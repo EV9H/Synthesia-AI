@@ -35,7 +35,8 @@ private:
 };
 
 class SynthesiaAIEditor : public juce::AudioProcessorEditor,
-                          public juce::Timer
+                          public juce::Timer,
+                          public juce::FileDragAndDropTarget
 {
 public:
     SynthesiaAIEditor(SynthesiaAIProcessor&);
@@ -45,12 +46,21 @@ public:
     void resized() override;
     void timerCallback() override;
 
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void fileDragEnter(const juce::StringArray&, int, int) override;
+    void fileDragExit(const juce::StringArray&) override;
+    void filesDropped(const juce::StringArray& files, int, int) override;
+
 private:
     void onGenerateClicked();
     void onPlanClicked();
     void onExportMidi();
+    void onImportClicked();
+    void onCaptureClicked();
     void applyGenreDefaults();
     void applyPlanToUI(const ArrangementPlan& plan);
+    void applyImportToUI(const MidiAnalysis& analysis);
+    bool importPath(const juce::File& file);
     MidiGenerationParams collectParams() const;
     void updateUIState();
     void exportToChooser(int menuId);
@@ -96,6 +106,11 @@ private:
     
     juce::Label generatorLabel;
     juce::ComboBox generatorComboBox;
+
+    juce::Label importModeLabel;
+    juce::ComboBox importModeComboBox;
+    juce::TextButton importButton;
+    juce::TextButton captureButton;
     
     juce::TextButton planButton;
     juce::TextButton generateButton;
@@ -108,6 +123,8 @@ private:
     ClipView clipView;
     int shownClipVersion{0};
     int shownPlanVersion{0};
+    int shownImportVersion{0};
+    bool draggingFiles{false};
     
     juce::Label statusLabel;
     

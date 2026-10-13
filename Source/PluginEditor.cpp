@@ -271,7 +271,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Plan with a prompt, edit chords, then generate MIDI", juce::dontSendNotification);
+    subtitleLabel.setText("Import MIDI, plan a form, then generate around it", juce::dontSendNotification);
     subtitleLabel.setFont(juce::Font(13.0f));
     subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(subtitleLabel);
@@ -402,6 +402,32 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     addAndMakeVisible(generatorComboBox);
 
+    setUpLabel(importModeLabel, "Import");
+    addAndMakeVisible(importModeLabel);
+    importModeComboBox.addItem("Off", 1);
+    importModeComboBox.addItem("Accompany", 2);
+    importModeComboBox.addItem("Extend", 3);
+    importModeComboBox.addItem("Rewrite", 4);
+    importModeComboBox.addItem("Restyle", 5);
+    importModeComboBox.setSelectedId(1, juce::dontSendNotification);
+    importModeComboBox.onChange = [this]()
+    {
+        if (importModeComboBox.getSelectedId() == 3 && lengthSlider.getValue() < 16)
+        {
+            lengthSlider.setValue(24, juce::dontSendNotification);
+            formComboBox.setSelectedId(2, juce::dontSendNotification);
+        }
+    };
+    addAndMakeVisible(importModeComboBox);
+
+    importButton.setButtonText("Import MIDI...");
+    importButton.onClick = [this]() { onImportClicked(); };
+    addAndMakeVisible(importButton);
+
+    captureButton.setButtonText("Capture MIDI");
+    captureButton.onClick = [this]() { onCaptureClicked(); };
+    addAndMakeVisible(captureButton);
+
     applyGenreDefaults();
     
     setUpLabel(planLabel, "Plan");
@@ -459,7 +485,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     addAndMakeVisible(settingsButton);
 
-    setSize(700, 960);
+    setSize(700, 1020);
     startTimerHz(30);
 }
 
@@ -488,6 +514,17 @@ void SynthesiaAIEditor::paint(juce::Graphics& g)
     g.fillRect(header);
     g.setColour(Theme::outline);
     g.drawHorizontalLine(header.getBottom() - 1, 0.0f, static_cast<float>(getWidth()));
+
+    if (draggingFiles)
+    {
+        g.setColour(Theme::accent.withAlpha(0.18f));
+        g.fillRect(getLocalBounds());
+        g.setColour(Theme::accent);
+        g.drawRect(getLocalBounds().reduced(6), 2);
+        g.setFont(18.0f);
+        g.setColour(juce::Colours::white);
+        g.drawText("Drop a .mid file to import", getLocalBounds(), juce::Justification::centred);
+    }
 }
 
 void SynthesiaAIEditor::resized()
@@ -528,6 +565,17 @@ void SynthesiaAIEditor::resized()
     {
         auto row = area.removeFromTop(28);
         layoutCell(row, generatorLabel, generatorComboBox);
+        area.removeFromTop(10);
+    }
+
+    {
+        auto row = area.removeFromTop(28);
+        auto left = row.removeFromLeft((row.getWidth() - columnGap) / 2);
+        row.removeFromLeft(columnGap);
+        layoutCell(left, importModeLabel, importModeComboBox);
+        importButton.setBounds(row.removeFromLeft((row.getWidth() - 8) / 2));
+        row.removeFromLeft(8);
+        captureButton.setBounds(row);
         area.removeFromTop(10);
     }
 
@@ -599,6 +647,14 @@ MidiGenerationParams SynthesiaAIEditor::collectParams() const
     for (int i = 0; i < partLockButtons.size(); ++i)
         if (partLockButtons[i]->getToggleState())
             params.lockedParts |= partLockBit(allParts[static_cast<size_t>(i)]);
+    switch (importModeComboBox.getSelectedId())
+    {
+        case 2: params.importMode = ImportMode::Accompany; break;
+        case 3: params.importMode = ImportMode::Extend; break;
+        case 4: params.importMode = ImportMode::Rewrite; break;
+        case 5: params.importMode = ImportMode::Restyle; break;
+        default: params.importMode = ImportMode::None; break;
+    }
     return params;
 }
 
@@ -616,6 +672,35 @@ void SynthesiaAIEditor::applyPlanToUI(const ArrangementPlan& plan)
     planSummaryEditor.setText(plan.summary());
 }
 
+void SynthesiaAIEditor::applyImportToUI(const MidiAnalysis& analysis)
+{
+    if (!analysis.ok)
+    {
+        statusLabel.setText(analysis.error.isEmpty() ? "Import failed" : analysis.error,
+                            juce::dontSendNotification);
+        return;
+    }
+
+    keyComboBox.setSelectedId(analysis.rootNote + 1, juce::dontSendNotification);
+    scaleComboBox.setSelectedId(static_cast<int>(analysis.scale) + 1, juce::dontSendNotification);
+    tempoSlider.setValue(analysis.tempo, juce::dontSendNotification);
+    if (importModeComboBox.getSelectedId() != 3)
+        lengthSlider.setValue(analysis.lengthInBars, juce::dontSendNotification);
+    chordsEditor.setText(analysis.chordChart, juce::dontSendNotification);
+    chordsEditor.setCaretPosition(0);
+    lockProgressionButton.setToggleState(true, juce::dontSendNotification);
+
+    for (int i = 0; i < partLockButtons.size(); ++i)
+        partLockButtons[i]->setToggleState(allParts[static_cast<size_t>(i)] == analysis.primaryPart,
+                                           juce::dontSendNotification);
+
+    planSummaryEditor.setText(analysis.summary);
+    statusLabel.setText("Imported " + analysis.sourceName + " · "
+                            + juce::String(partName(analysis.primaryPart)) + " · "
+                            + juce::String(analysis.lengthInBars) + " bars",
+                        juce::dontSendNotification);
+}
+
 void SynthesiaAIEditor::onPlanClicked()
 {
     audioProcessor.planArrangement(collectParams());
@@ -626,6 +711,102 @@ void SynthesiaAIEditor::onGenerateClicked()
 {
     audioProcessor.generateMidi(collectParams());
     statusLabel.setText("Generating...", juce::dontSendNotification);
+}
+
+bool SynthesiaAIEditor::importPath(const juce::File& file)
+{
+    if (!audioProcessor.importMidiFile(file))
+    {
+        statusLabel.setText(audioProcessor.getLastImport().error, juce::dontSendNotification);
+        return false;
+    }
+    applyImportToUI(audioProcessor.getLastImport());
+    shownImportVersion = audioProcessor.getImportVersion();
+    shownClipVersion = audioProcessor.getClipVersion();
+    clipView.setClip(audioProcessor.getGeneratedMidi(),
+                     audioProcessor.getClipLengthInBeats(),
+                     audioProcessor.getProgression(),
+                     audioProcessor.getSections());
+    return true;
+}
+
+void SynthesiaAIEditor::onImportClicked()
+{
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Import MIDI file...",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.mid;*.midi");
+    const auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+    {
+        const auto file = fc.getResult();
+        if (file != juce::File{})
+            importPath(file);
+    });
+}
+
+void SynthesiaAIEditor::onCaptureClicked()
+{
+    if (audioProcessor.isCapturingMidi())
+    {
+        const bool ok = audioProcessor.finishMidiCapture();
+        captureButton.setButtonText("Capture MIDI");
+        if (ok)
+        {
+            applyImportToUI(audioProcessor.getLastImport());
+            shownImportVersion = audioProcessor.getImportVersion();
+            shownClipVersion = audioProcessor.getClipVersion();
+            clipView.setClip(audioProcessor.getGeneratedMidi(),
+                             audioProcessor.getClipLengthInBeats(),
+                             audioProcessor.getProgression(),
+                             audioProcessor.getSections());
+        }
+        else
+        {
+            statusLabel.setText("Capture was empty — play MIDI into the plugin first",
+                                juce::dontSendNotification);
+        }
+        return;
+    }
+
+    audioProcessor.setMidiCapture(true);
+    captureButton.setButtonText("Stop capture");
+    statusLabel.setText("Capturing host MIDI...", juce::dontSendNotification);
+}
+
+bool SynthesiaAIEditor::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    for (const auto& path : files)
+        if (juce::File(path).hasFileExtension("mid") || juce::File(path).hasFileExtension("midi"))
+            return true;
+    return false;
+}
+
+void SynthesiaAIEditor::fileDragEnter(const juce::StringArray&, int, int)
+{
+    draggingFiles = true;
+    repaint();
+}
+
+void SynthesiaAIEditor::fileDragExit(const juce::StringArray&)
+{
+    draggingFiles = false;
+    repaint();
+}
+
+void SynthesiaAIEditor::filesDropped(const juce::StringArray& files, int, int)
+{
+    draggingFiles = false;
+    repaint();
+    for (const auto& path : files)
+    {
+        const juce::File file(path);
+        if (file.hasFileExtension("mid") || file.hasFileExtension("midi"))
+        {
+            importPath(file);
+            return;
+        }
+    }
 }
 
 void SynthesiaAIEditor::onExportMidi()
@@ -707,6 +888,14 @@ void SynthesiaAIEditor::updateUIState()
     exportButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
+
+    captureButton.setButtonText(audioProcessor.isCapturingMidi() ? "Stop capture" : "Capture MIDI");
+
+    if (shownImportVersion != audioProcessor.getImportVersion())
+    {
+        shownImportVersion = audioProcessor.getImportVersion();
+        applyImportToUI(audioProcessor.getLastImport());
+    }
 
     if (shownPlanVersion != audioProcessor.getPlanVersion())
     {
