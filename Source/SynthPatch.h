@@ -109,15 +109,17 @@ struct MixSettings
     juce::String name;
 
     float sidechainAmount{0.35f};
-    float sidechainAttack{0.008f};   // seconds
-    float sidechainRelease{0.16f};
+    float sidechainAttack{0.012f};   // seconds
+    float sidechainRelease{0.18f};
     float sidechainBass{0.7f};       // 0 = leave bass/808 unducked
 
-    float compAmount{0.7f};          // UI macro 0-1
-    BusComp drum { 0.45f, 0.004f, 0.09f, 3.0f, 0.22f };
-    BusComp bass { 0.40f, 0.012f, 0.14f, 2.4f, 0.28f };
-    BusComp music { 0.30f, 0.018f, 0.16f, 2.2f, 0.32f };
-    BusComp master { 0.45f, 0.020f, 0.16f, 1.8f, 0.38f };
+    float compAmount{0.55f};         // UI macro 0-1
+    float outputGain{1.15f};         // makeup into the true-peak limiter
+    float musicWidth{1.35f};
+    BusComp drum { 0.28f, 0.018f, 0.12f, 2.4f, 0.32f };
+    BusComp bass { 0.26f, 0.022f, 0.16f, 2.2f, 0.34f };
+    BusComp music { 0.22f, 0.028f, 0.18f, 2.0f, 0.36f };
+    BusComp master { 0.22f, 0.040f, 0.22f, 1.6f, 0.42f };
 
     void writeXml(juce::XmlElement& xml) const;
     static MixSettings fromXml(const juce::XmlElement& xml);

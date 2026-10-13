@@ -183,10 +183,10 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.tineClick = 0.22f;
         p.amp = { 0.008f, 1.4f, 0.55f, 0.45f };
         p.filterEnv = { 0.004f, 0.6f, 0.35f, 0.4f };
-        p.cutoff = 2200.0f; p.resonance = 0.22f; p.filterEnvAmount = 0.8f;
-        p.lfoRate = 0.35f; p.lfoToPitch = 8.0f; p.wowFlutter = 0.45f;
-        p.chorusSend = 0.35f; p.delaySend = 0.12f; p.reverbSend = 0.28f;
-        p.tapeSat = 0.45f; p.vinylAmount = 0.35f; p.drive = 0.22f; p.gain = 0.72f;
+        p.cutoff = 2800.0f; p.resonance = 0.18f; p.filterEnvAmount = 1.0f;
+        p.lfoRate = 0.35f; p.lfoToPitch = 6.0f; p.wowFlutter = 0.32f;
+        p.chorusSend = 0.42f; p.delaySend = 0.10f; p.reverbSend = 0.24f;
+        p.tapeSat = 0.22f; p.vinylAmount = 0.22f; p.drive = 0.16f; p.gain = 0.68f;
         patches.add(p);
     }
     {
@@ -196,9 +196,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.tineClick = 0.18f;
         p.amp = { 0.004f, 1.1f, 0.4f, 0.35f };
         p.filterEnv = { 0.002f, 0.5f, 0.2f, 0.3f };
-        p.cutoff = 2600.0f; p.resonance = 0.2f; p.filterEnvAmount = 1.1f;
-        p.wowFlutter = 0.3f; p.chorusSend = 0.22f; p.reverbSend = 0.22f;
-        p.tapeSat = 0.4f; p.vinylAmount = 0.25f; p.drive = 0.18f; p.gain = 0.7f;
+        p.cutoff = 3400.0f; p.resonance = 0.16f; p.filterEnvAmount = 1.3f;
+        p.wowFlutter = 0.22f; p.chorusSend = 0.28f; p.reverbSend = 0.20f;
+        p.tapeSat = 0.18f; p.vinylAmount = 0.16f; p.drive = 0.12f; p.gain = 0.66f;
         patches.add(p);
     }
     {
@@ -232,9 +232,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Square, 0.35f, 7.0f, 0, 1, 0.0f, 0.42f, 1.0f, 0.0f };
         p.amp = { 0.004f, 0.22f, 0.45f, 0.18f };
         p.filterEnv = { 0.001f, 0.14f, 0.15f, 0.12f };
-        p.cutoff = 2400.0f; p.resonance = 0.45f; p.filterEnvAmount = 2.4f; p.velToCutoff = 0.5f;
-        p.chorusSend = 0.22f; p.delaySend = 0.08f; p.reverbSend = 0.16f;
-        p.drive = 0.32f; p.gain = 0.62f;
+        p.cutoff = 3200.0f; p.resonance = 0.38f; p.filterEnvAmount = 2.6f; p.velToCutoff = 0.5f;
+        p.chorusSend = 0.28f; p.delaySend = 0.08f; p.reverbSend = 0.14f;
+        p.drive = 0.24f; p.gain = 0.58f;
         patches.add(p);
     }
     {
@@ -243,9 +243,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Sine, 0.55f, 0.0f, 1, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.subMix = 0.2f;
         p.amp = { 0.002f, 0.08f, 0.85f, 0.08f };
-        p.filterMode = FilterMode::LowPass; p.cutoff = 3200.0f; p.resonance = 0.15f;
-        p.filterEnvAmount = 0.4f;
-        p.chorusSend = 0.18f; p.reverbSend = 0.12f; p.drive = 0.2f; p.gain = 0.58f;
+        p.filterMode = FilterMode::LowPass; p.cutoff = 4200.0f; p.resonance = 0.12f;
+        p.filterEnvAmount = 0.5f;
+        p.chorusSend = 0.22f; p.reverbSend = 0.10f; p.drive = 0.16f; p.gain = 0.54f;
         patches.add(p);
     }
     {
@@ -263,12 +263,12 @@ juce::Array<SynthPatch> PatchLibrary::all()
         auto p = make("house-supersaw", "Peak Supersaw", Part::Synth);
         p.osc1 = { OscWave::Saw, 1.0f, 0.0f, 0, 7, 14.0f, 0.5f, 1.0f, 0.0f };
         p.osc2 = { OscWave::Saw, 0.35f, 12.0f, 0, 3, 8.0f, 0.5f, 1.0f, 0.0f };
-        p.amp = { 0.02f, 0.28f, 0.7f, 0.22f };
-        p.filterEnv = { 0.03f, 0.35f, 0.4f, 0.25f };
-        p.cutoff = 2800.0f; p.resonance = 0.32f; p.filterEnvAmount = 1.8f;
-        p.lfoRate = 0.35f; p.lfoToFilter = 0.25f;
-        p.chorusSend = 0.4f; p.delaySend = 0.22f; p.reverbSend = 0.28f;
-        p.drive = 0.2f; p.gain = 0.48f;
+        p.amp = { 0.018f, 0.24f, 0.72f, 0.20f };
+        p.filterEnv = { 0.025f, 0.30f, 0.42f, 0.22f };
+        p.cutoff = 3800.0f; p.resonance = 0.28f; p.filterEnvAmount = 2.0f;
+        p.lfoRate = 0.28f; p.lfoToFilter = 0.22f;
+        p.chorusSend = 0.48f; p.delaySend = 0.18f; p.reverbSend = 0.24f;
+        p.drive = 0.14f; p.gain = 0.44f;
         patches.add(p);
     }
 
@@ -276,24 +276,25 @@ juce::Array<SynthPatch> PatchLibrary::all()
         auto p = make("trap-dark-pad", "Trap Dark Pad", Part::Chords);
         p.osc1 = { OscWave::Saw, 0.8f, 0.0f, 0, 5, 10.0f, 0.5f, 1.0f, 0.0f };
         p.osc2 = { OscWave::Triangle, 0.45f, 10.0f, -1, 1, 0.0f, 0.5f, 1.0f, 0.0f };
-        p.amp = { 0.12f, 0.8f, 0.75f, 0.6f };
-        p.filterEnv = { 0.08f, 0.9f, 0.45f, 0.5f };
-        p.cutoff = 700.0f; p.resonance = 0.38f; p.filterEnvAmount = 1.6f;
-        p.chorusSend = 0.32f; p.delaySend = 0.16f; p.reverbSend = 0.4f;
-        p.drive = 0.18f; p.gain = 0.55f;
+        p.amp = { 0.10f, 0.7f, 0.72f, 0.55f };
+        p.filterEnv = { 0.06f, 0.8f, 0.42f, 0.45f };
+        p.cutoff = 1100.0f; p.resonance = 0.32f; p.filterEnvAmount = 1.8f;
+        p.chorusSend = 0.42f; p.delaySend = 0.14f; p.reverbSend = 0.36f;
+        p.drive = 0.14f; p.gain = 0.50f;
         patches.add(p);
     }
     {
         auto p = make("trap-808", "Trap 808", Part::Bass);
         p.osc1 = { OscWave::Sine, 1.0f, 0.0f, 0, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.osc2 = { OscWave::Sine, 0.18f, 0.0f, 1, 1, 0.0f, 0.5f, 2.0f, 0.4f };
-        p.subMix = 0.7f; p.subOctave = -1;
-        p.amp = { 0.002f, 0.35f, 0.92f, 0.18f };
-        p.filterMode = FilterMode::LowPass; p.cutoff = 280.0f; p.resonance = 0.15f;
-        p.filterEnvAmount = 0.8f; p.filterEnv = { 0.001f, 0.12f, 0.4f, 0.1f };
-        p.pitchEnvAmount = 18.0f; p.pitchEnvDecay = 0.07f;
-        p.glideSeconds = 0.08f; p.drive = 0.42f; p.tapeSat = 0.25f;
-        p.reverbSend = 0.02f; p.gain = 0.95f;
+        p.subMix = 0.62f; p.subOctave = -1;
+        p.noiseMix = 0.04f;
+        p.amp = { 0.002f, 0.42f, 0.88f, 0.22f };
+        p.filterMode = FilterMode::LowPass; p.cutoff = 220.0f; p.resonance = 0.12f;
+        p.filterEnvAmount = 1.1f; p.filterEnv = { 0.001f, 0.08f, 0.35f, 0.08f };
+        p.pitchEnvAmount = 14.0f; p.pitchEnvDecay = 0.055f;
+        p.glideSeconds = 0.09f; p.drive = 0.32f; p.tapeSat = 0.12f;
+        p.reverbSend = 0.0f; p.gain = 0.90f;
         patches.add(p);
     }
     {
@@ -303,10 +304,10 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.tineClick = 0.12f; p.noiseMix = 0.03f;
         p.amp = { 0.002f, 0.9f, 0.15f, 0.4f };
         p.filterEnv = { 0.001f, 0.35f, 0.1f, 0.3f };
-        p.filterMode = FilterMode::LowPass; p.cutoff = 4200.0f; p.resonance = 0.22f;
-        p.filterEnvAmount = 1.2f;
-        p.delaySend = 0.35f; p.reverbSend = 0.38f; p.chorusSend = 0.15f;
-        p.gain = 0.5f;
+        p.filterMode = FilterMode::LowPass; p.cutoff = 5600.0f; p.resonance = 0.18f;
+        p.filterEnvAmount = 1.4f;
+        p.delaySend = 0.32f; p.reverbSend = 0.34f; p.chorusSend = 0.18f;
+        p.gain = 0.46f;
         patches.add(p);
     }
     {
@@ -315,9 +316,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Sine, 0.7f, 0.0f, 1, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.amp = { 0.002f, 0.18f, 0.05f, 0.16f };
         p.filterEnv = { 0.001f, 0.1f, 0.05f, 0.1f };
-        p.filterMode = FilterMode::HighPass; p.cutoff = 420.0f; p.resonance = 0.25f;
-        p.filterEnvAmount = 0.4f;
-        p.delaySend = 0.22f; p.reverbSend = 0.18f; p.gain = 0.52f;
+        p.filterMode = FilterMode::HighPass; p.cutoff = 380.0f; p.resonance = 0.22f;
+        p.filterEnvAmount = 0.55f;
+        p.delaySend = 0.18f; p.reverbSend = 0.16f; p.chorusSend = 0.12f; p.gain = 0.48f;
         patches.add(p);
     }
 
@@ -328,9 +329,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.tineClick = 0.14f;
         p.amp = { 0.01f, 1.2f, 0.62f, 0.4f };
         p.filterEnv = { 0.006f, 0.7f, 0.4f, 0.35f };
-        p.cutoff = 2400.0f; p.resonance = 0.18f; p.filterEnvAmount = 0.9f;
-        p.chorusSend = 0.4f; p.delaySend = 0.14f; p.reverbSend = 0.3f;
-        p.drive = 0.16f; p.gain = 0.7f;
+        p.cutoff = 3100.0f; p.resonance = 0.15f; p.filterEnvAmount = 1.1f;
+        p.chorusSend = 0.46f; p.delaySend = 0.12f; p.reverbSend = 0.26f;
+        p.drive = 0.12f; p.gain = 0.64f;
         patches.add(p);
     }
     {
@@ -339,8 +340,8 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Triangle, 0.22f, 5.0f, 0, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.tineClick = 0.1f;
         p.amp = { 0.006f, 1.0f, 0.5f, 0.38f };
-        p.cutoff = 2800.0f; p.resonance = 0.16f; p.filterEnvAmount = 0.8f;
-        p.chorusSend = 0.3f; p.reverbSend = 0.28f; p.gain = 0.68f;
+        p.cutoff = 3600.0f; p.resonance = 0.14f; p.filterEnvAmount = 1.0f;
+        p.chorusSend = 0.36f; p.reverbSend = 0.24f; p.gain = 0.62f;
         patches.add(p);
     }
     {
@@ -360,10 +361,10 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Triangle, 0.55f, 8.0f, 0, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.amp = { 0.18f, 0.7f, 0.78f, 0.7f };
         p.filterEnv = { 0.2f, 0.8f, 0.55f, 0.6f };
-        p.cutoff = 1600.0f; p.resonance = 0.22f; p.filterEnvAmount = 1.1f;
-        p.lfoRate = 0.22f; p.lfoToFilter = 0.2f;
-        p.chorusSend = 0.45f; p.delaySend = 0.2f; p.reverbSend = 0.42f;
-        p.gain = 0.5f;
+        p.cutoff = 2100.0f; p.resonance = 0.18f; p.filterEnvAmount = 1.2f;
+        p.lfoRate = 0.22f; p.lfoToFilter = 0.18f;
+        p.chorusSend = 0.52f; p.delaySend = 0.16f; p.reverbSend = 0.36f;
+        p.gain = 0.46f;
         patches.add(p);
     }
 
@@ -374,10 +375,10 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.noiseMix = 0.03f;
         p.amp = { 0.35f, 1.1f, 0.85f, 1.1f };
         p.filterEnv = { 0.4f, 1.2f, 0.7f, 1.0f };
-        p.cutoff = 1400.0f; p.resonance = 0.18f; p.filterEnvAmount = 1.4f; p.keyTrack = 0.5f;
-        p.lfoRate = 0.18f; p.lfoToFilter = 0.15f; p.lfoToPitch = 4.0f;
-        p.chorusSend = 0.38f; p.delaySend = 0.12f; p.reverbSend = 0.62f;
-        p.drive = 0.08f; p.gain = 0.52f;
+        p.cutoff = 2000.0f; p.resonance = 0.14f; p.filterEnvAmount = 1.5f; p.keyTrack = 0.5f;
+        p.lfoRate = 0.16f; p.lfoToFilter = 0.12f; p.lfoToPitch = 3.0f;
+        p.chorusSend = 0.48f; p.delaySend = 0.10f; p.reverbSend = 0.55f;
+        p.drive = 0.06f; p.gain = 0.48f;
         patches.add(p);
     }
     {
@@ -387,9 +388,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.noiseMix = 0.02f;
         p.amp = { 0.004f, 2.2f, 0.18f, 0.55f };
         p.filterEnv = { 0.002f, 1.4f, 0.15f, 0.4f };
-        p.cutoff = 3200.0f; p.resonance = 0.12f; p.filterEnvAmount = 1.0f;
-        p.reverbSend = 0.48f; p.delaySend = 0.1f; p.chorusSend = 0.12f;
-        p.gain = 0.62f;
+        p.cutoff = 4200.0f; p.resonance = 0.10f; p.filterEnvAmount = 1.2f;
+        p.reverbSend = 0.42f; p.delaySend = 0.08f; p.chorusSend = 0.10f;
+        p.gain = 0.58f;
         patches.add(p);
     }
     {
@@ -410,11 +411,11 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.noiseMix = 0.08f;
         p.amp = { 0.22f, 0.8f, 0.7f, 0.85f };
         p.filterEnv = { 0.25f, 1.0f, 0.5f, 0.7f };
-        p.filterMode = FilterMode::HighPass; p.cutoff = 800.0f; p.resonance = 0.2f;
-        p.filterEnvAmount = 0.8f;
-        p.lfoRate = 4.5f; p.lfoDelay = 0.4f; p.lfoToPitch = 10.0f;
-        p.chorusSend = 0.3f; p.delaySend = 0.28f; p.reverbSend = 0.55f;
-        p.gain = 0.45f;
+        p.filterMode = FilterMode::HighPass; p.cutoff = 650.0f; p.resonance = 0.16f;
+        p.filterEnvAmount = 0.9f;
+        p.lfoRate = 4.5f; p.lfoDelay = 0.4f; p.lfoToPitch = 8.0f;
+        p.chorusSend = 0.36f; p.delaySend = 0.22f; p.reverbSend = 0.48f;
+        p.gain = 0.42f;
         patches.add(p);
     }
 
@@ -424,9 +425,9 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.osc2 = { OscWave::Sine, 0.55f, 4.0f, 0, 1, 0.0f, 0.5f, 1.0f, 0.0f };
         p.amp = { 0.006f, 0.45f, 0.62f, 0.28f };
         p.filterEnv = { 0.004f, 0.22f, 0.35f, 0.2f };
-        p.cutoff = 3200.0f; p.resonance = 0.22f; p.filterEnvAmount = 1.6f;
-        p.chorusSend = 0.2f; p.delaySend = 0.1f; p.reverbSend = 0.18f;
-        p.drive = 0.14f; p.gain = 0.65f;
+        p.cutoff = 4000.0f; p.resonance = 0.18f; p.filterEnvAmount = 1.8f;
+        p.chorusSend = 0.26f; p.delaySend = 0.08f; p.reverbSend = 0.16f;
+        p.drive = 0.10f; p.gain = 0.60f;
         patches.add(p);
     }
     {
@@ -436,8 +437,8 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.noiseMix = 0.025f;
         p.amp = { 0.002f, 1.6f, 0.12f, 0.32f };
         p.filterEnv = { 0.001f, 0.9f, 0.08f, 0.25f };
-        p.cutoff = 4800.0f; p.resonance = 0.12f; p.filterEnvAmount = 1.3f; p.keyTrack = 0.45f;
-        p.reverbSend = 0.16f; p.delaySend = 0.06f; p.gain = 0.7f;
+        p.cutoff = 5600.0f; p.resonance = 0.10f; p.filterEnvAmount = 1.5f; p.keyTrack = 0.45f;
+        p.reverbSend = 0.14f; p.delaySend = 0.05f; p.gain = 0.64f;
         patches.add(p);
     }
     {
@@ -587,6 +588,8 @@ void MixSettings::writeXml(juce::XmlElement& xml) const
     xml.setAttribute("scRelease", sidechainRelease);
     xml.setAttribute("scBass", sidechainBass);
     xml.setAttribute("comp", compAmount);
+    xml.setAttribute("outputGain", outputGain);
+    xml.setAttribute("musicWidth", musicWidth);
     writeBus(xml, "drum", drum);
     writeBus(xml, "bass", bass);
     writeBus(xml, "music", music);
@@ -604,6 +607,8 @@ MixSettings MixSettings::fromXml(const juce::XmlElement& xml)
     m.sidechainRelease = (float) xml.getDoubleAttribute("scRelease", m.sidechainRelease);
     m.sidechainBass = (float) xml.getDoubleAttribute("scBass", m.sidechainBass);
     m.compAmount = (float) xml.getDoubleAttribute("comp", m.compAmount);
+    m.outputGain = (float) xml.getDoubleAttribute("outputGain", m.outputGain);
+    m.musicWidth = (float) xml.getDoubleAttribute("musicWidth", m.musicWidth);
     m.drum = readBus(xml, "drum", m.drum);
     m.bass = readBus(xml, "bass", m.bass);
     m.music = readBus(xml, "music", m.music);
@@ -619,90 +624,102 @@ juce::Array<MixSettings> MixLibrary::all()
         MixSettings m;
         m.id = "house-pump";
         m.name = "House Pump";
-        m.sidechainAmount = 0.88f;
-        m.sidechainAttack = 0.004f;
-        m.sidechainRelease = 0.14f;
-        m.sidechainBass = 0.92f;
-        m.compAmount = 0.78f;
-        m.drum = bus(0.70f, 0.003f, 0.08f, 3.6f, 0.20f);   // punch
-        m.bass = bus(0.45f, 0.008f, 0.12f, 2.5f, 0.26f);
-        m.music = bus(0.38f, 0.012f, 0.16f, 2.2f, 0.32f);
-        m.master = bus(0.55f, 0.018f, 0.14f, 1.9f, 0.36f);
+        m.sidechainAmount = 0.72f;
+        m.sidechainAttack = 0.012f;
+        m.sidechainRelease = 0.16f;
+        m.sidechainBass = 0.78f;
+        m.compAmount = 0.52f;
+        m.outputGain = 1.35f;
+        m.musicWidth = 1.55f;
+        m.drum = bus(0.32f, 0.016f, 0.10f, 2.6f, 0.30f);
+        m.bass = bus(0.28f, 0.020f, 0.14f, 2.3f, 0.34f);
+        m.music = bus(0.24f, 0.024f, 0.16f, 2.1f, 0.36f);
+        m.master = bus(0.22f, 0.035f, 0.20f, 1.6f, 0.44f);
         mixes.add(m);
     }
     {
         MixSettings m;
         m.id = "trap-808";
         m.name = "Trap 808";
-        m.sidechainAmount = 0.55f;
-        m.sidechainAttack = 0.006f;
-        m.sidechainRelease = 0.2f;
-        m.sidechainBass = 0.12f; // keep 808 vs kick
-        m.compAmount = 0.72f;
-        m.drum = bus(0.62f, 0.002f, 0.07f, 3.2f, 0.22f);
-        m.bass = bus(0.28f, 0.018f, 0.22f, 1.6f, 0.34f);   // light 808 glue
-        m.music = bus(0.42f, 0.014f, 0.18f, 2.6f, 0.30f);
-        m.master = bus(0.50f, 0.016f, 0.14f, 2.0f, 0.36f);
+        m.sidechainAmount = 0.48f;
+        m.sidechainAttack = 0.010f;
+        m.sidechainRelease = 0.22f;
+        m.sidechainBass = 0.10f;
+        m.compAmount = 0.50f;
+        m.outputGain = 1.28f;
+        m.musicWidth = 1.48f;
+        m.drum = bus(0.30f, 0.018f, 0.11f, 2.5f, 0.32f);
+        m.bass = bus(0.20f, 0.028f, 0.20f, 1.8f, 0.38f);
+        m.music = bus(0.24f, 0.026f, 0.18f, 2.2f, 0.36f);
+        m.master = bus(0.20f, 0.040f, 0.22f, 1.5f, 0.44f);
         mixes.add(m);
     }
     {
         MixSettings m;
         m.id = "lofi-glue";
         m.name = "Lo-fi Glue";
-        m.sidechainAmount = 0.18f;
-        m.sidechainAttack = 0.012f;
+        m.sidechainAmount = 0.16f;
+        m.sidechainAttack = 0.018f;
         m.sidechainRelease = 0.28f;
-        m.sidechainBass = 0.35f;
-        m.compAmount = 0.48f;
-        m.drum = bus(0.40f, 0.008f, 0.20f, 2.0f, 0.28f);
-        m.bass = bus(0.38f, 0.014f, 0.18f, 2.0f, 0.30f);
-        m.music = bus(0.32f, 0.022f, 0.26f, 1.8f, 0.34f);
-        m.master = bus(0.42f, 0.028f, 0.22f, 1.6f, 0.40f);
+        m.sidechainBass = 0.28f;
+        m.compAmount = 0.40f;
+        m.outputGain = 0.95f;
+        m.musicWidth = 1.12f;
+        m.drum = bus(0.22f, 0.024f, 0.18f, 2.0f, 0.36f);
+        m.bass = bus(0.22f, 0.026f, 0.18f, 2.0f, 0.36f);
+        m.music = bus(0.18f, 0.032f, 0.24f, 1.8f, 0.38f);
+        m.master = bus(0.16f, 0.050f, 0.28f, 1.5f, 0.46f);
         mixes.add(m);
     }
     {
         MixSettings m;
         m.id = "rnb-smooth";
         m.name = "R&B Smooth";
-        m.sidechainAmount = 0.42f;
-        m.sidechainAttack = 0.01f;
-        m.sidechainRelease = 0.22f;
-        m.sidechainBass = 0.55f;
-        m.compAmount = 0.62f;
-        m.drum = bus(0.50f, 0.006f, 0.14f, 2.5f, 0.24f);
-        m.bass = bus(0.42f, 0.012f, 0.16f, 2.2f, 0.28f);
-        m.music = bus(0.40f, 0.018f, 0.20f, 2.0f, 0.32f);
-        m.master = bus(0.48f, 0.022f, 0.18f, 1.8f, 0.38f);
+        m.sidechainAmount = 0.32f;
+        m.sidechainAttack = 0.014f;
+        m.sidechainRelease = 0.24f;
+        m.sidechainBass = 0.42f;
+        m.compAmount = 0.46f;
+        m.outputGain = 1.02f;
+        m.musicWidth = 1.38f;
+        m.drum = bus(0.26f, 0.020f, 0.15f, 2.2f, 0.34f);
+        m.bass = bus(0.24f, 0.024f, 0.16f, 2.1f, 0.36f);
+        m.music = bus(0.22f, 0.030f, 0.20f, 1.9f, 0.38f);
+        m.master = bus(0.18f, 0.045f, 0.24f, 1.5f, 0.46f);
         mixes.add(m);
     }
     {
         MixSettings m;
         m.id = "cine-wide";
         m.name = "Cinematic Wide";
-        m.sidechainAmount = 0.1f;
-        m.sidechainAttack = 0.02f;
-        m.sidechainRelease = 0.4f;
-        m.sidechainBass = 0.2f;
-        m.compAmount = 0.4f;
-        m.drum = bus(0.35f, 0.010f, 0.25f, 2.0f, 0.30f);
-        m.bass = bus(0.30f, 0.020f, 0.28f, 1.8f, 0.32f);
-        m.music = bus(0.28f, 0.025f, 0.32f, 1.6f, 0.36f);
-        m.master = bus(0.38f, 0.030f, 0.26f, 1.5f, 0.42f);
+        m.sidechainAmount = 0.08f;
+        m.sidechainAttack = 0.025f;
+        m.sidechainRelease = 0.36f;
+        m.sidechainBass = 0.16f;
+        m.compAmount = 0.38f;
+        m.outputGain = 0.92f;
+        m.musicWidth = 1.62f;
+        m.drum = bus(0.18f, 0.028f, 0.22f, 2.0f, 0.38f);
+        m.bass = bus(0.18f, 0.032f, 0.26f, 1.7f, 0.38f);
+        m.music = bus(0.16f, 0.036f, 0.30f, 1.6f, 0.40f);
+        m.master = bus(0.14f, 0.055f, 0.30f, 1.4f, 0.48f);
         mixes.add(m);
     }
     {
         MixSettings m;
         m.id = "pop-radio";
         m.name = "Pop Radio";
-        m.sidechainAmount = 0.34f;
-        m.sidechainAttack = 0.008f;
-        m.sidechainRelease = 0.16f;
-        m.sidechainBass = 0.65f;
-        m.compAmount = 0.68f;
-        m.drum = bus(0.55f, 0.004f, 0.09f, 3.0f, 0.22f);
-        m.bass = bus(0.48f, 0.010f, 0.13f, 2.5f, 0.26f);
-        m.music = bus(0.40f, 0.012f, 0.15f, 2.2f, 0.30f);
-        m.master = bus(0.52f, 0.018f, 0.14f, 2.0f, 0.36f);
+        m.sidechainAmount = 0.28f;
+        m.sidechainAttack = 0.012f;
+        m.sidechainRelease = 0.18f;
+        m.sidechainBass = 0.55f;
+        m.compAmount = 0.48f;
+        m.outputGain = 1.22f;
+        m.musicWidth = 1.42f;
+        m.drum = bus(0.28f, 0.018f, 0.12f, 2.4f, 0.32f);
+        m.bass = bus(0.26f, 0.022f, 0.14f, 2.2f, 0.34f);
+        m.music = bus(0.22f, 0.026f, 0.16f, 2.0f, 0.36f);
+        m.master = bus(0.20f, 0.040f, 0.20f, 1.6f, 0.44f);
         mixes.add(m);
     }
 

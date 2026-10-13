@@ -82,6 +82,35 @@ namespace
             right[i] *= gain * makeup;
         }
     }
+
+    float onePoleCoeff(double hz, double sr)
+    {
+        return (float) (1.0 - std::exp(-twoPi * hz / sr));
+    }
+
+    void truePeakLimit(float* left, float* right, int num, float& env, double sr)
+    {
+        const float ceiling = 0.84f; // ~-1.5 dBFS sample peak, measured TP stays under -1 dBTP
+        const float atk = coeffFor(0.0004, sr);
+        const float rel = coeffFor(0.09, sr);
+        for (int i = 0; i < num; ++i)
+        {
+            float peak = juce::jmax(std::abs(left[i]), std::abs(right[i]));
+            if (i + 1 < num)
+            {
+                for (float t : { 0.25f, 0.5f, 0.75f })
+                {
+                    const float li = left[i] + t * (left[i + 1] - left[i]);
+                    const float ri = right[i] + t * (right[i + 1] - right[i]);
+                    peak = juce::jmax(peak, std::abs(li), std::abs(ri));
+                }
+            }
+            env += (peak > env ? atk : rel) * (peak - env);
+            const float g = env > ceiling ? ceiling / (env + 1.0e-8f) : 1.0f;
+            left[i] *= g;
+            right[i] *= g;
+        }
+    }
 }
 
 double PartVoice::polyBlep(double t, double dt)
@@ -327,10 +356,10 @@ void PartVoice::nextStereo(float& left, float& right)
                 value = 0.0;
     }
 
-    const float drive = 1.0f + 3.5f * patch->drive;
+    const float drive = 1.0f + 1.15f * patch->drive;
     value = std::tanh(value * drive) / std::tanh(drive);
 
-    const float level = patch->gain * (0.35f + 0.65f * velocity) * 0.62f * amp;
+    const float level = patch->gain * (0.38f + 0.62f * velocity) * 0.16f * amp;
     const float pan = juce::jlimit(-1.0f, 1.0f, patch->pan);
     const float gainL = std::sqrt(0.5f * (1.0f - pan));
     const float gainR = std::sqrt(0.5f * (1.0f + pan));
@@ -391,7 +420,7 @@ void SimpleSynth::setupVoices()
 
     drums.clearVoices();
     drums.clearSounds();
-    for (int i = 0; i < 16; ++i)
+    for (int i = 0; i < 24; ++i)
         drums.addVoice(new DrumVoice());
     drums.addSound(new DrumSound(currentKit));
 }
@@ -445,7 +474,15 @@ void SimpleSynth::prepareFx(double sampleRate, int samplesPerBlock)
 
     hpStateL = hpStateR = 0.0f;
     shelfStateL = shelfStateR = 0.0f;
-    kickLp = scEnv = drumEnv = bassEnv = musicEnv = masterEnv = limitEnv = 0.0f;
+    kickLp = kickPulse = scEnv = duckSmooth = 0.0f;
+    drumEnv = bassEnv = musicEnv = masterEnv = limitEnv = 0.0f;
+    bassMonoLpL = bassMonoLpR = 0.0f;
+    haasWrite = 0;
+    for (float& s : musicHaas)
+        s = 0.0f;
+    for (int i = 0; i < 4; ++i)
+        partHpL[i] = partHpR[i] = partMudLpL[i] = partMudBpL[i]
+            = partMudLpR[i] = partMudBpR[i] = partAirLpL[i] = partAirLpR[i] = 0.0f;
 }
 
 void SimpleSynth::releaseResources()
@@ -554,21 +591,67 @@ void SimpleSynth::ensureAuxSize(int start, int num)
 void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buffer, int start, int num)
 {
     const auto& patch = patches[partIndex];
-    if (patch.tapeSat > 0.01f || patch.drive > 0.2f)
+    const double sr = juce::jmax(1.0, currentSampleRate);
+    auto* l = buffer.getWritePointer(0, start);
+    auto* r = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1, start) : l;
+    const bool isBass = partIndex == 1;
+    const float hpHz = isBass ? 28.0f : 130.0f;
+    const float hpC = onePoleCoeff(hpHz, sr);
+    const float mudF = (float) (2.0 * std::sin(twoPi * 360.0 / sr));
+    const float mudQ = 0.35f;
+    const float mudAmt = isBass ? 0.12f : 0.42f;
+    const float airC = onePoleCoeff(7500.0, sr);
+    const float airAmt = isBass ? 0.08f : 0.62f;
+    const float partScale = isBass ? 0.90f : (partIndex == 0 ? 0.78f : 0.72f);
+
+    for (int i = 0; i < num; ++i)
     {
-        const float amount = 1.0f + 1.8f * juce::jmax(patch.tapeSat, patch.drive * 0.4f);
-        const float inv = 1.0f / std::tanh(amount);
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        auto process = [&](float x, float& hpS, float& mudLp, float& mudBp, float& airLp) -> float
         {
-            auto* data = buffer.getWritePointer(ch, start);
-            for (int i = 0; i < num; ++i)
-                data[i] = std::tanh(data[i] * amount) * inv;
+            hpS += hpC * (x - hpS);
+            x -= hpS;
+            mudLp += mudF * mudBp;
+            const float mudHp = x - mudLp - mudQ * mudBp;
+            mudBp += mudF * mudHp;
+            x -= mudAmt * mudBp;
+            airLp += airC * (x - airLp);
+            x += airAmt * (x - airLp);
+            return x;
+        };
+        l[i] = process(l[i], partHpL[partIndex], partMudLpL[partIndex], partMudBpL[partIndex], partAirLpL[partIndex]);
+        if (r != l)
+            r[i] = process(r[i], partHpR[partIndex], partMudLpR[partIndex], partMudBpR[partIndex], partAirLpR[partIndex]);
+    }
+
+    if (isBass)
+    {
+        const float monoC = onePoleCoeff(120.0, sr);
+        for (int i = 0; i < num; ++i)
+        {
+            bassMonoLpL += monoC * (l[i] - bassMonoLpL);
+            bassMonoLpR += monoC * (r[i] - bassMonoLpR);
+            const float mono = 0.5f * (bassMonoLpL + bassMonoLpR);
+            l[i] = (l[i] - bassMonoLpL) + mono;
+            r[i] = (r[i] - bassMonoLpR) + mono;
+        }
+    }
+
+    buffer.applyGain(start, num, partScale);
+
+    if (patch.tapeSat > 0.04f)
+    {
+        const float amount = 1.0f + 0.7f * patch.tapeSat;
+        const float inv = 1.0f / std::tanh(amount);
+        for (int i = 0; i < num; ++i)
+        {
+            l[i] = std::tanh(l[i] * amount) * inv;
+            r[i] = std::tanh(r[i] * amount) * inv;
         }
     }
 
     if (patch.chorusSend > 0.02f)
     {
-        chorus[partIndex].setMix(juce::jlimit(0.0f, 0.65f, patch.chorusSend));
+        chorus[partIndex].setMix(juce::jlimit(0.0f, 0.55f, patch.chorusSend * 0.85f));
         juce::dsp::AudioBlock<float> block(buffer);
         auto sub = block.getSubBlock((size_t) start, (size_t) num);
         chorus[partIndex].process(juce::dsp::ProcessContextReplacing<float>(sub));
@@ -576,8 +659,8 @@ void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buff
 
     sanitize(buffer, start, num);
 
-    const float delayAmt = patch.delaySend;
-    const float revAmt = patch.reverbSend;
+    const float delayAmt = patch.delaySend * 0.75f;
+    const float revAmt = patch.reverbSend * 0.7f;
     if (delayAmt > 0.001f || revAmt > 0.001f)
     {
         for (int ch = 0; ch < 2; ++ch)
@@ -614,6 +697,23 @@ void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMi
     compressStereo(bL, bR, num, bassEnv, mix.bass, macro, sr);
     compressStereo(mL, mR, num, musicEnv, mix.music, macro, sr);
 
+    const float width = juce::jlimit(1.0f, 1.8f, mix.musicWidth);
+    const int haasDelay = currentKit == Genre::LoFiJazz ? 7 : 13;
+    const int haasSize = (int) (sizeof(musicHaas) / sizeof(musicHaas[0]));
+    for (int i = 0; i < num; ++i)
+    {
+        const float mid = 0.5f * (mL[i] + mR[i]);
+        const float side = 0.5f * (mL[i] - mR[i]) * width;
+        mL[i] = mid + side;
+        musicHaas[(size_t) haasWrite] = mid - side;
+        int rpos = haasWrite - haasDelay;
+        if (rpos < 0)
+            rpos += haasSize;
+        mR[i] = musicHaas[(size_t) rpos];
+        if (++haasWrite >= haasSize)
+            haasWrite = 0;
+    }
+
     const float scAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainAmount);
     if (scAmt < 0.01f)
         return;
@@ -628,22 +728,29 @@ void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMi
             continue;
         const int pos = juce::jlimit(0, num - 1, metadata.samplePosition - start);
         kickTrig[(size_t) pos] = juce::jmax(kickTrig[(size_t) pos],
-                                            0.35f + 0.65f * message.getFloatVelocity());
+                                            0.25f + 0.55f * message.getFloatVelocity());
     }
 
-    const float atk = coeffFor(mix.sidechainAttack, sr);
-    const float rel = coeffFor(mix.sidechainRelease, sr);
-    const float lpCoeff = (float) (1.0 - std::exp(-twoPi * 90.0 / sr));
+    const float atk = coeffFor(juce::jmax(0.008f, mix.sidechainAttack), sr);
+    const float rel = coeffFor(juce::jmax(0.08f, mix.sidechainRelease), sr);
+    const float pulseDecay = coeffFor(0.045, sr);
+    const float smooth = coeffFor(0.008, sr);
+    const float lpCoeff = onePoleCoeff(85.0, sr);
     const float bassAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainBass);
     for (int i = 0; i < num; ++i)
     {
         const float mid = 0.5f * (dL[i] + dR[i]);
         kickLp += lpCoeff * (mid - kickLp);
-        const float key = juce::jmax(std::abs(kickLp) * 3.2f, kickTrig[(size_t) i]);
+        if (kickTrig[(size_t) i] > kickPulse)
+            kickPulse += atk * (kickTrig[(size_t) i] - kickPulse);
+        else
+            kickPulse += pulseDecay * (0.0f - kickPulse);
+        const float key = juce::jmax(std::abs(kickLp) * 2.4f, kickPulse);
         scEnv += (key > scEnv ? atk : rel) * (key - scEnv);
-        const float duck = juce::jlimit(0.0f, 0.92f, scEnv * scAmt * 1.65f);
-        const float musicG = 1.0f - duck;
-        const float bassG = 1.0f - duck * bassAmt;
+        const float targetDuck = juce::jlimit(0.0f, 0.72f, scEnv * scAmt * 1.15f);
+        duckSmooth += smooth * (targetDuck - duckSmooth);
+        const float musicG = 1.0f - duckSmooth;
+        const float bassG = 1.0f - duckSmooth * bassAmt;
         mL[i] *= musicG;
         mR[i] *= musicG;
         bL[i] *= bassG;
@@ -700,9 +807,9 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         buffer.addFrom(ch, start, reverbSend, juce::jmin(ch, 1), start, num, 0.72f);
 
-    const float hpCoeff = (float) (1.0 - std::exp(-twoPi * 28.0 / sr));
-    const float shelfCoeff = (float) (1.0 - std::exp(-twoPi * 8500.0 / sr));
-    const float shelfGain = 1.22f;
+    const float hpCoeff = onePoleCoeff(22.0, sr);
+    const float shelfCoeff = onePoleCoeff(9000.0, sr);
+    const float shelfGain = currentKit == Genre::LoFiJazz ? 1.22f : 1.48f;
     for (int i = 0; i < num; ++i)
     {
         hpStateL += hpCoeff * (oL[i] - hpStateL);
@@ -719,14 +826,14 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
                    juce::jlimit(0.0f, 1.0f, mix.compAmount), sr);
 
     float vinyl = 0.0f;
-    float tape = 0.12f;
+    float tape = 0.0f;
     for (const auto& p : patches)
     {
         vinyl = juce::jmax(vinyl, p.vinylAmount);
         tape = juce::jmax(tape, p.tapeSat);
     }
     if (currentKit == Genre::LoFiJazz)
-        vinyl = juce::jmax(vinyl, 0.22f);
+        vinyl = juce::jmax(vinyl, 0.16f);
 
     if (vinyl > 0.01f)
     {
@@ -734,18 +841,18 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         {
             const float n = noiseSample(vinylState);
             vinylPhase = wrap(vinylPhase + 0.55 / sr);
-            const float rumble = 0.015f * std::sin((float) vinylPhase * (float) twoPi);
-            const float hiss = n * 0.012f;
-            const float crackle = (std::abs(n) > 0.992f) ? n * 0.08f : 0.0f;
+            const float rumble = 0.008f * std::sin((float) vinylPhase * (float) twoPi);
+            const float hiss = n * 0.006f;
+            const float crackle = (std::abs(n) > 0.997f) ? n * 0.03f : 0.0f;
             const float v = vinyl * (rumble + hiss + crackle);
             oL[i] += v;
-            oR[i] += v * 0.85f;
+            oR[i] += v * 0.82f;
         }
     }
 
-    if (tape > 0.02f)
+    if (tape > 0.05f)
     {
-        const float amount = 1.0f + 1.4f * tape;
+        const float amount = 1.0f + 0.55f * tape;
         const float inv = 1.0f / std::tanh(amount);
         for (int i = 0; i < num; ++i)
         {
@@ -754,18 +861,14 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         }
     }
 
-    const float limAtk = coeffFor(0.001, sr);
-    const float limRel = coeffFor(0.05, sr);
+    const float makeup = juce::jlimit(0.4f, 2.2f, mix.outputGain);
     for (int i = 0; i < num; ++i)
     {
-        const float s = juce::jmax(std::abs(oL[i]), std::abs(oR[i]));
-        limitEnv += (s > limitEnv ? limAtk : limRel) * (s - limitEnv);
-        float g = 1.0f;
-        if (limitEnv > 0.95f)
-            g = 0.95f / (limitEnv + 1.0e-8f);
-        oL[i] = juce::jlimit(-0.99f, 0.99f, oL[i] * g);
-        oR[i] = juce::jlimit(-0.99f, 0.99f, oR[i] * g);
+        oL[i] *= makeup;
+        oR[i] *= makeup;
     }
+
+    truePeakLimit(oL, oR, num, limitEnv, sr);
     sanitize(buffer, start, num);
 }
 
@@ -811,7 +914,7 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     partBuffer.clear(startSample, numSamples);
     drums.renderNextBlock(partBuffer, drumMidi, startSample, numSamples);
     for (int ch = 0; ch < 2; ++ch)
-        drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 1.05f);
+        drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 0.92f);
 
     applyBusMix(startSample, numSamples, drumMidi);
 
@@ -908,22 +1011,47 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
         default:          piece = Piece::Tom; break;
     }
 
+    brightPiece = piece == Piece::ClosedHat || piece == Piece::OpenHat
+               || piece == Piece::Crash || piece == Piece::Ride || piece == Piece::Perc;
+    hatAirLp = 0.0f;
+    {
+        float pan = 0.0f;
+        switch (piece)
+        {
+            case Piece::Kick:      pan = 0.0f; break;
+            case Piece::Snare:     pan = -0.12f; break;
+            case Piece::Clap:      pan = 0.16f; break;
+            case Piece::ClosedHat: pan = midiNoteNumber == 44 ? -0.18f : -0.48f; break;
+            case Piece::OpenHat:   pan = 0.42f; break;
+            case Piece::Crash:     pan = 0.28f; break;
+            case Piece::Ride:      pan = -0.22f; break;
+            case Piece::Perc:      pan = (midiNoteNumber & 1) ? -0.58f : 0.55f; break;
+            case Piece::Tom:       pan = 0.10f; break;
+        }
+        pan += ((int) (noiseState % 9) - 4) * 0.02f;
+        pan = juce::jlimit(-0.85f, 0.85f, pan);
+        panL = std::sqrt(0.5f * (1.0f - pan));
+        panR = std::sqrt(0.5f * (1.0f + pan));
+    }
+
     auto& library = DrumLibrary::get();
     library.ensureLoaded();
     const auto drumPiece = DrumLibrary::pieceFromNote(midiNoteNumber);
-    if (const auto* sample = library.find(kit, drumPiece, velocity))
+    if (const auto* sample = library.find(kit, drumPiece, velocity, midiNoteNumber))
     {
         usingSample = true;
         sampleData = &sample->data;
         sampleRateOfFile = sample->sourceRate;
         if (drumPiece == DrumPiece::Tom)
             tomRatio = std::pow(2.0, (midiNoteNumber - DrumLibrary::tomRootNote()) / 12.0);
-        kitLpCoeff = library.kitLowpassCoeff(kit);
+        kitLpCoeff = brightPiece ? 1.0 : library.kitLowpassCoeff(kit);
         level = library.gainFor(kit, drumPiece) * vel;
         decayMul = 1.0;
         honourNoteOff = honourNoteOff || drumPiece == DrumPiece::OpenHat
                         || drumPiece == DrumPiece::Crash;
         updateSampleIncrement();
+        if (brightPiece)
+            sampleIncrement *= 0.972 + 0.056 * ((noiseState >> 9) & 255) / 255.0;
         return;
     }
 
@@ -1050,10 +1178,15 @@ float DrumVoice::nextSample()
         env *= decayMul;
         noteTime += 1.0 / sr;
 
-        if (kitLpCoeff < 0.99)
+        if (kitLpCoeff < 0.99 && piece == Piece::Kick)
         {
             kitLpState += kitLpCoeff * (s - kitLpState);
             s = kitLpState;
+        }
+        if (brightPiece)
+        {
+            hatAirLp += 0.18f * (static_cast<float>(s) - hatAirLp);
+            s += 0.55 * (s - hatAirLp);
         }
 
         return static_cast<float>(s) * level * static_cast<float>(env);
@@ -1141,10 +1274,15 @@ float DrumVoice::nextSynthSample()
     env *= decayMul;
     s *= env;
 
-    if (kitLpCoeff < 0.99)
+    if (kitLpCoeff < 0.99 && piece == Piece::Kick)
     {
         kitLpState += kitLpCoeff * (s - kitLpState);
         s = kitLpState;
+    }
+    if (brightPiece)
+    {
+        hatAirLp += 0.18f * (static_cast<float>(s) - hatAirLp);
+        s += 0.5 * (s - hatAirLp);
     }
 
     noteTime += 1.0 / sr;
@@ -1168,8 +1306,15 @@ void DrumVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     {
         const float sample = nextSample();
 
-        for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-            outputBuffer.addSample(i, startSample, sample);
+        if (outputBuffer.getNumChannels() >= 2)
+        {
+            outputBuffer.addSample(0, startSample, sample * panL);
+            outputBuffer.addSample(1, startSample, sample * panR);
+        }
+        else
+        {
+            outputBuffer.addSample(0, startSample, sample);
+        }
 
         ++startSample;
 

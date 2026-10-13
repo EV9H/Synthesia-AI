@@ -117,6 +117,10 @@ private:
     double env{1.0};
     double decayMul{0.999};
     float level{0.0f};
+    float panL{0.707f};
+    float panR{0.707f};
+    float hatAirLp{0.0f};
+    bool brightPiece{false};
     juce::uint32 noiseState{1};
     bool honourNoteOff{false};
 
@@ -188,10 +192,18 @@ private:
     juce::dsp::Reverb reverb;
     std::vector<float> delayBufL, delayBufR;
     int delayWrite{0};
+    float partHpL[4]{}, partHpR[4]{};
+    float partMudLpL[4]{}, partMudBpL[4]{}, partMudLpR[4]{}, partMudBpR[4]{};
+    float partAirLpL[4]{}, partAirLpR[4]{};
+    float bassMonoLpL{0.0f}, bassMonoLpR{0.0f};
+    float musicHaas[48]{};
+    int haasWrite{0};
     float hpStateL{0.0f}, hpStateR{0.0f};
     float shelfStateL{0.0f}, shelfStateR{0.0f};
     float kickLp{0.0f};
+    float kickPulse{0.0f};
     float scEnv{0.0f};
+    float duckSmooth{0.0f};
     float drumEnv{0.0f};
     float bassEnv{0.0f};
     float musicEnv{0.0f};
