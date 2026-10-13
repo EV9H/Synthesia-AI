@@ -1,6 +1,10 @@
 #include "MusicTheory.h"
+#include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <cstring>
 #include <set>
+#include <sstream>
 
 namespace theory
 {
@@ -357,5 +361,230 @@ namespace theory
         }
 
         return best;
+    }
+
+    namespace
+    {
+        std::string trimCopy(std::string s)
+        {
+            while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front())))
+                s.erase(s.begin());
+            while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
+                s.pop_back();
+            return s;
+        }
+
+        std::string toLowerCopy(std::string s)
+        {
+            for (auto& c : s)
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            return s;
+        }
+
+        bool looksRoman(const std::string& token)
+        {
+            size_t i = 0;
+            if (!token.empty() && (token[0] == 'b' || token[0] == '#'))
+                ++i;
+            if (i >= token.size())
+                return false;
+            const char c = token[i];
+            return c == 'I' || c == 'V' || c == 'i' || c == 'v';
+        }
+
+        bool consumeRoman(const std::string& token, size_t& i, int& degree, bool& minorCase)
+        {
+            const auto match = [&](const char* upper, const char* lower, int deg) -> bool
+            {
+                const size_t n = std::strlen(upper);
+                if (token.size() - i >= n && token.compare(i, n, upper) == 0)
+                {
+                    degree = deg;
+                    minorCase = false;
+                    i += n;
+                    return true;
+                }
+                if (token.size() - i >= n && token.compare(i, n, lower) == 0)
+                {
+                    degree = deg;
+                    minorCase = true;
+                    i += n;
+                    return true;
+                }
+                return false;
+            };
+
+            return match("VII", "vii", 6) || match("III", "iii", 2) || match("II", "ii", 1)
+                || match("IV", "iv", 3) || match("VI", "vi", 5) || match("I", "i", 0)
+                || match("V", "v", 4);
+        }
+
+        std::vector<int> intervalsFromQuality(std::string quality)
+        {
+            quality = toLowerCopy(quality);
+            quality.erase(std::remove_if(quality.begin(), quality.end(),
+                                         [](char c) { return c == '(' || c == ')' || c == '^'; }),
+                          quality.end());
+
+            if (quality == "m9" || quality == "min9" || quality == "-9")         return { 0, 3, 7, 10, 14 };
+            if (quality == "m11" || quality == "min11")                          return { 0, 3, 7, 10, 14, 17 };
+            if (quality == "m7" || quality == "min7" || quality == "-7")         return { 0, 3, 7, 10 };
+            if (quality == "mmaj7" || quality == "m(maj7)" || quality == "minmaj7") return { 0, 3, 7, 11 };
+            if (quality == "m6" || quality == "min6")                            return { 0, 3, 7, 9 };
+            if (quality == "m" || quality == "min" || quality == "-")            return { 0, 3, 7 };
+            if (quality == "maj9" || quality == "m9j" || quality == "Δ9")        return { 0, 4, 7, 11, 14 };
+            if (quality == "maj7" || quality == "ma7" || quality == "Δ7")        return { 0, 4, 7, 11 };
+            if (quality == "maj")                                                return { 0, 4, 7 };
+            if (quality == "7b9")                                                return { 0, 4, 7, 10, 13 };
+            if (quality == "7#9")                                                return { 0, 4, 7, 10, 15 };
+            if (quality == "9")                                                  return { 0, 4, 7, 10, 14 };
+            if (quality == "11")                                                 return { 0, 4, 7, 10, 14, 17 };
+            if (quality == "13")                                                 return { 0, 4, 7, 10, 14, 21 };
+            if (quality == "7sus4")                                              return { 0, 5, 7, 10 };
+            if (quality == "7")                                                  return { 0, 4, 7, 10 };
+            if (quality == "dim7" || quality == "o7")                            return { 0, 3, 6, 9 };
+            if (quality == "dim" || quality == "o" || quality == "mb5")          return { 0, 3, 6 };
+            if (quality == "m7b5" || quality == "ø")                             return { 0, 3, 6, 10 };
+            if (quality == "aug" || quality == "+")                              return { 0, 4, 8 };
+            if (quality == "sus4" || quality == "sus")                           return { 0, 5, 7 };
+            if (quality == "sus2")                                               return { 0, 2, 7 };
+            if (quality == "add9")                                               return { 0, 4, 7, 14 };
+            if (quality == "6")                                                  return { 0, 4, 7, 9 };
+            if (quality == "5")                                                  return { 0, 7 };
+            return {};
+        }
+    }
+
+    bool parseUserChord(const std::string& rawToken, int keyRoot, ScaleType scale,
+                        int defaultExtension, ChordInfo& out)
+    {
+        const std::string token = trimCopy(rawToken);
+        if (token.empty())
+            return false;
+
+        if (looksRoman(token))
+        {
+            size_t i = 0;
+            bool borrowed = false;
+            if (token[0] == 'b') { borrowed = true; ++i; }
+            else if (token[0] == '#') { ++i; }
+
+            int degree = 0;
+            bool minorCase = false;
+            if (!consumeRoman(token, i, degree, minorCase))
+                return false;
+
+            const std::string quality = token.substr(i);
+            if (quality.empty())
+            {
+                ChordSpec spec;
+                spec.degree = degree;
+                spec.borrowed = borrowed;
+                if (minorCase)
+                    spec.extension = 3;
+                out = buildChord(keyRoot, scale, spec, minorCase ? 3 : defaultExtension);
+                return true;
+            }
+
+            const auto intervals = intervalsFromQuality(quality);
+            if (intervals.empty())
+                return false;
+
+            const auto mode = modeIntervals(scale);
+            int rootOffset = mode[static_cast<size_t>(degree)];
+            if (borrowed)
+            {
+                static const std::array<int, 7> majorScale{ 0, 2, 4, 5, 7, 9, 11 };
+                rootOffset = (majorScale[static_cast<size_t>(degree)] - 1 + 12) % 12;
+            }
+
+            out.rootPitchClass = (keyRoot + rootOffset + 12) % 12;
+            out.intervals = intervals;
+            out.symbol = chordSymbol(out.rootPitchClass, intervals,
+                                     borrowed || keyPrefersFlats(keyRoot, scale));
+            return true;
+        }
+
+        size_t i = 0;
+        if (i >= token.size())
+            return false;
+        const char letter = static_cast<char>(std::toupper(static_cast<unsigned char>(token[i])));
+        static const int letterPc[] = { 9, 11, 0, 2, 4, 5, 7 }; // A B C D E F G
+        if (letter < 'A' || letter > 'G')
+            return false;
+        int pc = letterPc[letter - 'A'];
+        ++i;
+        if (i < token.size() && (token[i] == '#' || token[i] == 'b'))
+        {
+            pc = (pc + (token[i] == '#' ? 1 : -1) + 12) % 12;
+            ++i;
+        }
+
+        std::string quality = token.substr(i);
+        auto intervals = intervalsFromQuality(quality);
+        if (intervals.empty())
+        {
+            if (quality.empty())
+                intervals = { 0, 4, 7 };
+            else
+                return false;
+        }
+
+        out.rootPitchClass = pc;
+        out.intervals = intervals;
+        out.symbol = chordSymbol(pc, intervals, keyPrefersFlats(keyRoot, scale) || token.find('b') != std::string::npos);
+        return true;
+    }
+
+    std::vector<ChordInfo> parseProgressionText(const std::string& text, int keyRoot,
+                                                ScaleType scale, int bars, int defaultExtension)
+    {
+        std::vector<ChordInfo> parsed;
+        const int safeBars = juce::jmax(1, bars);
+        const std::string input = trimCopy(text);
+        if (input.empty())
+            return parsed;
+
+        std::vector<std::vector<std::string>> barsTokens;
+        if (input.find('|') != std::string::npos)
+        {
+            std::istringstream barStream(input);
+            for (std::string bar; std::getline(barStream, bar, '|');)
+            {
+                std::vector<std::string> tokens;
+                std::istringstream tokStream(bar);
+                for (std::string tok; tokStream >> tok;)
+                    tokens.push_back(tok);
+                if (!tokens.empty())
+                    barsTokens.push_back(std::move(tokens));
+            }
+        }
+        else
+        {
+            std::istringstream tokStream(input);
+            for (std::string tok; tokStream >> tok;)
+                barsTokens.push_back({ tok });
+        }
+
+        if (barsTokens.empty())
+            return parsed;
+
+        for (int bar = 0; bar < safeBars; ++bar)
+        {
+            const auto& tokens = barsTokens[static_cast<size_t>(bar) % barsTokens.size()];
+            const double barStart = bar * 4.0;
+            const double each = 4.0 / static_cast<double>(tokens.size());
+            for (size_t i = 0; i < tokens.size(); ++i)
+            {
+                ChordInfo chord;
+                if (!parseUserChord(tokens[i], keyRoot, scale, defaultExtension, chord))
+                    continue;
+                chord.startBeat = barStart + static_cast<double>(i) * each;
+                chord.lengthBeats = each;
+                parsed.push_back(std::move(chord));
+            }
+        }
+
+        return parsed;
     }
 }

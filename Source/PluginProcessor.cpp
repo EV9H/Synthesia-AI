@@ -3,6 +3,8 @@
 #include "Generators/MarkovGenerator.h"
 #include "Generators/LLMGenerator.h"
 #include "Generators/ArrangementGenerator.h"
+#include "Generators/GenreProfiles.h"
+#include "Music/MusicTheory.h"
 #include "MidiExporter.h"
 #include <cmath>
 #include <thread>
@@ -294,14 +296,27 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
                           && params.rootNote == clipParams.rootNote
                           && params.scale == clipParams.scale
                           && params.genre == clipParams.genre
-                          && params.lengthInBars == clipParams.lengthInBars;
+                          && params.lengthInBars == clipParams.lengthInBars
+                          && params.form == clipParams.form;
 
-    mergeIntoClip = params.part != Part::All && sameContext
+    const bool keepParts = params.part != Part::All || params.lockedParts != 0;
+    mergeIntoClip = keepParts && sameContext
                  && currentGeneratorType != GeneratorType::Markov;
 
-    if (mergeIntoClip)
+    if (params.lockProgression && !progression.empty() && sameContext)
         params.progression = progression;
-    else if (currentGeneratorType == GeneratorType::LLM)
+
+    if (params.progression.empty() && !params.chordText.empty())
+    {
+        const auto& profile = getGenreProfile(params.genre);
+        params.progression = theory::parseProgressionText(params.chordText, params.rootNote,
+                                                          params.scale, params.lengthInBars,
+                                                          profile.defaultExtension);
+    }
+
+    if (mergeIntoClip && params.progression.empty())
+        params.progression = progression;
+    else if (params.progression.empty() && currentGeneratorType == GeneratorType::LLM)
         params.progression = ArrangementGenerator::buildProgression(params);
 
     return params;
@@ -313,10 +328,11 @@ SynthesiaAIProcessor::Result SynthesiaAIProcessor::runGenerator(MidiGenerator& g
     if (auto* arranger = dynamic_cast<ArrangementGenerator*>(&gen))
     {
         auto arrangement = arranger->generateArrangement(params);
-        return { std::move(arrangement.midi), std::move(arrangement.progression) };
+        return { std::move(arrangement.midi), std::move(arrangement.progression),
+                 std::move(arrangement.sections) };
     }
 
-    return { gen.generate(params), params.progression };
+    return { gen.generate(params), params.progression, {} };
 }
 
 void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip)
@@ -326,16 +342,24 @@ void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams
     if (mergeIntoClip)
     {
         for (const auto part : allParts)
-            if (part != params.part)
+        {
+            const bool keep = (params.part != Part::All && part != params.part)
+                           || isPartLocked(params.lockedParts, part);
+            if (keep)
                 clip.addEvents(MidiExporter::filterPart(generatedMidi, part), 0, -1, 0);
-        clip.addEvents(result.midi, 0, -1, 0);
+            else
+                clip.addEvents(MidiExporter::filterPart(result.midi, part), 0, -1, 0);
+        }
     }
     else
     {
         clip = std::move(result.midi);
     }
 
-    progression = std::move(result.progression);
+    if (!(params.lockProgression && !progression.empty()) || result.progression.empty())
+        progression = std::move(result.progression);
+    if (!result.sections.empty())
+        sections = std::move(result.sections);
     clipParams = params;
     clipParams.progression.clear();
     previewTempo.store(params.tempo);

@@ -64,7 +64,11 @@ namespace
             "  --part <name>           all|chords|bass|synth|piano|drums (default all)\n"
             "  --key <C..B>            root note (default C)\n"
             "  --scale <name>          major|minor|dorian|mixolydian|pentatonic (default major)\n"
-            "  --bars <1-16>           clip length in bars (default 8)\n"
+            "  --bars <1-32>           clip length in bars (default 8)\n"
+            "  --form <loop|song>      loop (default) or a sectioned song form\n"
+            "  --chords <text>         locked progression, e.g. 'Am9 Fmaj9 Dm7 E7b9'\n"
+            "  --lock-chords           keep the clip's / --chords progression on regen\n"
+            "  --lock-parts <list>     comma-separated parts to keep (chords,bass,...)\n"
             "  --quant <1/16|1/8|1/4|1/2>  finest melodic grid (default: genre's)\n"
             "  --tempo <bpm>           host tempo (default: genre's)\n"
             "  --seed <n>              generator seed, 0 = random (default 1)\n"
@@ -117,10 +121,27 @@ int main(int argc, char* argv[])
     params.rootNote = parseKey(option("--key", "C"));
     const int scaleIndex = parseScale(option("--scale", "major"));
     const int quantIndex = parseQuantization(option("--quant", gridNames[static_cast<int>(profile.defaultGrid)]));
-    params.lengthInBars = juce::jlimit(1, 16, option("--bars", "8").getIntValue());
+    params.lengthInBars = juce::jlimit(1, 32, option("--bars", "8").getIntValue());
     params.tempo = juce::jlimit(20.0, 300.0, option("--tempo", juce::String(profile.defaultTempo)).getDoubleValue());
     params.seed = static_cast<unsigned int>(option("--seed", "1").getLargeIntValue());
     params.stylePrompt = option("--style", "").toStdString();
+    params.chordText = option("--chords", "").toStdString();
+    params.lockProgression = args.contains("--lock-chords") || params.chordText.size() > 0;
+    params.form = option("--form", "loop").equalsIgnoreCase("song") ? ArrangementForm::Song
+                                                                   : ArrangementForm::Loop;
+
+    const auto lockParts = option("--lock-parts", {});
+    if (lockParts.isNotEmpty())
+    {
+        juce::StringArray names;
+        names.addTokens(lockParts, ",", "");
+        for (auto name : names)
+        {
+            const int index = partNames.indexOf(name.trim(), true);
+            if (index > 0)
+                params.lockedParts |= partLockBit(static_cast<Part>(index));
+        }
+    }
 
     if (params.rootNote < 0 || scaleIndex < 0 || quantIndex < 0)
     {
@@ -171,6 +192,10 @@ int main(int argc, char* argv[])
     juce::String chordChart;
     for (const auto& chord : synthesia->getProgression())
         chordChart << chord.symbol << " ";
+
+    juce::String formChart;
+    for (const auto& section : synthesia->getSections())
+        formChart << section.label << " (" << juce::String(section.lengthBeats / 4.0, 0) << ") ";
 
     OfflinePlayHead playHead;
     playHead.bpm = params.tempo;
@@ -243,6 +268,8 @@ int main(int argc, char* argv[])
               << option("--key", "C") << " " << option("--scale", "major") << "\n";
     if (chordChart.isNotEmpty())
         std::cout << "  chords: " << chordChart << "\n";
+    if (formChart.isNotEmpty())
+        std::cout << "  form: " << formChart << "\n";
     std::cout << "  " << params.lengthInBars << " bars @ " << params.tempo << " bpm, "
               << juce::String(totalSamples / sampleRate, 2) << " s, "
               << notesOut << "/" << notesInClip << " note-ons played\n"

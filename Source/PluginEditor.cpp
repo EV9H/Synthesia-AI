@@ -61,10 +61,12 @@ namespace
 }
 
 void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
-                       const std::vector<ChordInfo>& chords)
+                       const std::vector<ChordInfo>& chords,
+                       const std::vector<SectionInfo>& formSections)
 {
     notes.clear();
     progression = chords;
+    sections = formSections;
     clipLength = lengthInBeats;
 
     std::map<std::pair<int, int>, std::pair<double, int>> openNotes;
@@ -152,6 +154,11 @@ void ClipView::paint(juce::Graphics& g)
     auto legend = area.removeFromTop(16.0f);
     area.removeFromTop(2.0f);
 
+    const bool drawSections = !sections.empty() && sections.size() > 1;
+    auto sectionStrip = drawSections ? area.removeFromTop(14.0f) : juce::Rectangle<float>{};
+    if (drawSections)
+        area.removeFromTop(2.0f);
+
     const bool drawChords = !progression.empty();
     auto chordStrip = drawChords ? area.removeFromTop(16.0f) : juce::Rectangle<float>{};
     if (drawChords)
@@ -182,6 +189,28 @@ void ClipView::paint(juce::Graphics& g)
     const float pixelsPerBeat = area.getWidth() / static_cast<float>(clipLength);
     const int pitchRows = highestPitch - lowestPitch + 3;
     const float rowHeight = area.getHeight() / static_cast<float>(pitchRows);
+
+    if (drawSections)
+    {
+        static const juce::Colour sectionColours[] = {
+            juce::Colour(0xff3d4a63), juce::Colour(0xff35556e), juce::Colour(0xff4a5a3d),
+            juce::Colour(0xff6a4a3a), juce::Colour(0xff4a3d63), juce::Colour(0xff6a3d4a),
+            juce::Colour(0xff3d3d3d), juce::Colour(0xff3d4a4a)
+        };
+        g.setFont(10.0f);
+        for (const auto& section : sections)
+        {
+            const float x = sectionStrip.getX() + static_cast<float>(section.startBeat) * pixelsPerBeat;
+            const float w = juce::jmax(8.0f, static_cast<float>(section.lengthBeats) * pixelsPerBeat - 2.0f);
+            const auto colour = sectionColours[static_cast<int>(section.kind) % 8];
+            g.setColour(colour);
+            g.fillRoundedRectangle(x, sectionStrip.getY(), w, sectionStrip.getHeight(), 3.0f);
+            g.setColour(juce::Colours::white.withAlpha(0.85f));
+            g.drawText(section.label, juce::roundToInt(x + 3.0f), juce::roundToInt(sectionStrip.getY()),
+                       juce::roundToInt(w - 4.0f), juce::roundToInt(sectionStrip.getHeight()),
+                       juce::Justification::centredLeft, false);
+        }
+    }
 
     for (int beat = 0; beat <= static_cast<int>(clipLength); ++beat)
     {
@@ -229,6 +258,8 @@ void ClipView::paint(juce::Graphics& g)
         g.fillRect(x, area.getY(), 1.5f, area.getHeight());
         if (drawChords)
             g.fillRect(x, chordStrip.getY(), 1.5f, chordStrip.getHeight());
+        if (drawSections)
+            g.fillRect(x, sectionStrip.getY(), 1.5f, sectionStrip.getHeight());
     }
 }
 
@@ -286,7 +317,19 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     setUpLabel(lengthLabel, "Length (bars)");
     addAndMakeVisible(lengthLabel);
     
-    lengthSlider.setRange(1, 16, 1);
+    setUpLabel(formLabel, "Form");
+    addAndMakeVisible(formLabel);
+    formComboBox.addItem("Loop", 1);
+    formComboBox.addItem("Song form", 2);
+    formComboBox.setSelectedId(1, juce::dontSendNotification);
+    formComboBox.onChange = [this]()
+    {
+        if (formComboBox.getSelectedId() == 2 && lengthSlider.getValue() < 16)
+            lengthSlider.setValue(24, juce::dontSendNotification);
+    };
+    addAndMakeVisible(formComboBox);
+
+    lengthSlider.setRange(1, 32, 1);
     lengthSlider.setValue(8, juce::dontSendNotification);
     lengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 24);
     lengthSlider.setColour(juce::Slider::thumbColourId, Theme::accent);
@@ -315,6 +358,28 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     setUpLabel(styleLabel, "Style / prompt");
     addAndMakeVisible(styleLabel);
     
+    setUpLabel(chordsLabel, "Chords");
+    addAndMakeVisible(chordsLabel);
+    chordsEditor.setMultiLine(false);
+    chordsEditor.setTextToShowWhenEmpty("Am9 Fmaj9 Dm7 E7b9   or   Am9 | Fmaj9 | Dm7 | E7b9", Theme::dimText);
+    chordsEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
+    chordsEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
+    chordsEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
+    addAndMakeVisible(chordsEditor);
+
+    lockProgressionButton.setButtonText("Lock chords");
+    lockProgressionButton.setColour(juce::ToggleButton::textColourId, Theme::label);
+    addAndMakeVisible(lockProgressionButton);
+
+    setUpLabel(locksLabel, "Keep");
+    addAndMakeVisible(locksLabel);
+    for (auto part : allParts)
+    {
+        auto* button = partLockButtons.add(new juce::ToggleButton(partName(part)));
+        button->setColour(juce::ToggleButton::textColourId, Theme::label);
+        addAndMakeVisible(button);
+    }
+
     styleTextEditor.setMultiLine(true);
     styleTextEditor.setReturnKeyStartsNewLine(true);
     styleTextEditor.setTextToShowWhenEmpty("Describe the style (used by the LLM generator)", Theme::dimText);
@@ -380,7 +445,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     addAndMakeVisible(settingsButton);
 
-    setSize(660, 700);
+    setSize(700, 860);
     startTimerHz(30);
 }
 
@@ -443,17 +508,40 @@ void SynthesiaAIEditor::resized()
 
     twoColumnRow(keyLabel, keyComboBox, scaleLabel, scaleComboBox);
     twoColumnRow(genreLabel, genreComboBox, partLabel, partComboBox);
-    twoColumnRow(lengthLabel, lengthSlider, tempoLabel, tempoSlider);
-    twoColumnRow(tempoSyncLabel, tempoSyncComboBox, generatorLabel, generatorComboBox);
+    twoColumnRow(formLabel, formComboBox, lengthLabel, lengthSlider);
+    twoColumnRow(tempoLabel, tempoSlider, tempoSyncLabel, tempoSyncComboBox);
+
+    {
+        auto row = area.removeFromTop(28);
+        layoutCell(row, generatorLabel, generatorComboBox);
+        area.removeFromTop(10);
+    }
+
+    {
+        auto row = area.removeFromTop(28);
+        layoutCell(row.removeFromLeft((row.getWidth() - columnGap) / 2), chordsLabel, chordsEditor);
+        row.removeFromLeft(columnGap);
+        lockProgressionButton.setBounds(row);
+        area.removeFromTop(10);
+    }
+
+    {
+        auto row = area.removeFromTop(24);
+        locksLabel.setBounds(row.removeFromLeft(labelWidth));
+        const int lockW = row.getWidth() / juce::jmax(1, partLockButtons.size());
+        for (auto* button : partLockButtons)
+            button->setBounds(row.removeFromLeft(lockW));
+        area.removeFromTop(10);
+    }
 
     styleLabel.setBounds(area.removeFromTop(22));
-    styleTextEditor.setBounds(area.removeFromTop(48));
-    area.removeFromTop(14);
+    styleTextEditor.setBounds(area.removeFromTop(40));
+    area.removeFromTop(12);
 
     generateButton.setBounds(area.removeFromTop(40));
     area.removeFromTop(14);
 
-    clipView.setBounds(area.removeFromTop(210));
+    clipView.setBounds(area.removeFromTop(230));
     area.removeFromTop(12);
 
     auto row = area.removeFromTop(34);
@@ -481,7 +569,14 @@ void SynthesiaAIEditor::onGenerateClicked()
     params.tempo = tempoSlider.getValue();
     params.genre = static_cast<Genre>(juce::jmax(0, genreComboBox.getSelectedId() - 1));
     params.part = static_cast<Part>(juce::jmax(0, partComboBox.getSelectedId() - 1));
-    
+    params.form = formComboBox.getSelectedId() == 2 ? ArrangementForm::Song : ArrangementForm::Loop;
+    params.chordText = chordsEditor.getText().toStdString();
+    params.lockProgression = lockProgressionButton.getToggleState();
+    params.lockedParts = 0;
+    for (int i = 0; i < partLockButtons.size(); ++i)
+        if (partLockButtons[i]->getToggleState())
+            params.lockedParts |= partLockBit(allParts[static_cast<size_t>(i)]);
+
     audioProcessor.generateMidi(params);
     statusLabel.setText("Generating...", juce::dontSendNotification);
 }
@@ -570,7 +665,8 @@ void SynthesiaAIEditor::updateUIState()
         shownClipVersion = audioProcessor.getClipVersion();
         clipView.setClip(audioProcessor.getGeneratedMidi(),
                          audioProcessor.getClipLengthInBeats(),
-                         audioProcessor.getProgression());
+                         audioProcessor.getProgression(),
+                         audioProcessor.getSections());
     }
     clipView.setPlaybackBeat(audioProcessor.getPlaybackBeat());
     

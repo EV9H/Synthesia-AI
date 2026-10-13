@@ -1,6 +1,7 @@
 #include "ArrangementGenerator.h"
 #include <cctype>
 #include <cmath>
+#include <map>
 #include <sstream>
 
 namespace
@@ -233,24 +234,165 @@ std::vector<ChordInfo> ArrangementGenerator::buildProgression(const MidiGenerati
     return progression;
 }
 
+const SectionInfo* ArrangementGenerator::Context::sectionAt(double beat) const
+{
+    for (const auto& section : sections)
+        if (beat + 1.0e-6 >= section.startBeat && beat < section.startBeat + section.lengthBeats)
+            return &section;
+    return sections.empty() ? nullptr : &sections.back();
+}
+
+float ArrangementGenerator::Context::energyAt(double beat) const
+{
+    if (const auto* section = sectionAt(beat))
+        return section->energy;
+    return 0.7f;
+}
+
+namespace
+{
+    float energyForKind(SectionKind kind)
+    {
+        switch (kind)
+        {
+            case SectionKind::Intro:     return 0.32f;
+            case SectionKind::Verse:     return 0.58f;
+            case SectionKind::PreChorus: return 0.78f;
+            case SectionKind::Chorus:    return 1.00f;
+            case SectionKind::Drop:      return 1.00f;
+            case SectionKind::Bridge:    return 0.52f;
+            case SectionKind::Break:     return 0.28f;
+            case SectionKind::Outro:     return 0.40f;
+        }
+        return 0.7f;
+    }
+
+    using FormSpec = std::pair<SectionKind, int>;
+
+    std::vector<FormSpec> formTemplate(Genre genre, int bars)
+    {
+        const bool longForm = bars >= 28;
+
+        switch (genre)
+        {
+            case Genre::House:
+                if (longForm)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::PreChorus, 4 }, { SectionKind::Drop, 8 },
+                             { SectionKind::Break, 4 }, { SectionKind::Drop, 4 } };
+                if (bars >= 20)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Drop, 8 }, { SectionKind::Outro, 4 } };
+                return { { SectionKind::Intro, 4 }, { SectionKind::Drop, 8 }, { SectionKind::Outro, 4 } };
+
+            case Genre::Trap:
+                if (longForm)
+                    return { { SectionKind::Intro, 8 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Drop, 8 }, { SectionKind::Bridge, 4 },
+                             { SectionKind::Drop, 4 } };
+                if (bars >= 20)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Drop, 8 }, { SectionKind::Outro, 4 } };
+                return { { SectionKind::Intro, 4 }, { SectionKind::Drop, 8 }, { SectionKind::Outro, 4 } };
+
+            case Genre::LoFiJazz:
+                if (longForm)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Chorus, 8 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Outro, 4 } };
+                return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                         { SectionKind::Chorus, 8 }, { SectionKind::Outro, 4 } };
+
+            case Genre::Pop:
+                if (longForm)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::PreChorus, 4 }, { SectionKind::Chorus, 8 },
+                             { SectionKind::Bridge, 4 }, { SectionKind::Chorus, 4 } };
+                return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                         { SectionKind::Chorus, 8 }, { SectionKind::Outro, 4 } };
+
+            case Genre::RnB:
+                if (longForm)
+                    return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                             { SectionKind::PreChorus, 4 }, { SectionKind::Chorus, 8 },
+                             { SectionKind::Bridge, 4 }, { SectionKind::Chorus, 4 } };
+                return { { SectionKind::Intro, 4 }, { SectionKind::Verse, 8 },
+                         { SectionKind::Chorus, 8 }, { SectionKind::Outro, 4 } };
+
+            case Genre::Cinematic:
+                if (longForm)
+                    return { { SectionKind::Intro, 8 }, { SectionKind::Verse, 8 },
+                             { SectionKind::Chorus, 8 }, { SectionKind::Bridge, 4 },
+                             { SectionKind::Outro, 4 } };
+                return { { SectionKind::Intro, 8 }, { SectionKind::Verse, 8 }, { SectionKind::Outro, 8 } };
+        }
+
+        return { { SectionKind::Verse, bars } };
+    }
+}
+
+std::vector<SectionInfo> ArrangementGenerator::buildForm(Genre genre, ArrangementForm form, int bars)
+{
+    const int safeBars = juce::jmax(1, bars);
+    if (form != ArrangementForm::Song || safeBars < 8)
+    {
+        return { { SectionKind::Verse, 0.0, safeBars * 4.0, 0.7f, 1, "Loop" } };
+    }
+
+    auto spec = formTemplate(genre, safeBars);
+    std::vector<SectionInfo> sections;
+    std::map<SectionKind, int> counts;
+    int used = 0;
+
+    for (const auto& item : spec)
+    {
+        if (used >= safeBars)
+            break;
+        const int length = juce::jmin(item.second, safeBars - used);
+        const int occurrence = ++counts[item.first];
+        std::string label = sectionName(item.first);
+        if (occurrence > 1)
+            label += " " + std::to_string(occurrence);
+        float energy = energyForKind(item.first);
+        if (occurrence > 1)
+            energy = juce::jmin(1.0f, energy + 0.06f);
+        sections.push_back({ item.first, used * 4.0, length * 4.0, energy, occurrence, label });
+        used += length;
+    }
+
+    if (used < safeBars && !sections.empty())
+        sections.back().lengthBeats += (safeBars - used) * 4.0;
+
+    return sections;
+}
+
 GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationParams& params)
 {
     const auto& profile = getGenreProfile(params.genre);
     const unsigned int seed = params.seed != 0 ? params.seed : std::random_device{}();
 
     GenerationResult result;
-    if (params.progression.empty())
+    result.sections = buildForm(params.genre, params.form, params.lengthInBars);
+
+    if (!params.progression.empty())
+    {
+        result.progression = params.progression;
+    }
+    else if (!params.chordText.empty())
+    {
+        result.progression = theory::parseProgressionText(params.chordText, params.rootNote,
+                                                          params.scale, params.lengthInBars,
+                                                          profile.defaultExtension);
+    }
+
+    if (result.progression.empty())
     {
         auto progressionRng = streamFor(seed, 1);
         result.progression = buildProgression(params, progressionRng);
     }
-    else
-    {
-        result.progression = params.progression;
-    }
 
-    const Context ctx{ params, profile, result.progression, params.lengthInBars * 4.0,
-                       gridSteps(params.quantization) };
+    const Context ctx{ params, profile, result.progression, result.sections,
+                       params.lengthInBars * 4.0, gridSteps(params.quantization) };
 
     PartNotes bassNotes;
 
@@ -287,6 +429,12 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         appendToBuffer(notes, partChannel(part), part == Part::Bass ? 12 : 2, result.midi);
     }
 
+    for (const auto& section : result.sections)
+    {
+        const int tick = juce::roundToInt(section.startBeat * ticksPerBeat);
+        result.midi.addEvent(juce::MidiMessage::textMetaEvent(6, section.label), tick);
+    }
+
     return result;
 }
 
@@ -307,8 +455,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateChords(const Conte
                 for (size_t i = 0; i < voicing.size(); ++i)
                 {
                     const bool top = i + 1 == voicing.size();
+                    const float energy = ctx.energyAt(chord.startBeat);
                     notes.push_back({ voicing[i], chord.startBeat, chord.lengthBeats - 0.05,
-                                      humanise(top ? 80 : 70, rng, 4) });
+                                      humanise(juce::roundToInt((top ? 80 : 70) * (0.55f + 0.45f * energy)), rng, 4) });
                 }
             }
             return notes;
@@ -646,17 +795,17 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                           humanise(velocity, rng, 7), false, bend });
     };
 
-    auto patternAt = [](const std::vector<std::string>& patterns, int bar, std::mt19937& r) -> const std::string*
+    auto patternAt = [](const std::vector<std::string>& patterns, int bar, int variation, std::mt19937& r) -> const std::string*
     {
         if (patterns.empty())
             return nullptr;
-        return &patterns[static_cast<size_t>(bar / 2 + static_cast<int>(r() % 64)) % patterns.size()];
+        return &patterns[static_cast<size_t>(bar / 2 + variation * 7 + static_cast<int>(r() % 64)) % patterns.size()];
     };
 
     auto emitPattern = [&](const std::vector<std::string>& patterns, int pitch, int accentVel,
-                           int hitVel, int ghostVel, bool isHat, int bar)
+                           int hitVel, int ghostVel, bool isHat, int bar, int variation, float energy)
     {
-        const auto* pattern = patternAt(patterns, bar, rng);
+        const auto* pattern = patternAt(patterns, bar, variation, rng);
         if (pattern == nullptr)
             return;
 
@@ -665,7 +814,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             const char c = (*pattern)[static_cast<size_t>(step % static_cast<int>(pattern->size()))];
             if (c == '.' || c == '-')
                 continue;
-            const int vel = c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel;
+            if (isHat && energy < 0.4f && step % 4 != 0 && c != 'X')
+                continue;
+            const int vel = juce::roundToInt((c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel)
+                                             * (0.5f + 0.5f * energy));
             addHit(pitch, bar * 4.0 + step * stepBeats, vel, isHat);
         }
     };
@@ -674,37 +826,44 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
 
     for (int bar = 0; bar < bars; ++bar)
     {
-        const bool fillBar = (bar % 4 == 3) && uniform(rng) < drums.fillChance;
-        const int grooveBars = fillBar ? bars : bar; // unused; keep fill from replacing the whole bar
-        juce::ignoreUnused(grooveBars);
+        const float energy = ctx.energyAt(bar * 4.0);
+        const auto* section = ctx.sectionAt(bar * 4.0);
+        const auto* nextSection = bar + 1 < bars ? ctx.sectionAt((bar + 1) * 4.0) : nullptr;
+        const bool liftComing = section != nullptr && nextSection != nullptr
+                             && nextSection->kind != section->kind
+                             && (nextSection->kind == SectionKind::Chorus
+                                 || nextSection->kind == SectionKind::Drop);
+        const bool fillBar = liftComing
+                          || ((bar % 4 == 3) && uniform(rng) < drums.fillChance * (0.35 + 0.65 * energy));
+        const int variation = section != nullptr ? section->occurrence : 1;
 
         emitPattern(drums.kick, gm::kick, drums.kickVelocity, drums.kickVelocity - 10,
-                    drums.kickVelocity - 28, false, bar);
+                    drums.kickVelocity - 28, false, bar, variation, energy);
         emitPattern(drums.snare, gm::snare, drums.snareVelocity, drums.snareVelocity - 8,
-                    juce::jmax(28, drums.snareVelocity - 50), false, bar);
+                    juce::jmax(28, drums.snareVelocity - 50), false, bar, variation, energy);
         emitPattern(drums.clap, gm::clap, drums.snareVelocity - 4, drums.snareVelocity - 14,
-                    drums.snareVelocity - 40, false, bar);
+                    drums.snareVelocity - 40, false, bar, variation, energy);
 
         const int hatPitch = drums.rideHats ? gm::ride : gm::closedHat;
         emitPattern(drums.closedHat, hatPitch, drums.hatVelocity + 10, drums.hatVelocity,
-                    drums.hatVelocity - 22, true, bar);
+                    drums.hatVelocity - 22, true, bar, variation, energy);
         emitPattern(drums.openHat, gm::openHat, drums.hatVelocity + 6, drums.hatVelocity,
-                    drums.hatVelocity - 18, true, bar);
+                    drums.hatVelocity - 18, true, bar, variation, energy);
 
         if (!drums.perc.empty())
         {
             const int percPitch = ctx.profile.genre == Genre::House ? gm::maracas
                                : ctx.profile.genre == Genre::Pop    ? gm::tamb
                                                                      : gm::rim;
-            emitPattern(drums.perc, percPitch, 62, 52, 38, percPitch != gm::rim, bar);
+            emitPattern(drums.perc, percPitch, 62, 52, 38, percPitch != gm::rim, bar, variation, energy);
         }
 
         // Ghost snares on weak 16ths
-        if (drums.ghostSnareChance > 0.0)
+        if (drums.ghostSnareChance > 0.0 && energy > 0.35f)
         {
             for (int step : { 1, 3, 5, 7, 9, 11, 13, 15 })
             {
-                if (uniform(rng) < drums.ghostSnareChance * (step % 4 == 3 ? 1.2 : 0.7))
+                if (uniform(rng) < drums.ghostSnareChance * energy * (step % 4 == 3 ? 1.2 : 0.7))
                     addHit(gm::snare, bar * 4.0 + step * stepBeats,
                            humanise(36, rng, 8), false);
             }
@@ -726,7 +885,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         }
 
         // Trap hat rolls: 32nds or 16th-triplets with velocity + pitch ramps
-        if (drums.hatRollChance > 0.0 && uniform(rng) < drums.hatRollChance)
+        if (energy > 0.65f && drums.hatRollChance > 0.0 && uniform(rng) < drums.hatRollChance)
         {
             const bool triplets = uniform(rng) < 0.4;
             const int count = triplets ? 6 : (uniform(rng) < 0.5 ? 8 : 12);
@@ -1145,7 +1304,20 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
                     pitch = shifted;
             }
 
-            const int velocity = role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0);
+            const float energy = ctx.energyAt(start);
+            if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy)
+                continue;
+
+            int registerShift = 0;
+            if (energy < 0.45f && pitch + 12 <= role.high)
+                registerShift = -12;
+            else if (energy > 0.85f && pitch - 12 >= role.low && uniform(rng) < 0.25)
+                registerShift = 12;
+            if (registerShift != 0 && pitch + registerShift >= role.low && pitch + registerShift <= role.high)
+                pitch += registerShift;
+
+            const int velocity = juce::roundToInt((role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0))
+                                                  * (0.55f + 0.45f * energy));
             const double length = rn.length * stepBeats * (cadenceNote ? 1.0 : 0.92);
             notes.push_back({ pitch, start, length, humanise(velocity, rng, 5) });
 

@@ -9,7 +9,8 @@ class ClipView : public juce::Component
 {
 public:
     void setClip(const juce::MidiBuffer& midi, double lengthInBeats,
-                 const std::vector<ChordInfo>& chords);
+                 const std::vector<ChordInfo>& chords,
+                 const std::vector<SectionInfo>& sections = {});
     void setPlaybackBeat(double beat);
 
     void paint(juce::Graphics&) override;
@@ -26,6 +27,7 @@ private:
 
     std::vector<DisplayNote> notes;
     std::vector<ChordInfo> progression;
+    std::vector<SectionInfo> sections;
     double clipLength{0.0};
     double playbackBeat{-1.0};
     int lowestPitch{60};
@@ -67,8 +69,18 @@ private:
     juce::Label partLabel;
     juce::ComboBox partComboBox;
     
+    juce::Label formLabel;
+    juce::ComboBox formComboBox;
+
     juce::Label lengthLabel;
     juce::Slider lengthSlider;
+
+    juce::Label chordsLabel;
+    juce::TextEditor chordsEditor;
+    juce::ToggleButton lockProgressionButton;
+
+    juce::Label locksLabel;
+    juce::OwnedArray<juce::ToggleButton> partLockButtons;
 
     juce::Label tempoLabel;
     juce::Slider tempoSlider;

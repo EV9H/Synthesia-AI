@@ -83,7 +83,9 @@ public:
 
 private:
     float nextSample();
+    float nextSynthSample();
     float noise();
+    void updateSampleIncrement();
 
     enum class Piece { Kick, Snare, Clap, ClosedHat, OpenHat, Tom, Crash, Ride, Perc };
 
@@ -114,6 +116,13 @@ private:
     float level{0.0f};
     juce::uint32 noiseState{1};
     bool honourNoteOff{false};
+
+    const juce::AudioBuffer<float>* sampleData{nullptr};
+    double sampleRateOfFile{44100.0};
+    double samplePos{0.0};
+    double sampleIncrement{1.0};
+    double tomRatio{1.0};
+    bool usingSample{false};
 };
 
 class SimpleSynth

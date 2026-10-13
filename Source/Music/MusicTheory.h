@@ -40,6 +40,14 @@ namespace theory
     // Builds root + intervals (ascending, relative to root, may exceed an octave).
     ChordInfo buildChord(int keyRoot, ScaleType scale, const ChordSpec& spec, int defaultExtension);
 
+    // User-facing symbols: "Am9", "Fmaj9", "E7b9", "vi", "V7", "bVI".
+    bool parseUserChord(const std::string& token, int keyRoot, ScaleType scale,
+                        int defaultExtension, ChordInfo& out);
+
+    // Space-separated chords, optionally grouped per bar with '|'. Repeats to fill `bars`.
+    std::vector<ChordInfo> parseProgressionText(const std::string& text, int keyRoot,
+                                                ScaleType scale, int bars, int defaultExtension);
+
     std::string chordSymbol(int rootPitchClass, const std::vector<int>& intervals, bool preferFlats);
 
     std::vector<int> chordPitchClasses(const ChordInfo& chord);

@@ -1,4 +1,5 @@
 #include "SimpleSynth.h"
+#include "DrumLibrary.h"
 #include <cmath>
 
 namespace
@@ -214,6 +215,7 @@ SimpleSynth::SimpleSynth()
 void SimpleSynth::prepare(double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(samplesPerBlock);
+    DrumLibrary::get().ensureLoaded();
     currentSampleRate = sampleRate;
     synth.setCurrentPlaybackSampleRate(sampleRate);
 }
@@ -228,7 +230,21 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                                   int startSample,
                                   int numSamples)
 {
-    synth.renderNextBlock(outputBuffer, midiMessages, startSample, numSamples);
+    // Closed/pedal hats choke the open hat; retriggering an open hat does too.
+    juce::MidiBuffer withChoke;
+    for (const auto metadata : midiMessages)
+    {
+        const auto message = metadata.getMessage();
+        if (message.isNoteOn() && message.getChannel() == 10
+            && (DrumLibrary::isClosedHat(message.getNoteNumber())
+                || DrumLibrary::isOpenHat(message.getNoteNumber())))
+        {
+            withChoke.addEvent(juce::MidiMessage::noteOff(10, 46), metadata.samplePosition);
+        }
+        withChoke.addEvent(message, metadata.samplePosition);
+    }
+
+    synth.renderNextBlock(outputBuffer, withChoke, startSample, numSamples);
 }
 
 void SimpleSynth::setKit(Genre genre)
@@ -271,6 +287,16 @@ void DrumVoice::pitchWheelMoved(int newValue)
 {
     const double semitones = (newValue - 8192) / 8192.0 * 12.0;
     bendRatio = std::pow(2.0, semitones / 12.0);
+    if (usingSample)
+        updateSampleIncrement();
+}
+
+void DrumVoice::updateSampleIncrement()
+{
+    const double sr = getSampleRate();
+    if (sr <= 0.0 || sampleData == nullptr)
+        return;
+    sampleIncrement = (sampleRateOfFile / sr) * bendRatio * tomRatio;
 }
 
 void DrumVoice::startNote(int midiNoteNumber, float velocity,
@@ -285,6 +311,10 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
     hpState = lpState = bpState = kitLpState = 0.0;
     env = 1.0;
     honourNoteOff = false;
+    usingSample = false;
+    sampleData = nullptr;
+    samplePos = 0.0;
+    tomRatio = 1.0;
     pitchWheelMoved(pitchWheel);
 
     const float vel = 0.35f + 0.65f * velocity;
@@ -309,6 +339,25 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
         case 51: case 59: piece = Piece::Ride; break;
         case 37: case 54: case 69: case 70: piece = Piece::Perc; break;
         default:          piece = Piece::Tom; break;
+    }
+
+    auto& library = DrumLibrary::get();
+    library.ensureLoaded();
+    const auto drumPiece = DrumLibrary::pieceFromNote(midiNoteNumber);
+    if (const auto* sample = library.find(kit, drumPiece, velocity))
+    {
+        usingSample = true;
+        sampleData = &sample->data;
+        sampleRateOfFile = sample->sourceRate;
+        if (drumPiece == DrumPiece::Tom)
+            tomRatio = std::pow(2.0, (midiNoteNumber - DrumLibrary::tomRootNote()) / 12.0);
+        kitLpCoeff = library.kitLowpassCoeff(kit);
+        level = library.gainFor(kit, drumPiece) * vel;
+        decayMul = 1.0;
+        honourNoteOff = honourNoteOff || drumPiece == DrumPiece::OpenHat
+                        || drumPiece == DrumPiece::Crash;
+        updateSampleIncrement();
+        return;
     }
 
     switch (kit)
@@ -414,6 +463,40 @@ void DrumVoice::stopNote(float, bool allowTailOff)
 }
 
 float DrumVoice::nextSample()
+{
+    const double sr = getSampleRate();
+    double s = 0.0;
+
+    if (usingSample && sampleData != nullptr)
+    {
+        const int n = sampleData->getNumSamples();
+        if (n <= 0 || samplePos >= static_cast<double>(n) || env < 1.0e-4)
+        {
+            clearCurrentNote();
+            return 0.0f;
+        }
+
+        const int i0 = juce::jlimit(0, n - 1, static_cast<int>(samplePos));
+        const int i1 = juce::jmin(n - 1, i0 + 1);
+        const float frac = static_cast<float>(samplePos - i0);
+        s = sampleData->getSample(0, i0) * (1.0f - frac) + sampleData->getSample(0, i1) * frac;
+        samplePos += sampleIncrement;
+        env *= decayMul;
+        noteTime += 1.0 / sr;
+
+        if (kitLpCoeff < 0.99)
+        {
+            kitLpState += kitLpCoeff * (s - kitLpState);
+            s = kitLpState;
+        }
+
+        return static_cast<float>(s) * level * static_cast<float>(env);
+    }
+
+    return nextSynthSample();
+}
+
+float DrumVoice::nextSynthSample()
 {
     const double sr = getSampleRate();
     const float n = noise();
