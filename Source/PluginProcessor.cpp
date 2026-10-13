@@ -2,6 +2,8 @@
 #include "PluginEditor.h"
 #include "Generators/MarkovGenerator.h"
 #include "Generators/LLMGenerator.h"
+#include "Generators/ArrangementGenerator.h"
+#include "MidiExporter.h"
 #include <cmath>
 #include <thread>
 
@@ -14,7 +16,7 @@ SynthesiaAIProcessor::SynthesiaAIProcessor()
     : AudioProcessor(BusesProperties()
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
-    generator = std::make_shared<MarkovGenerator>();
+    generator = std::make_shared<ArrangementGenerator>();
 }
 
 SynthesiaAIProcessor::~SynthesiaAIProcessor()
@@ -103,7 +105,7 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     buffer.clear();
     const int numSamples = buffer.getNumSamples();
 
-    double bpm = 120.0;
+    double bpm = previewTempo.load();
     bool hostPlaying = false;
     double hostBeat = 0.0;
 
@@ -243,7 +245,7 @@ void SynthesiaAIProcessor::setStateInformation(const void* data, int sizeInBytes
     if (xml != nullptr && xml->hasTagName("SynthesiaAIState"))
     {
         currentGeneratorType = static_cast<GeneratorType>(
-            xml->getIntAttribute("generatorType", static_cast<int>(GeneratorType::Markov)));
+            xml->getIntAttribute("generatorType", static_cast<int>(GeneratorType::Genre)));
         apiKey = xml->getStringAttribute("apiKey");
         
         setGeneratorType(currentGeneratorType);
@@ -257,18 +259,20 @@ void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
     
     isGeneratingMidi.store(true);
 
+    bool merge = false;
+    const auto prepared = prepareParams(params, merge);
     std::weak_ptr<bool> alive = aliveToken;
     
-    std::thread([this, alive, params, gen = generator]()
+    std::thread([this, alive, prepared, merge, gen = generator]()
     {
-        auto newMidi = gen->generate(params);
+        auto result = runGenerator(*gen, prepared);
         
-        juce::MessageManager::callAsync([this, alive, params, newMidi = std::move(newMidi)]() mutable
+        juce::MessageManager::callAsync([this, alive, prepared, merge, result = std::move(result)]() mutable
         {
             if (alive.expired())
                 return;
 
-            setGeneratedClip(std::move(newMidi), params.lengthInBars * 4.0);
+            applyResult(std::move(result), prepared, merge);
             isGeneratingMidi.store(false);
 
             if (!generatedMidi.isEmpty())
@@ -279,7 +283,63 @@ void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
 
 void SynthesiaAIProcessor::generateMidiBlocking(const MidiGenerationParams& params)
 {
-    setGeneratedClip(generator->generate(params), params.lengthInBars * 4.0);
+    bool merge = false;
+    const auto prepared = prepareParams(params, merge);
+    applyResult(runGenerator(*generator, prepared), prepared, merge);
+}
+
+MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const
+{
+    const bool sameContext = !progression.empty()
+                          && params.rootNote == clipParams.rootNote
+                          && params.scale == clipParams.scale
+                          && params.genre == clipParams.genre
+                          && params.lengthInBars == clipParams.lengthInBars;
+
+    mergeIntoClip = params.part != Part::All && sameContext
+                 && currentGeneratorType != GeneratorType::Markov;
+
+    if (mergeIntoClip)
+        params.progression = progression;
+    else if (currentGeneratorType == GeneratorType::LLM)
+        params.progression = ArrangementGenerator::buildProgression(params);
+
+    return params;
+}
+
+SynthesiaAIProcessor::Result SynthesiaAIProcessor::runGenerator(MidiGenerator& gen,
+                                                                 const MidiGenerationParams& params)
+{
+    if (auto* arranger = dynamic_cast<ArrangementGenerator*>(&gen))
+    {
+        auto arrangement = arranger->generateArrangement(params);
+        return { std::move(arrangement.midi), std::move(arrangement.progression) };
+    }
+
+    return { gen.generate(params), params.progression };
+}
+
+void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip)
+{
+    juce::MidiBuffer clip;
+
+    if (mergeIntoClip)
+    {
+        for (const auto part : allParts)
+            if (part != params.part)
+                clip.addEvents(MidiExporter::filterPart(generatedMidi, part), 0, -1, 0);
+        clip.addEvents(result.midi, 0, -1, 0);
+    }
+    else
+    {
+        clip = std::move(result.midi);
+    }
+
+    progression = std::move(result.progression);
+    clipParams = params;
+    clipParams.progression.clear();
+    previewTempo.store(params.tempo);
+    setGeneratedClip(std::move(clip), params.lengthInBars * 4.0);
 }
 
 void SynthesiaAIProcessor::setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats)
@@ -327,6 +387,9 @@ void SynthesiaAIProcessor::setGeneratorType(GeneratorType type)
             break;
         case GeneratorType::LLM:
             generator = std::make_shared<LLMGenerator>(apiKey);
+            break;
+        case GeneratorType::Genre:
+            generator = std::make_shared<ArrangementGenerator>();
             break;
     }
 }

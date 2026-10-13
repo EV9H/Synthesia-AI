@@ -37,10 +37,13 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    // MIDI generation
+    // MIDI generation. Generating a single part keeps the other parts and, when key, scale,
+    // genre and length are unchanged, writes the new part over the existing progression.
     void generateMidi(const MidiGenerationParams& params);
     void generateMidiBlocking(const MidiGenerationParams& params);
     const juce::MidiBuffer& getGeneratedMidi() const { return generatedMidi; }
+    const std::vector<ChordInfo>& getProgression() const { return progression; }
+    double getClipTempo() const { return previewTempo.load(); }
     double getClipLengthInBeats() const { return clipLengthBeats; }
     int getClipVersion() const { return clipVersion; }
     // Position within the clip in beats, or a negative value when not playing
@@ -66,6 +69,15 @@ private:
         juce::MidiMessage message;
     };
 
+    struct Result
+    {
+        juce::MidiBuffer midi;
+        std::vector<ChordInfo> progression;
+    };
+
+    MidiGenerationParams prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const;
+    static Result runGenerator(MidiGenerator& gen, const MidiGenerationParams& params);
+    void applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip);
     void setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats);
     void collectClipEvents(double startBeat, double endBeat, double samplesPerBeat,
                            int numSamples, juce::MidiBuffer& out) const;
@@ -74,9 +86,12 @@ private:
     // Shared so a background generation keeps its generator alive if the type changes mid-run
     std::shared_ptr<MidiGenerator> generator;
     std::shared_ptr<bool> aliveToken{std::make_shared<bool>(true)};
-    GeneratorType currentGeneratorType{GeneratorType::Markov};
+    GeneratorType currentGeneratorType{GeneratorType::Genre};
     
     juce::MidiBuffer generatedMidi;
+    std::vector<ChordInfo> progression;
+    MidiGenerationParams clipParams;
+    std::atomic<double> previewTempo{120.0};
     double clipLengthBeats{0.0};
     int clipVersion{0};
     std::atomic<double> playbackBeat{-1.0};
