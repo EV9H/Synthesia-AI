@@ -90,25 +90,28 @@ namespace
 
     void truePeakLimit(float* left, float* right, int num, float& env, double sr)
     {
-        const float ceiling = 0.84f; // ~-1.5 dBFS sample peak, measured TP stays under -1 dBTP
-        const float atk = coeffFor(0.0004, sr);
-        const float rel = coeffFor(0.09, sr);
+        const float ceiling = 0.68f; // ~-3.4 dBFS; MP3 encoding adds ~1.5–2 dB true peak
+        const float rel = coeffFor(0.16, sr);
         for (int i = 0; i < num; ++i)
         {
             float peak = juce::jmax(std::abs(left[i]), std::abs(right[i]));
             if (i + 1 < num)
             {
-                for (float t : { 0.25f, 0.5f, 0.75f })
+                for (int k = 1; k < 8; ++k)
                 {
+                    const float t = k / 8.0f;
                     const float li = left[i] + t * (left[i + 1] - left[i]);
                     const float ri = right[i] + t * (right[i + 1] - right[i]);
                     peak = juce::jmax(peak, std::abs(li), std::abs(ri));
                 }
             }
-            env += (peak > env ? atk : rel) * (peak - env);
+            if (peak > env)
+                env = peak;
+            else
+                env += rel * (peak - env);
             const float g = env > ceiling ? ceiling / (env + 1.0e-8f) : 1.0f;
-            left[i] *= g;
-            right[i] *= g;
+            left[i] = juce::jlimit(-ceiling, ceiling, left[i] * g);
+            right[i] = juce::jlimit(-ceiling, ceiling, right[i] * g);
         }
     }
 }
@@ -359,7 +362,7 @@ void PartVoice::nextStereo(float& left, float& right)
     const float drive = 1.0f + 1.15f * patch->drive;
     value = std::tanh(value * drive) / std::tanh(drive);
 
-    const float level = patch->gain * (0.38f + 0.62f * velocity) * 0.16f * amp;
+    const float level = patch->gain * (0.38f + 0.62f * velocity) * 0.22f * amp;
     const float pan = juce::jlimit(-1.0f, 1.0f, patch->pan);
     const float gainL = std::sqrt(0.5f * (1.0f - pan));
     const float gainR = std::sqrt(0.5f * (1.0f + pan));
@@ -602,7 +605,7 @@ void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buff
     const float mudAmt = isBass ? 0.12f : 0.42f;
     const float airC = onePoleCoeff(7500.0, sr);
     const float airAmt = isBass ? 0.08f : 0.62f;
-    const float partScale = isBass ? 0.90f : (partIndex == 0 ? 0.78f : 0.72f);
+    const float partScale = isBass ? 0.78f : (partIndex == 0 ? 0.92f : 0.90f);
 
     for (int i = 0; i < num; ++i)
     {
@@ -697,8 +700,8 @@ void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMi
     compressStereo(bL, bR, num, bassEnv, mix.bass, macro, sr);
     compressStereo(mL, mR, num, musicEnv, mix.music, macro, sr);
 
-    const float width = juce::jlimit(1.0f, 1.8f, mix.musicWidth);
-    const int haasDelay = currentKit == Genre::LoFiJazz ? 7 : 13;
+    const float width = juce::jlimit(1.0f, 2.0f, mix.musicWidth);
+    const int haasDelay = currentKit == Genre::LoFiJazz ? 9 : 22;
     const int haasSize = (int) (sizeof(musicHaas) / sizeof(musicHaas[0]));
     for (int i = 0; i < num; ++i)
     {
@@ -833,7 +836,7 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         tape = juce::jmax(tape, p.tapeSat);
     }
     if (currentKit == Genre::LoFiJazz)
-        vinyl = juce::jmax(vinyl, 0.16f);
+        vinyl = juce::jmax(vinyl, 0.08f);
 
     if (vinyl > 0.01f)
     {
@@ -861,7 +864,7 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         }
     }
 
-    const float makeup = juce::jlimit(0.4f, 2.2f, mix.outputGain);
+    const float makeup = juce::jlimit(0.4f, 3.4f, mix.outputGain);
     for (int i = 0; i < num; ++i)
     {
         oL[i] *= makeup;
@@ -914,7 +917,7 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     partBuffer.clear(startSample, numSamples);
     drums.renderNextBlock(partBuffer, drumMidi, startSample, numSamples);
     for (int ch = 0; ch < 2; ++ch)
-        drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 0.92f);
+        drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 0.82f);
 
     applyBusMix(startSample, numSamples, drumMidi);
 
@@ -1021,8 +1024,8 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
             case Piece::Kick:      pan = 0.0f; break;
             case Piece::Snare:     pan = -0.12f; break;
             case Piece::Clap:      pan = 0.16f; break;
-            case Piece::ClosedHat: pan = midiNoteNumber == 44 ? -0.18f : -0.48f; break;
-            case Piece::OpenHat:   pan = 0.42f; break;
+            case Piece::ClosedHat: pan = midiNoteNumber == 44 ? -0.32f : -0.62f; break;
+            case Piece::OpenHat:   pan = 0.58f; break;
             case Piece::Crash:     pan = 0.28f; break;
             case Piece::Ride:      pan = -0.22f; break;
             case Piece::Perc:      pan = (midiNoteNumber & 1) ? -0.58f : 0.55f; break;

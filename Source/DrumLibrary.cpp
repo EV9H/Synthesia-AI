@@ -181,13 +181,13 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
     switch (genre)
     {
         case Genre::House:
-            if (piece == DrumPiece::Kick) gain = 0.36f;
+            if (piece == DrumPiece::Kick) gain = 0.16f;
             if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.88f;
             if (piece == DrumPiece::ClosedHat) gain = 0.54f;
             if (piece == DrumPiece::OpenHat) gain = 0.48f;
             break;
         case Genre::Trap:
-            if (piece == DrumPiece::Kick) gain = 0.24f;
+            if (piece == DrumPiece::Kick) gain = 0.20f;
             if (piece == DrumPiece::ClosedHat) gain = 0.50f;
             if (piece == DrumPiece::OpenHat) gain = 0.44f;
             break;

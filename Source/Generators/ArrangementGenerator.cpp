@@ -284,7 +284,7 @@ namespace
         switch (kind)
         {
             case SectionKind::Intro:     return 0.32f;
-            case SectionKind::Verse:     return 0.58f;
+            case SectionKind::Verse:     return 0.42f;
             case SectionKind::PreChorus: return 0.78f;
             case SectionKind::Chorus:    return 1.00f;
             case SectionKind::Drop:      return 1.00f;
@@ -637,9 +637,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             if (ctx.energyAt(start) < 0.4f && hit.step % 4 != 0 && hit.symbol != 'X')
                 continue;
 
-            const int velocity = hit.symbol == 'X' ? baseVelocity + 10
+            const float energy = ctx.energyAt(start);
+            const int velocity = juce::roundToInt((hit.symbol == 'X' ? baseVelocity + 10
                                : hit.symbol == 'g' ? baseVelocity - 25
-                                                   : baseVelocity;
+                                                   : baseVelocity) * (0.40f + 0.60f * energy));
 
             for (int pitch : voicings[static_cast<size_t>(index)])
                 notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, 5) });
@@ -945,7 +946,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             if (c != 'X' && step % 4 != 0 && uniform(rng) > 0.3 + 0.7 * density)
                 continue;
             const int vel = juce::roundToInt((c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel)
-                                             * (0.5f + 0.5f * energy));
+                                             * (0.32f + 0.68f * energy));
             int usePitch = pitch;
             if (isHat && pitch == gm::closedHat)
             {
@@ -1134,6 +1135,28 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             if (i > 0 && uniform(rng) < 0.45)
                 addHit(gm::lowTom, chord.startBeat, 96, false);
         }
+    }
+
+    // One-beat dropout into a chorus/drop so the lift reads louder (LRA).
+    for (int bar = 0; bar + 1 < bars; ++bar)
+    {
+        const auto* section = ctx.sectionAt(bar * 4.0);
+        const auto* nextSection = ctx.sectionAt((bar + 1) * 4.0);
+        if (section == nullptr || nextSection == nullptr || section->kind == nextSection->kind)
+            continue;
+        if (nextSection->kind != SectionKind::Chorus && nextSection->kind != SectionKind::Drop)
+            continue;
+        const double muteFrom = bar * 4.0 + 3.0;
+        const double muteTo = (bar + 1) * 4.0 - 0.02;
+        notes.erase(std::remove_if(notes.begin(), notes.end(),
+                                   [&](const PartNote& n)
+                                   {
+                                       if (n.start < muteFrom || n.start >= muteTo)
+                                           return false;
+                                       return n.pitch == gm::kick || n.pitch == gm::snare
+                                           || n.pitch == gm::clap || n.pitch == gm::eSnare;
+                                   }),
+                    notes.end());
     }
 
     // Kick / bass lock: land a kick on strong bass onsets that don't already have one

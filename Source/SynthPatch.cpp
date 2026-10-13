@@ -234,7 +234,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.filterEnv = { 0.001f, 0.14f, 0.15f, 0.12f };
         p.cutoff = 3200.0f; p.resonance = 0.38f; p.filterEnvAmount = 2.6f; p.velToCutoff = 0.5f;
         p.chorusSend = 0.28f; p.delaySend = 0.08f; p.reverbSend = 0.14f;
-        p.drive = 0.24f; p.gain = 0.58f;
+        p.drive = 0.24f; p.gain = 0.82f;
         patches.add(p);
     }
     {
@@ -256,7 +256,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.amp = { 0.003f, 0.16f, 0.55f, 0.1f };
         p.filterEnv = { 0.001f, 0.09f, 0.12f, 0.08f };
         p.cutoff = 380.0f; p.resonance = 0.55f; p.filterEnvAmount = 3.2f; p.velToCutoff = 0.45f;
-        p.glideSeconds = 0.02f; p.drive = 0.38f; p.gain = 0.8f;
+        p.glideSeconds = 0.02f; p.drive = 0.38f; p.gain = 0.95f;
         patches.add(p);
     }
     {
@@ -268,7 +268,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.cutoff = 3800.0f; p.resonance = 0.28f; p.filterEnvAmount = 2.0f;
         p.lfoRate = 0.28f; p.lfoToFilter = 0.22f;
         p.chorusSend = 0.48f; p.delaySend = 0.18f; p.reverbSend = 0.24f;
-        p.drive = 0.14f; p.gain = 0.44f;
+        p.drive = 0.14f; p.gain = 0.58f;
         patches.add(p);
     }
 
@@ -293,8 +293,8 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.filterMode = FilterMode::LowPass; p.cutoff = 220.0f; p.resonance = 0.12f;
         p.filterEnvAmount = 1.1f; p.filterEnv = { 0.001f, 0.08f, 0.35f, 0.08f };
         p.pitchEnvAmount = 14.0f; p.pitchEnvDecay = 0.055f;
-        p.glideSeconds = 0.09f; p.drive = 0.32f; p.tapeSat = 0.12f;
-        p.reverbSend = 0.0f; p.gain = 0.90f;
+        p.glideSeconds = 0.09f; p.drive = 0.26f; p.tapeSat = 0.08f;
+        p.reverbSend = 0.0f; p.gain = 0.86f;
         patches.add(p);
     }
     {
@@ -628,13 +628,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.012f;
         m.sidechainRelease = 0.16f;
         m.sidechainBass = 0.78f;
-        m.compAmount = 0.52f;
-        m.outputGain = 1.35f;
-        m.musicWidth = 1.55f;
-        m.drum = bus(0.32f, 0.016f, 0.10f, 2.6f, 0.30f);
-        m.bass = bus(0.28f, 0.020f, 0.14f, 2.3f, 0.34f);
-        m.music = bus(0.24f, 0.024f, 0.16f, 2.1f, 0.36f);
-        m.master = bus(0.22f, 0.035f, 0.20f, 1.6f, 0.44f);
+        m.compAmount = 0.42f;
+        m.outputGain = 2.45f;
+        m.musicWidth = 1.72f;
+        m.drum = bus(0.24f, 0.020f, 0.12f, 2.2f, 0.34f);
+        m.bass = bus(0.22f, 0.024f, 0.16f, 2.0f, 0.36f);
+        m.music = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.38f);
+        m.master = bus(0.14f, 0.045f, 0.24f, 1.4f, 0.48f);
         mixes.add(m);
     }
     {
@@ -645,13 +645,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.010f;
         m.sidechainRelease = 0.22f;
         m.sidechainBass = 0.10f;
-        m.compAmount = 0.50f;
-        m.outputGain = 1.28f;
-        m.musicWidth = 1.48f;
-        m.drum = bus(0.30f, 0.018f, 0.11f, 2.5f, 0.32f);
-        m.bass = bus(0.20f, 0.028f, 0.20f, 1.8f, 0.38f);
-        m.music = bus(0.24f, 0.026f, 0.18f, 2.2f, 0.36f);
-        m.master = bus(0.20f, 0.040f, 0.22f, 1.5f, 0.44f);
+        m.compAmount = 0.40f;
+        m.outputGain = 2.20f;
+        m.musicWidth = 1.62f;
+        m.drum = bus(0.22f, 0.022f, 0.13f, 2.1f, 0.36f);
+        m.bass = bus(0.16f, 0.032f, 0.22f, 1.6f, 0.42f);
+        m.music = bus(0.18f, 0.030f, 0.20f, 1.8f, 0.38f);
+        m.master = bus(0.12f, 0.050f, 0.26f, 1.35f, 0.50f);
         mixes.add(m);
     }
     {
@@ -662,13 +662,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.018f;
         m.sidechainRelease = 0.28f;
         m.sidechainBass = 0.28f;
-        m.compAmount = 0.40f;
-        m.outputGain = 0.95f;
-        m.musicWidth = 1.12f;
-        m.drum = bus(0.22f, 0.024f, 0.18f, 2.0f, 0.36f);
-        m.bass = bus(0.22f, 0.026f, 0.18f, 2.0f, 0.36f);
-        m.music = bus(0.18f, 0.032f, 0.24f, 1.8f, 0.38f);
-        m.master = bus(0.16f, 0.050f, 0.28f, 1.5f, 0.46f);
+        m.compAmount = 0.32f;
+        m.outputGain = 1.58f;
+        m.musicWidth = 1.28f;
+        m.drum = bus(0.16f, 0.028f, 0.20f, 1.7f, 0.40f);
+        m.bass = bus(0.16f, 0.030f, 0.20f, 1.7f, 0.40f);
+        m.music = bus(0.14f, 0.036f, 0.26f, 1.5f, 0.42f);
+        m.master = bus(0.10f, 0.060f, 0.32f, 1.3f, 0.52f);
         mixes.add(m);
     }
     {
@@ -679,13 +679,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.014f;
         m.sidechainRelease = 0.24f;
         m.sidechainBass = 0.42f;
-        m.compAmount = 0.46f;
-        m.outputGain = 1.02f;
-        m.musicWidth = 1.38f;
-        m.drum = bus(0.26f, 0.020f, 0.15f, 2.2f, 0.34f);
-        m.bass = bus(0.24f, 0.024f, 0.16f, 2.1f, 0.36f);
-        m.music = bus(0.22f, 0.030f, 0.20f, 1.9f, 0.38f);
-        m.master = bus(0.18f, 0.045f, 0.24f, 1.5f, 0.46f);
+        m.compAmount = 0.36f;
+        m.outputGain = 2.12f;
+        m.musicWidth = 1.55f;
+        m.drum = bus(0.18f, 0.024f, 0.16f, 1.9f, 0.38f);
+        m.bass = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.40f);
+        m.music = bus(0.16f, 0.034f, 0.22f, 1.6f, 0.42f);
+        m.master = bus(0.10f, 0.055f, 0.28f, 1.3f, 0.52f);
         mixes.add(m);
     }
     {
@@ -696,13 +696,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.025f;
         m.sidechainRelease = 0.36f;
         m.sidechainBass = 0.16f;
-        m.compAmount = 0.38f;
-        m.outputGain = 0.92f;
-        m.musicWidth = 1.62f;
-        m.drum = bus(0.18f, 0.028f, 0.22f, 2.0f, 0.38f);
-        m.bass = bus(0.18f, 0.032f, 0.26f, 1.7f, 0.38f);
-        m.music = bus(0.16f, 0.036f, 0.30f, 1.6f, 0.40f);
-        m.master = bus(0.14f, 0.055f, 0.30f, 1.4f, 0.48f);
+        m.compAmount = 0.28f;
+        m.outputGain = 2.70f;
+        m.musicWidth = 1.85f;
+        m.drum = bus(0.12f, 0.032f, 0.24f, 1.6f, 0.42f);
+        m.bass = bus(0.12f, 0.036f, 0.28f, 1.5f, 0.42f);
+        m.music = bus(0.12f, 0.040f, 0.32f, 1.4f, 0.44f);
+        m.master = bus(0.08f, 0.065f, 0.34f, 1.25f, 0.55f);
         mixes.add(m);
     }
     {
@@ -713,13 +713,13 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainAttack = 0.012f;
         m.sidechainRelease = 0.18f;
         m.sidechainBass = 0.55f;
-        m.compAmount = 0.48f;
-        m.outputGain = 1.22f;
-        m.musicWidth = 1.42f;
-        m.drum = bus(0.28f, 0.018f, 0.12f, 2.4f, 0.32f);
-        m.bass = bus(0.26f, 0.022f, 0.14f, 2.2f, 0.34f);
-        m.music = bus(0.22f, 0.026f, 0.16f, 2.0f, 0.36f);
-        m.master = bus(0.20f, 0.040f, 0.20f, 1.6f, 0.44f);
+        m.compAmount = 0.38f;
+        m.outputGain = 1.75f;
+        m.musicWidth = 1.58f;
+        m.drum = bus(0.20f, 0.022f, 0.14f, 2.0f, 0.36f);
+        m.bass = bus(0.20f, 0.026f, 0.16f, 1.9f, 0.38f);
+        m.music = bus(0.16f, 0.030f, 0.18f, 1.7f, 0.40f);
+        m.master = bus(0.12f, 0.050f, 0.24f, 1.35f, 0.50f);
         mixes.add(m);
     }
 
