@@ -20,30 +20,35 @@ fi
 
 mkdir -p "$OUT"
 
-# name | key | scale | grid | bpm | seed | style prompt
+# Mix + each part solo for a handful of genres. Same seed so a solo matches
+# that part inside the mix. Tempo and grid come from the genre profile unless
+# overridden; we pin them here so the filenames stay accurate.
+#
+# name | genre | key | scale | bpm | seed
 DEMOS=(
-    "c-major-eighths-120bpm|C|major|1/8|120|1|bright pop melody"
-    "a-minor-sixteenths-128bpm|A|minor|1/16|128|7|driving minor arpeggio"
-    "d-dorian-quarters-90bpm|D|dorian|1/4|90|3|laid-back dorian groove"
-    "e-pentatonic-eighths-100bpm|E|pentatonic|1/8|100|11|airy pentatonic hook"
+    "lofi-am-84bpm|lofi|A|minor|84|7"
+    "house-am-124bpm|house|A|minor|124|7"
+    "trap-am-140bpm|trap|A|minor|140|7"
 )
+
+# Extra full-arrangement mixes (no solos) so every genre has a listen-check.
+MIXES=(
+    "pop-am-110bpm|pop|A|minor|110|7"
+    "rnb-am-88bpm|rnb|A|minor|88|7"
+    "cinematic-am-80bpm|cinematic|A|minor|80|7"
+)
+
+PARTS=(chords bass synth piano)
 
 failed=0
 
-for demo in "${DEMOS[@]}"; do
-    IFS='|' read -r name key scale grid bpm seed style <<< "$demo"
-    wav="$OUT/$name.wav"
-
-    "$HOST" --out "$wav" --midi "$OUT/$name.mid" \
-        --key "$key" --scale "$scale" --bars 8 --quant "$grid" \
-        --tempo "$bpm" --seed "$seed" --style "$style"
-
-    ffmpeg -hide_banner -loglevel error -y -i "$wav" -codec:a libmp3lame -b:a 192k "$OUT/$name.mp3"
-
-    stats="$(ffmpeg -hide_banner -i "$OUT/$name.mp3" -af volumedetect -f null - 2>&1)"
+check_mp3() {
+    local mp3="$1"
+    local stats max_db mean_db gaps status
+    stats="$(ffmpeg -hide_banner -i "$mp3" -af volumedetect -f null - 2>&1)"
     max_db="$(sed -n 's/.*max_volume: \(-\?[0-9.]*\) dB.*/\1/p' <<< "$stats")"
     mean_db="$(sed -n 's/.*mean_volume: \(-\?[0-9.]*\) dB.*/\1/p' <<< "$stats")"
-    gaps="$(ffmpeg -hide_banner -i "$OUT/$name.mp3" -af silencedetect=noise=-60dB:d=1 -f null - 2>&1 \
+    gaps="$(ffmpeg -hide_banner -i "$mp3" -af silencedetect=noise=-60dB:d=1 -f null - 2>&1 \
             | grep -c 'silence_start' || true)"
 
     status="ok"
@@ -52,7 +57,45 @@ for demo in "${DEMOS[@]}"; do
     [[ "$status" == "ok" ]] || failed=1
 
     printf '  mp3: max %s dB, mean %s dB, silent gaps >1s: %s -> %s\n' "$max_db" "$mean_db" "$gaps" "$status"
+}
+
+encode_wav() {
+    local wav="$1"
+    local mp3="${wav%.wav}.mp3"
+    ffmpeg -hide_banner -loglevel error -y -i "$wav" -codec:a libmp3lame -b:a 192k "$mp3"
+    check_mp3 "$mp3"
     rm -f "$wav"
+}
+
+render() {
+    local name="$1" genre="$2" key="$3" scale="$4" bpm="$5" seed="$6" part="$7"
+    local extra=("${@:8}")
+    local wav="$OUT/${name}.wav"
+
+    "$HOST" --out "$wav" --midi "$OUT/${name}.mid" \
+        --generator genre --genre "$genre" --part "$part" \
+        --key "$key" --scale "$scale" --bars 8 \
+        --tempo "$bpm" --seed "$seed" "${extra[@]}"
+
+    encode_wav "$wav"
+}
+
+for demo in "${DEMOS[@]}"; do
+    IFS='|' read -r name genre key scale bpm seed <<< "$demo"
+
+    echo "== $name mix (chords+bass+synth+piano) =="
+    render "${name}-mix" "$genre" "$key" "$scale" "$bpm" "$seed" all
+
+    for part in "${PARTS[@]}"; do
+        echo "== $name $part solo =="
+        render "${name}-${part}" "$genre" "$key" "$scale" "$bpm" "$seed" "$part"
+    done
+done
+
+for demo in "${MIXES[@]}"; do
+    IFS='|' read -r name genre key scale bpm seed <<< "$demo"
+    echo "== $name mix (bonus) =="
+    render "${name}-mix" "$genre" "$key" "$scale" "$bpm" "$seed" all
 done
 
 exit "$failed"
