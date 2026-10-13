@@ -236,6 +236,8 @@ void SynthesiaAIProcessor::getStateInformation(juce::MemoryBlock& destData)
     juce::XmlElement xml("SynthesiaAIState");
     xml.setAttribute("generatorType", static_cast<int>(currentGeneratorType));
     xml.setAttribute("apiKey", apiKey);
+    xml.setAttribute("apiEndpoint", apiEndpoint);
+    xml.setAttribute("apiModel", apiModel);
     
     copyXmlToBinary(xml, destData);
 }
@@ -249,6 +251,8 @@ void SynthesiaAIProcessor::setStateInformation(const void* data, int sizeInBytes
         currentGeneratorType = static_cast<GeneratorType>(
             xml->getIntAttribute("generatorType", static_cast<int>(GeneratorType::Genre)));
         apiKey = xml->getStringAttribute("apiKey");
+        apiEndpoint = xml->getStringAttribute("apiEndpoint", apiEndpoint);
+        apiModel = xml->getStringAttribute("apiModel", apiModel);
         
         setGeneratorType(currentGeneratorType);
     }
@@ -267,6 +271,7 @@ void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
     
     std::thread([this, alive, prepared, merge, gen = generator]()
     {
+        configureLlm(*gen);
         auto result = runGenerator(*gen, prepared);
         
         juce::MessageManager::callAsync([this, alive, prepared, merge, result = std::move(result)]() mutable
@@ -290,6 +295,42 @@ void SynthesiaAIProcessor::generateMidiBlocking(const MidiGenerationParams& para
     applyResult(runGenerator(*generator, prepared), prepared, merge);
 }
 
+void SynthesiaAIProcessor::planArrangement(const MidiGenerationParams& params)
+{
+    if (isGeneratingMidi.load())
+        return;
+
+    isGeneratingMidi.store(true);
+    bool merge = false;
+    const auto prepared = prepareParams(params, merge);
+    std::weak_ptr<bool> alive = aliveToken;
+
+    std::thread([this, alive, prepared, gen = generator]()
+    {
+        configureLlm(*gen);
+        auto planned = createPlan(prepared);
+
+        juce::MessageManager::callAsync([this, alive, planned = std::move(planned)]() mutable
+        {
+            if (alive.expired())
+                return;
+
+            storePlan(std::move(planned), true);
+            isGeneratingMidi.store(false);
+        });
+    }).detach();
+}
+
+ArrangementPlan SynthesiaAIProcessor::planArrangementBlocking(const MidiGenerationParams& params)
+{
+    bool merge = false;
+    const auto prepared = prepareParams(params, merge);
+    configureLlm(*generator);
+    auto planned = createPlan(prepared);
+    storePlan(planned, true);
+    return planned;
+}
+
 MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const
 {
     const bool sameContext = !progression.empty()
@@ -306,6 +347,29 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
     if (params.lockProgression && !progression.empty() && sameContext)
         params.progression = progression;
 
+    if (!params.planJson.empty() && params.plannedSections.empty())
+    {
+        const auto seed = params.seed;
+        const auto part = params.part;
+        const auto locked = params.lockedParts;
+        const auto quant = params.quantization;
+        const auto style = params.stylePrompt;
+        const auto chordOverride = params.chordText;
+        auto plan = ArrangementPlan::parseJson(params.planJson, params);
+        plan.applyTo(params);
+        params.seed = seed;
+        params.part = part;
+        params.lockedParts = locked;
+        params.quantization = quant;
+        params.stylePrompt = style;
+        if (!chordOverride.empty())
+        {
+            params.chordText = chordOverride;
+            params.progression.clear();
+            params.lockProgression = true;
+        }
+    }
+
     if (params.progression.empty() && !params.chordText.empty())
     {
         const auto& profile = getGenreProfile(params.genre);
@@ -316,27 +380,114 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
 
     if (mergeIntoClip && params.progression.empty())
         params.progression = progression;
-    else if (params.progression.empty() && currentGeneratorType == GeneratorType::LLM)
-        params.progression = ArrangementGenerator::buildProgression(params);
 
     return params;
+}
+
+void SynthesiaAIProcessor::configureLlm(MidiGenerator& gen) const
+{
+    if (auto* llm = dynamic_cast<LLMGenerator*>(&gen))
+    {
+        llm->setApiKey(apiKey);
+        llm->setEndpoint(apiEndpoint);
+        llm->setModel(apiModel);
+    }
+}
+
+ArrangementPlan SynthesiaAIProcessor::createPlan(const MidiGenerationParams& params)
+{
+    if (auto* llm = dynamic_cast<LLMGenerator*>(generator.get()))
+        return llm->plan(params);
+
+    if (!params.planJson.empty())
+        return ArrangementPlan::parseJson(params.planJson, params);
+
+    return ArrangementPlan::fromKeywords(params.stylePrompt, params);
+}
+
+void SynthesiaAIProcessor::storePlan(ArrangementPlan plan, bool bumpUi)
+{
+    lastPlan = std::move(plan);
+    if (auto* llm = dynamic_cast<LLMGenerator*>(generator.get()))
+        sessionUsage = llm->sessionUsage();
+    if (bumpUi)
+        ++planVersion;
 }
 
 SynthesiaAIProcessor::Result SynthesiaAIProcessor::runGenerator(MidiGenerator& gen,
                                                                  const MidiGenerationParams& params)
 {
+    configureLlm(gen);
+
+    if (auto* llm = dynamic_cast<LLMGenerator*>(&gen))
+    {
+        ArrangementPlan planned;
+        const bool reuse = lastPlan.sections.size() > 0
+                        && lastPlan.prompt == params.stylePrompt
+                        && (lastPlan.source == "llm" || lastPlan.source == "heuristic" || lastPlan.source == "json");
+        if (!params.planJson.empty())
+            planned = ArrangementPlan::parseJson(params.planJson, params);
+        else if (reuse)
+            planned = lastPlan;
+        else
+            planned = llm->plan(params);
+
+        MidiGenerationParams realised = params;
+        planned.applyTo(realised);
+        realised.seed = params.seed;
+        realised.part = params.part;
+        realised.lockedParts = params.lockedParts;
+        realised.quantization = params.quantization;
+        if (!params.chordText.empty())
+        {
+            realised.chordText = params.chordText;
+            realised.progression.clear();
+            realised.lockProgression = true;
+        }
+
+        ArrangementGenerator arranger;
+        auto arrangement = arranger.generateArrangement(realised);
+        Result result;
+        result.midi = std::move(arrangement.midi);
+        result.progression = std::move(arrangement.progression);
+        result.sections = std::move(arrangement.sections);
+        result.plan = std::move(planned);
+        result.hasPlan = true;
+        result.realised = realised;
+        return result;
+    }
+
     if (auto* arranger = dynamic_cast<ArrangementGenerator*>(&gen))
     {
         auto arrangement = arranger->generateArrangement(params);
-        return { std::move(arrangement.midi), std::move(arrangement.progression),
-                 std::move(arrangement.sections) };
+        Result result;
+        result.midi = std::move(arrangement.midi);
+        result.progression = std::move(arrangement.progression);
+        result.sections = std::move(arrangement.sections);
+        result.realised = params;
+        if (!params.planJson.empty())
+        {
+            result.hasPlan = true;
+            result.plan = ArrangementPlan::parseJson(params.planJson, params);
+        }
+        return result;
     }
 
-    return { gen.generate(params), params.progression, {} };
+    Result result;
+    result.midi = gen.generate(params);
+    result.progression = params.progression;
+    result.realised = params;
+    return result;
 }
 
 void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip)
 {
+    if (result.hasPlan)
+        storePlan(result.plan, planVersion == 0);
+
+    if (!result.midiReady)
+        return;
+
     juce::MidiBuffer clip;
 
     if (mergeIntoClip)
@@ -356,15 +507,17 @@ void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams
         clip = std::move(result.midi);
     }
 
+    const auto& used = result.realised.lengthInBars > 0 ? result.realised : params;
+
     if (!(params.lockProgression && !progression.empty()) || result.progression.empty())
         progression = std::move(result.progression);
     if (!result.sections.empty())
         sections = std::move(result.sections);
-    clipParams = params;
+    clipParams = used;
     clipParams.progression.clear();
-    previewTempo.store(params.tempo);
-    simpleSynth.setKit(params.genre);
-    setGeneratedClip(std::move(clip), params.lengthInBars * 4.0);
+    previewTempo.store(used.tempo);
+    simpleSynth.setKit(used.genre);
+    setGeneratedClip(std::move(clip), used.lengthInBars * 4.0);
 }
 
 void SynthesiaAIProcessor::setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats)
@@ -412,6 +565,7 @@ void SynthesiaAIProcessor::setGeneratorType(GeneratorType type)
             break;
         case GeneratorType::LLM:
             generator = std::make_shared<LLMGenerator>(apiKey);
+            configureLlm(*generator);
             break;
         case GeneratorType::Genre:
             generator = std::make_shared<ArrangementGenerator>();
@@ -422,18 +576,28 @@ void SynthesiaAIProcessor::setGeneratorType(GeneratorType type)
 void SynthesiaAIProcessor::setApiKey(const juce::String& key)
 {
     apiKey = key;
-    if (currentGeneratorType == GeneratorType::LLM)
-    {
-        if (auto* llmGen = dynamic_cast<LLMGenerator*>(generator.get()))
-        {
-            llmGen->setApiKey(key);
-        }
-    }
+    configureLlm(*generator);
 }
 
 juce::String SynthesiaAIProcessor::getApiKey() const
 {
     return apiKey;
+}
+
+void SynthesiaAIProcessor::setApiEndpoint(const juce::String& url)
+{
+    const auto trimmed = url.trim();
+    if (trimmed.isNotEmpty())
+        apiEndpoint = trimmed;
+    configureLlm(*generator);
+}
+
+void SynthesiaAIProcessor::setApiModel(const juce::String& name)
+{
+    const auto trimmed = name.trim();
+    if (trimmed.isNotEmpty())
+        apiModel = trimmed;
+    configureLlm(*generator);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

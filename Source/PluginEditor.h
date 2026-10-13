@@ -47,8 +47,11 @@ public:
 
 private:
     void onGenerateClicked();
+    void onPlanClicked();
     void onExportMidi();
     void applyGenreDefaults();
+    void applyPlanToUI(const ArrangementPlan& plan);
+    MidiGenerationParams collectParams() const;
     void updateUIState();
     void exportToChooser(int menuId);
 
@@ -94,12 +97,17 @@ private:
     juce::Label generatorLabel;
     juce::ComboBox generatorComboBox;
     
+    juce::TextButton planButton;
     juce::TextButton generateButton;
     juce::TextButton previewButton;
     juce::TextButton exportButton;
 
+    juce::Label planLabel;
+    juce::TextEditor planSummaryEditor;
+
     ClipView clipView;
     int shownClipVersion{0};
+    int shownPlanVersion{0};
     
     juce::Label statusLabel;
     
@@ -123,6 +131,11 @@ private:
     
     juce::Label apiKeyLabel;
     juce::TextEditor apiKeyEditor;
+    juce::Label endpointLabel;
+    juce::TextEditor endpointEditor;
+    juce::Label modelLabel;
+    juce::TextEditor modelEditor;
+    juce::Label usageLabel;
     juce::Label hintLabel;
     juce::TextButton saveButton;
     juce::TextButton cancelButton;

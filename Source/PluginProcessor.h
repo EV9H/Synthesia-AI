@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "Generators/MidiGenerator.h"
+#include "Generators/ArrangementPlan.h"
 #include "SimpleSynth.h"
 
 class SynthesiaAIProcessor : public juce::AudioProcessor
@@ -41,9 +42,15 @@ public:
     // genre and length are unchanged, writes the new part over the existing progression.
     void generateMidi(const MidiGenerationParams& params);
     void generateMidiBlocking(const MidiGenerationParams& params);
+    void planArrangement(const MidiGenerationParams& params);
+    ArrangementPlan planArrangementBlocking(const MidiGenerationParams& params);
     const juce::MidiBuffer& getGeneratedMidi() const { return generatedMidi; }
     const std::vector<ChordInfo>& getProgression() const { return progression; }
     const std::vector<SectionInfo>& getSections() const { return sections; }
+    const ArrangementPlan& getLastPlan() const { return lastPlan; }
+    int getPlanVersion() const { return planVersion; }
+    TokenUsage getLastTokenUsage() const { return lastPlan.usage; }
+    TokenUsage getSessionTokenUsage() const { return sessionUsage; }
     double getClipTempo() const { return previewTempo.load(); }
     double getClipLengthInBeats() const { return clipLengthBeats; }
     int getClipVersion() const { return clipVersion; }
@@ -62,6 +69,10 @@ public:
     // Settings
     void setApiKey(const juce::String& key);
     juce::String getApiKey() const;
+    void setApiEndpoint(const juce::String& url);
+    juce::String getApiEndpoint() const { return apiEndpoint; }
+    void setApiModel(const juce::String& name);
+    juce::String getApiModel() const { return apiModel; }
 
 private:
     struct ClipEvent
@@ -75,11 +86,18 @@ private:
         juce::MidiBuffer midi;
         std::vector<ChordInfo> progression;
         std::vector<SectionInfo> sections;
+        ArrangementPlan plan;
+        bool hasPlan{false};
+        bool midiReady{true};
+        MidiGenerationParams realised;
     };
 
     MidiGenerationParams prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const;
-    static Result runGenerator(MidiGenerator& gen, const MidiGenerationParams& params);
+    Result runGenerator(MidiGenerator& gen, const MidiGenerationParams& params);
+    ArrangementPlan createPlan(const MidiGenerationParams& params);
     void applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip);
+    void storePlan(ArrangementPlan plan, bool bumpUi);
+    void configureLlm(MidiGenerator& gen) const;
     void setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats);
     void collectClipEvents(double startBeat, double endBeat, double samplesPerBeat,
                            int numSamples, juce::MidiBuffer& out) const;
@@ -117,6 +135,11 @@ private:
     std::atomic<bool> isGeneratingMidi{false};
     
     juce::String apiKey;
+    juce::String apiEndpoint{ "https://api.openai.com/v1/chat/completions" };
+    juce::String apiModel{ "gpt-4o-mini" };
+    ArrangementPlan lastPlan;
+    TokenUsage sessionUsage;
+    int planVersion{0};
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIProcessor)
 };

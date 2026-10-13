@@ -271,7 +271,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Genre-aware MIDI generator", juce::dontSendNotification);
+    subtitleLabel.setText("Plan with a prompt, edit chords, then generate MIDI", juce::dontSendNotification);
     subtitleLabel.setFont(juce::Font(13.0f));
     subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(subtitleLabel);
@@ -382,7 +382,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     styleTextEditor.setMultiLine(true);
     styleTextEditor.setReturnKeyStartsNewLine(true);
-    styleTextEditor.setTextToShowWhenEmpty("Describe the style (used by the LLM generator)", Theme::dimText);
+    styleTextEditor.setTextToShowWhenEmpty("late-night synthwave, chorus should explode", Theme::dimText);
     styleTextEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
     styleTextEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
     styleTextEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
@@ -404,6 +404,20 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     applyGenreDefaults();
     
+    setUpLabel(planLabel, "Plan");
+    addAndMakeVisible(planLabel);
+    planSummaryEditor.setMultiLine(true);
+    planSummaryEditor.setReadOnly(true);
+    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 12.0f, juce::Font::plain));
+    planSummaryEditor.setTextToShowWhenEmpty("Plan a track to see sections and chords here. Edit the Chords field before Generate.", Theme::dimText);
+    planSummaryEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
+    planSummaryEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
+    addAndMakeVisible(planSummaryEditor);
+
+    planButton.setButtonText("Plan");
+    planButton.onClick = [this]() { onPlanClicked(); };
+    addAndMakeVisible(planButton);
+
     generateButton.setButtonText("Generate MIDI");
     generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
@@ -434,7 +448,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     settingsButton.onClick = [this]()
     {
         auto* dialog = new SettingsDialog(audioProcessor);
-        dialog->setSize(440, 180);
+        dialog->setSize(440, 360);
         juce::DialogWindow::LaunchOptions options;
         options.content.setOwned(dialog);
         options.dialogTitle = "Synthesia AI Settings";
@@ -445,7 +459,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     addAndMakeVisible(settingsButton);
 
-    setSize(700, 860);
+    setSize(700, 960);
     startTimerHz(30);
 }
 
@@ -535,11 +549,20 @@ void SynthesiaAIEditor::resized()
     }
 
     styleLabel.setBounds(area.removeFromTop(22));
-    styleTextEditor.setBounds(area.removeFromTop(40));
-    area.removeFromTop(12);
+    styleTextEditor.setBounds(area.removeFromTop(48));
+    area.removeFromTop(10);
 
-    generateButton.setBounds(area.removeFromTop(40));
-    area.removeFromTop(14);
+    planLabel.setBounds(area.removeFromTop(22));
+    planSummaryEditor.setBounds(area.removeFromTop(88));
+    area.removeFromTop(10);
+
+    {
+        auto row = area.removeFromTop(40);
+        planButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
+        row.removeFromLeft(10);
+        generateButton.setBounds(row);
+        area.removeFromTop(14);
+    }
 
     clipView.setBounds(area.removeFromTop(230));
     area.removeFromTop(12);
@@ -558,7 +581,7 @@ void SynthesiaAIEditor::timerCallback()
     updateUIState();
 }
 
-void SynthesiaAIEditor::onGenerateClicked()
+MidiGenerationParams SynthesiaAIEditor::collectParams() const
 {
     MidiGenerationParams params;
     params.rootNote = keyComboBox.getSelectedId() - 1;
@@ -571,13 +594,37 @@ void SynthesiaAIEditor::onGenerateClicked()
     params.part = static_cast<Part>(juce::jmax(0, partComboBox.getSelectedId() - 1));
     params.form = formComboBox.getSelectedId() == 2 ? ArrangementForm::Song : ArrangementForm::Loop;
     params.chordText = chordsEditor.getText().toStdString();
-    params.lockProgression = lockProgressionButton.getToggleState();
+    params.lockProgression = lockProgressionButton.getToggleState() || !params.chordText.empty();
     params.lockedParts = 0;
     for (int i = 0; i < partLockButtons.size(); ++i)
         if (partLockButtons[i]->getToggleState())
             params.lockedParts |= partLockBit(allParts[static_cast<size_t>(i)]);
+    return params;
+}
 
-    audioProcessor.generateMidi(params);
+void SynthesiaAIEditor::applyPlanToUI(const ArrangementPlan& plan)
+{
+    genreComboBox.setSelectedId(static_cast<int>(plan.genre) + 1, juce::dontSendNotification);
+    keyComboBox.setSelectedId(plan.rootNote + 1, juce::dontSendNotification);
+    scaleComboBox.setSelectedId(static_cast<int>(plan.scale) + 1, juce::dontSendNotification);
+    tempoSlider.setValue(plan.tempo, juce::dontSendNotification);
+    lengthSlider.setValue(plan.lengthInBars, juce::dontSendNotification);
+    formComboBox.setSelectedId(plan.sections.size() > 1 ? 2 : 1, juce::dontSendNotification);
+    chordsEditor.setText(plan.chordChart(), juce::dontSendNotification);
+    chordsEditor.setCaretPosition(0);
+    lockProgressionButton.setToggleState(true, juce::dontSendNotification);
+    planSummaryEditor.setText(plan.summary());
+}
+
+void SynthesiaAIEditor::onPlanClicked()
+{
+    audioProcessor.planArrangement(collectParams());
+    statusLabel.setText("Planning...", juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::onGenerateClicked()
+{
+    audioProcessor.generateMidi(collectParams());
     statusLabel.setText("Generating...", juce::dontSendNotification);
 }
 
@@ -654,11 +701,20 @@ void SynthesiaAIEditor::updateUIState()
 {
     bool isGenerating = audioProcessor.isGenerating();
     generateButton.setEnabled(!isGenerating);
+    planButton.setEnabled(!isGenerating);
     
     bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     exportButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
+
+    if (shownPlanVersion != audioProcessor.getPlanVersion())
+    {
+        shownPlanVersion = audioProcessor.getPlanVersion();
+        const auto& plan = audioProcessor.getLastPlan();
+        if (!plan.sections.empty())
+            applyPlanToUI(plan);
+    }
 
     if (shownClipVersion != audioProcessor.getClipVersion())
     {
@@ -674,24 +730,67 @@ void SynthesiaAIEditor::updateUIState()
         statusLabel.setText(hasMidi ? "Generation complete!"
                                     : "Generation failed (check generator settings)",
                             juce::dontSendNotification);
+    if (!isGenerating && statusLabel.getText() == "Planning...")
+    {
+        const auto& plan = audioProcessor.getLastPlan();
+        juce::String text = "Planned (" + juce::String(plan.source) + ")";
+        if (plan.usage.totalTokens > 0)
+            text << " · " << plan.usage.promptTokens << " prompt / "
+                 << plan.usage.completionTokens << " completion tokens";
+        else
+            text << " · offline heuristic (no API key)";
+        statusLabel.setText(text, juce::dontSendNotification);
+    }
 }
 
 SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
     : processor(p)
 {
+    auto styleEditor = [](juce::TextEditor& editor)
+    {
+        editor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
+        editor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
+        editor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
+    };
+
     setUpLabel(apiKeyLabel, "OpenAI API key");
     addAndMakeVisible(apiKeyLabel);
     
     apiKeyEditor.setText(processor.getApiKey());
     apiKeyEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
-    apiKeyEditor.setTextToShowWhenEmpty("sk-...", Theme::dimText);
-    apiKeyEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
-    apiKeyEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
-    apiKeyEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
+    apiKeyEditor.setTextToShowWhenEmpty("sk-... (leave empty for offline heuristic)", Theme::dimText);
+    styleEditor(apiKeyEditor);
     addAndMakeVisible(apiKeyEditor);
 
-    hintLabel.setText("Used by the LLM generator. The key is saved with your project, "
-                      "so don't share project files that contain it.",
+    setUpLabel(endpointLabel, "API base URL");
+    addAndMakeVisible(endpointLabel);
+    endpointEditor.setText(processor.getApiEndpoint());
+    endpointEditor.setTextToShowWhenEmpty("https://api.openai.com/v1/chat/completions", Theme::dimText);
+    styleEditor(endpointEditor);
+    addAndMakeVisible(endpointEditor);
+
+    setUpLabel(modelLabel, "Model");
+    addAndMakeVisible(modelLabel);
+    modelEditor.setText(processor.getApiModel());
+    modelEditor.setTextToShowWhenEmpty("gpt-4o-mini", Theme::dimText);
+    styleEditor(modelEditor);
+    addAndMakeVisible(modelEditor);
+
+    const auto last = processor.getLastTokenUsage();
+    const auto session = processor.getSessionTokenUsage();
+    juce::String usage;
+    usage << "Last request: " << last.promptTokens << " prompt / "
+          << last.completionTokens << " completion (" << last.totalTokens << " total)\n"
+          << "Session: " << session.promptTokens << " prompt / "
+          << session.completionTokens << " completion · " << session.requests << " calls";
+    usageLabel.setText(usage, juce::dontSendNotification);
+    usageLabel.setFont(juce::Font(12.5f));
+    usageLabel.setColour(juce::Label::textColourId, Theme::label);
+    usageLabel.setJustificationType(juce::Justification::topLeft);
+    addAndMakeVisible(usageLabel);
+
+    hintLabel.setText("OpenAI-compatible endpoint. Without a key, Plan maps prompt keywords "
+                      "offline. The key is saved with your project — don't share those files.",
                       juce::dontSendNotification);
     hintLabel.setFont(juce::Font(12.5f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
@@ -705,6 +804,8 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
     saveButton.onClick = [this]()
     {
         processor.setApiKey(apiKeyEditor.getText());
+        processor.setApiEndpoint(endpointEditor.getText());
+        processor.setApiModel(modelEditor.getText());
         if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
             dw->exitModalState(1);
     };
@@ -727,12 +828,22 @@ void SettingsDialog::paint(juce::Graphics& g)
 void SettingsDialog::resized()
 {
     auto area = getLocalBounds().reduced(20);
-    
-    apiKeyLabel.setBounds(area.removeFromTop(22));
-    area.removeFromTop(4);
-    apiKeyEditor.setBounds(area.removeFromTop(30));
-    area.removeFromTop(8);
-    hintLabel.setBounds(area.removeFromTop(36));
+
+    auto field = [&area](juce::Label& label, juce::TextEditor& editor)
+    {
+        label.setBounds(area.removeFromTop(20));
+        area.removeFromTop(2);
+        editor.setBounds(area.removeFromTop(28));
+        area.removeFromTop(8);
+    };
+
+    field(apiKeyLabel, apiKeyEditor);
+    field(endpointLabel, endpointEditor);
+    field(modelLabel, modelEditor);
+
+    usageLabel.setBounds(area.removeFromTop(40));
+    area.removeFromTop(6);
+    hintLabel.setBounds(area.removeFromTop(48));
 
     auto buttonRow = area.removeFromBottom(32);
     saveButton.setBounds(buttonRow.removeFromRight(96));
