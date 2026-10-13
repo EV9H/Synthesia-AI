@@ -46,6 +46,7 @@ set(SYNTHESIA_SOURCES
     Source/Generators/LLMGenerator.cpp
     Source/Generators/GenreProfiles.cpp
     Source/Generators/ArrangementGenerator.cpp
+    Source/Generators/ArrangementPlan.cpp
     Source/Music/MusicTheory.cpp
     Source/SimpleSynth.cpp
     Source/DrumLibrary.cpp

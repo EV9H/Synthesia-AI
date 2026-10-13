@@ -134,6 +134,11 @@ struct SectionInfo
     float energy{0.7f};
     int occurrence{1};
     std::string label;
+    float densityChords{0.7f};
+    float densityBass{0.7f};
+    float densitySynth{0.7f};
+    float densityPiano{0.7f};
+    float densityDrums{0.7f};
 };
 
 inline const char* sectionName(SectionKind kind)
@@ -184,6 +189,14 @@ struct MidiGenerationParams
     std::string chordText;
     bool lockProgression{false};
     int lockedParts{0};
+    // 0 = use the genre profile's swing; otherwise 0.5 (straight) to ~0.75
+    double swing{0.0};
+    std::string motifContour;   // rising | falling | arch | static
+    std::string motifRhythm;    // straight | swung | syncopated | sparse
+    // 0 = every part on; otherwise a mask of partLockBit()
+    int enabledParts{0};
+    std::vector<SectionInfo> plannedSections;
+    std::string planJson;
 };
 
 struct Note

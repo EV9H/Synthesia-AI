@@ -48,6 +48,7 @@ private:
 
         const SectionInfo* sectionAt(double beat) const;
         float energyAt(double beat) const;
+        float densityAt(Part part, double beat) const;
     };
 
     static std::vector<ChordInfo> buildProgression(const MidiGenerationParams& params, std::mt19937& rng);
@@ -60,7 +61,8 @@ private:
 
     PartNotes generatePatternBass(const Context& ctx, std::mt19937& rng);
     PartNotes generateWalkingBass(const Context& ctx, std::mt19937& rng);
-    PartNotes generateMelody(const Context& ctx, const MelodyProfile& role, std::mt19937& rng);
+    PartNotes generateMelody(const Context& ctx, const MelodyProfile& role, std::mt19937& rng,
+                             Part part = Part::Synth);
     PartNotes generateArp(const Context& ctx, const ArpProfile& role, int rateSteps, std::mt19937& rng);
     PartNotes generatePatternChords(const Context& ctx, const std::vector<std::string>& patterns,
                                     const theory::VoicingOptions& voicing, int baseVelocity,

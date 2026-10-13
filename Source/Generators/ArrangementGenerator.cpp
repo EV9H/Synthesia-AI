@@ -1,4 +1,5 @@
 #include "ArrangementGenerator.h"
+#include "ArrangementPlan.h"
 #include <cctype>
 #include <cmath>
 #include <map>
@@ -249,6 +250,24 @@ float ArrangementGenerator::Context::energyAt(double beat) const
     return 0.7f;
 }
 
+float ArrangementGenerator::Context::densityAt(Part part, double beat) const
+{
+    const auto* section = sectionAt(beat);
+    if (section == nullptr)
+        return 0.7f;
+
+    switch (part)
+    {
+        case Part::Chords: return section->densityChords;
+        case Part::Bass:   return section->densityBass;
+        case Part::Synth:  return section->densitySynth;
+        case Part::Piano:  return section->densityPiano;
+        case Part::Drums:  return section->densityDrums;
+        case Part::All:    return section->energy;
+    }
+    return 0.7f;
+}
+
 namespace
 {
     float energyForKind(SectionKind kind)
@@ -366,13 +385,36 @@ std::vector<SectionInfo> ArrangementGenerator::buildForm(Genre genre, Arrangemen
     return sections;
 }
 
-GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationParams& params)
+namespace
 {
+    bool partIsEnabled(const MidiGenerationParams& params, Part part)
+    {
+        if (params.enabledParts == 0)
+            return true;
+        return isPartLocked(params.enabledParts, part);
+    }
+
+    MidiGenerationParams realisedParams(MidiGenerationParams params)
+    {
+        if (!params.planJson.empty() && params.plannedSections.empty())
+        {
+            auto plan = ArrangementPlan::parseJson(params.planJson, params);
+            plan.applyTo(params);
+        }
+        return params;
+    }
+}
+
+GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationParams& input)
+{
+    const auto params = realisedParams(input);
     const auto& profile = getGenreProfile(params.genre);
     const unsigned int seed = params.seed != 0 ? params.seed : std::random_device{}();
 
     GenerationResult result;
-    result.sections = buildForm(params.genre, params.form, params.lengthInBars);
+    result.sections = !params.plannedSections.empty()
+        ? params.plannedSections
+        : buildForm(params.genre, params.form, params.lengthInBars);
 
     if (!params.progression.empty())
     {
@@ -394,12 +436,22 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
     const Context ctx{ params, profile, result.progression, result.sections,
                        params.lengthInBars * 4.0, gridSteps(params.quantization) };
 
+    double swing = params.swing > 0.0 ? params.swing : profile.swing;
+    bool swingSixteenths = profile.swingSixteenths;
+    if (params.motifRhythm == "swung")
+    {
+        swing = juce::jmax(swing, 0.62);
+        swingSixteenths = true;
+    }
+
     PartNotes bassNotes;
 
     for (const auto part : allParts)
     {
         const bool drumsNeedBass = part == Part::Bass && params.part == Part::Drums;
         if (params.part != Part::All && params.part != part && !drumsNeedBass)
+            continue;
+        if (!partIsEnabled(params, part) && !drumsNeedBass)
             continue;
 
         // Independent random stream per part: regenerating one part never changes the others.
@@ -417,13 +469,15 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         }
 
         if (part != Part::Drums)
-            applySwing(notes, profile.swing, profile.swingSixteenths);
+            applySwing(notes, swing, swingSixteenths);
         finalise(notes, ctx.totalBeats);
 
         if (part == Part::Bass)
             bassNotes = notes;
 
         if (params.part != Part::All && params.part != part)
+            continue;
+        if (!partIsEnabled(params, part))
             continue;
 
         appendToBuffer(notes, partChannel(part), part == Part::Bass ? 12 : 2, result.midi);
@@ -518,6 +572,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             if (!anticipated)
                 length = juce::jmin(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
 
+            const float density = ctx.densityAt(Part::Chords, start);
+            if (hit.symbol == 'g' && density < 0.4f)
+                continue;
+            if (hit.symbol != 'X' && uniform(rng) > 0.3 + 0.7 * density)
+                continue;
+
             const int velocity = hit.symbol == 'X' ? baseVelocity + 10
                                : hit.symbol == 'g' ? baseVelocity - 25
                                                    : baseVelocity;
@@ -601,6 +661,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
             length = juce::jmin(length, chordEnd(chord) - start);
 
             const bool ghost = std::islower(static_cast<unsigned char>(hit.symbol)) != 0;
+            const float density = ctx.densityAt(Part::Bass, start);
+            if (ghost && density < 0.45f)
+                continue;
+            if (role != 'R' && hit.step != 0 && density < 0.28f)
+                continue;
             const int velocity = ghost ? 62 : hit.step == 0 ? 102 : 92;
             notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, 5) });
             previousRoot = root;
@@ -688,7 +753,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateSynth(const Contex
     if (ctx.profile.leadStyle == LeadStyle::Arp)
         return generateArp(ctx, ctx.profile.leadArp, ctx.finestSteps, rng);
 
-    return generateMelody(ctx, ctx.profile.leadMelody, rng);
+    return generateMelody(ctx, ctx.profile.leadMelody, rng, Part::Synth);
 }
 
 ArrangementGenerator::PartNotes ArrangementGenerator::generatePiano(const Context& ctx, std::mt19937& rng)
@@ -699,7 +764,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePiano(const Contex
     {
         case PianoStyle::Broken:   return generateBrokenPiano(ctx, rng);
         case PianoStyle::Comp:     return generatePatternChords(ctx, profile.pianoPatterns, profile.pianoVoicing, 82, rng);
-        case PianoStyle::Melodic:  return generateMelody(ctx, profile.pianoMelody, rng);
+        case PianoStyle::Melodic:  return generateMelody(ctx, profile.pianoMelody, rng, Part::Piano);
         case PianoStyle::Arpeggio: return generateArp(ctx, profile.pianoArp, ctx.finestSteps, rng);
     }
 
@@ -815,6 +880,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             if (c == '.' || c == '-')
                 continue;
             if (isHat && energy < 0.4f && step % 4 != 0 && c != 'X')
+                continue;
+            const float density = ctx.densityAt(Part::Drums, bar * 4.0 + step * stepBeats);
+            if (c != 'X' && step % 4 != 0 && uniform(rng) > 0.3 + 0.7 * density)
                 continue;
             const int vel = juce::roundToInt((c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel)
                                              * (0.5f + 0.5f * energy));
@@ -1073,8 +1141,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
     return notes;
 }
 
-ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Context& ctx, const MelodyProfile& role,
-                                                                     std::mt19937& rng)
+ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Context& ctx, const MelodyProfile& roleIn,
+                                                                     std::mt19937& rng, Part part)
 {
     struct RhythmNote
     {
@@ -1082,6 +1150,18 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         int length;
     };
     using Rhythm = std::vector<RhythmNote>;
+
+    MelodyProfile role = roleIn;
+    if (ctx.params.motifRhythm == "sparse")
+    {
+        role.density *= 0.55;
+        role.restChance = juce::jmax(role.restChance, 0.5);
+    }
+    else if (ctx.params.motifRhythm == "syncopated")
+    {
+        role.syncopation = juce::jmax(role.syncopation, 0.55);
+        role.density = juce::jmin(1.0, role.density + 0.1);
+    }
 
     const auto& progression = ctx.progression;
     const int keyRoot = ctx.params.rootNote;
@@ -1155,7 +1235,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         for (size_t i = 1; i < count; ++i)
         {
             const int previous = deltas.back();
-            const double upChance = i < count / 2 ? 0.62 : 0.38;
+            const auto contour = ctx.params.motifContour;
+            double upChance = i < count / 2 ? 0.62 : 0.38;
+            if (contour == "rising")
+                upChance = 0.82;
+            else if (contour == "falling")
+                upChance = 0.18;
+            else if (contour == "static")
+                upChance = 0.5;
             const int direction = uniform(rng) < upChance ? 1 : -1;
             int delta;
 
@@ -1164,10 +1251,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             else
             {
                 const double r = uniform(rng);
-                delta = r < 0.12 ? direction * (3 + static_cast<int>(rng() % 2))
-                      : r < 0.25 ? 0
-                      : r < 0.65 ? direction
-                                 : direction * 2;
+                const double stay = contour == "static" ? 0.55 : 0.25;
+                delta = r < 0.12 && contour != "static" ? direction * (3 + static_cast<int>(rng() % 2))
+                      : r < stay ? 0
+                      : r < stay + 0.4 ? direction
+                                       : direction * (contour == "static" ? 1 : 2);
             }
             deltas.push_back(delta);
         }
@@ -1305,7 +1393,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             }
 
             const float energy = ctx.energyAt(start);
-            if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy)
+            const float density = ctx.densityAt(part, start);
+            if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy * density)
                 continue;
 
             int registerShift = 0;
