@@ -5,19 +5,20 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 ## Features
 
 ### Current (MVP)
-- **Dual Generator System**:
-  - **Markov Generator**: Offline algorithmic MIDI generation using Markov chains (no internet required)
+- **Three generators**:
+  - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp and piano, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic
+  - **Markov Generator**: classic single-line melody (no internet required)
   - **LLM Generator**: AI-powered MIDI generation using OpenAI-compatible APIs
   
-- **Rich UI Controls**:
-  - Key and scale selection (Major, Minor, Dorian, Mixolydian, Pentatonic)
-  - Length control (1-16 bars)
-  - Tempo sync with quantization (1/16, 1/8, 1/4, 1/2 notes)
+- **UI Controls**:
+  - Genre, part (All / Chords / Bass / Synth / Piano), key and scale
+  - Length (1-16 bars) and tempo (60-180 bpm, defaults follow the genre)
+  - Grid / quantization (1/16, 1/8, 1/4, 1/2 notes)
   - Style/prompt text input for AI generation
   
 - **Preview & Export**:
-  - Built-in simple synth for real-time audio preview
-  - Export generated MIDI as `.mid` files
+  - Built-in synth with a distinct timbre per part
+  - Export multi-track `.mid`, separate files per part, or a single part
   - MIDI output routing to DAW tracks
   
 - **Non-Blocking Generation**: All generation happens off the audio thread for smooth performance
@@ -27,7 +28,6 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 - **More generator types**: Genetic algorithms, reinforcement learning
 - **Style presets**: Pre-configured generation styles
 - **MIDI drag & drop**: Direct drag-drop into DAW piano roll
-- **Multi-track generation**: Generate bass, melody, chords separately
 
 ## Design Decisions
 
@@ -57,8 +57,9 @@ class MidiGenerator {
 ```
 
 Current implementations:
+- `ArrangementGenerator`: Genre-aware multi-part arranger (chords, bass, synth, piano) using `GenreProfiles` and `MusicTheory`
 - `MarkovGenerator`: Offline algorithmic generation using Markov chains for note selection
-- `LLMGenerator`: Calls OpenAI-compatible APIs with structured prompts, parses JSON responses
+- `LLMGenerator`: Calls OpenAI-compatible APIs with structured prompts (including genre, part and chord context), parses JSON responses
 
 **Extension Point**: New generators can be added by:
 1. Inheriting from `MidiGenerator`
@@ -122,18 +123,20 @@ Note: Linux builds produce only the Standalone version (no VST3/AU for DAW use o
 
 ### Offline render host (headless "DAW")
 
-`SynthesiaRender` loads the plugin processor, generates a clip with the Markov
-generator, plays it through the built-in synth with a running host transport and
-bounces it to WAV (and optionally `.mid`). It exits non-zero if the render is
-silent, clips, or plays a different number of notes than the clip contains.
+`SynthesiaRender` loads the plugin processor, generates a clip with the genre
+arranger (or `--generator markov`), plays it through the built-in synth with a
+running host transport and bounces it to WAV (and optionally a multi-track
+`.mid`). `--part` selects chords, bass, synth, piano, or all four. `--split-midi`
+also writes one `.mid` per part. It exits non-zero if the render is silent,
+clips, or plays a different number of notes than the clip contains.
 
 ```bash
 cmake --build build --target SynthesiaRender
 build/SynthesiaRender_artefacts/Release/SynthesiaRender \
-    --key A --scale minor --bars 8 --quant 1/16 --tempo 128 --seed 7 \
-    --out demo.wav --midi demo.mid
+    --genre lofi --part all --key A --scale minor --bars 8 --seed 7 \
+    --out demo.wav --midi demo.mid --split-midi
 
-# Render the demo set to MP3 + MIDI with level checks (needs ffmpeg)
+# Mix + per-part solos for a few genres, encoded to MP3 with level checks
 Tools/render_demos.sh build/demos
 ```
 
@@ -167,16 +170,17 @@ Tools/render_demos.sh build/demos
    - Add "Synthesia AI" as an instrument
    
 2. **Generate MIDI**:
+   - Choose a genre (tempo and grid follow it) and which part to write
    - Choose your key and scale
-   - Set length and quantization
-   - Enter a style prompt (e.g., "jazzy chords with walking bass")
+   - Set length, tempo and quantization
+   - For the LLM generator, enter a style prompt
    - Click "Generate MIDI"
    
 3. **Use the Output**:
    - **Audition**: The built-in synth plays the generated MIDI immediately
    - **Record**: Enable recording on the track and play to capture MIDI
    - **Route**: Disable Synthesia AI's audio, create another instrument track, route MIDI to it
-   - **Export**: Click "Export as .mid" to save the file, then drag into Live
+   - **Export**: Click "Export MIDI..." for a multi-track file, separate files per part, or one part only, then drag into Live
 
 ### In FL Studio
 
@@ -196,7 +200,7 @@ Tools/render_demos.sh build/demos
 1. Click the "Settings" button
 2. Enter your OpenAI API key (or OpenAI-compatible endpoint key)
 3. Click "Save"
-4. Select "LLM (OpenAI API)" from the Generator dropdown
+4. Select "LLM (OpenAI API)" from the Generator dropdown (the default is the offline genre engine)
 5. Generate MIDI as usual
 
 The LLM generator will send structured prompts to the AI and parse the returned JSON for notes.
@@ -232,11 +236,14 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 ├── Source/
 │   ├── PluginProcessor.{h,cpp}     # Main audio processor
 │   ├── PluginEditor.{h,cpp}        # UI implementation
-│   ├── SimpleSynth.{h,cpp}         # Preview synth
-│   ├── MidiExporter.{h,cpp}        # MIDI file export
+│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part)
+│   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
+│   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
-│       ├── MarkovGenerator.{h,cpp} # Algorithmic generator
+│       ├── ArrangementGenerator.*  # Genre-aware multi-part arranger
+│       ├── GenreProfiles.{h,cpp}   # Per-genre progressions and patterns
+│       ├── MarkovGenerator.{h,cpp} # Algorithmic melody generator
 │       └── LLMGenerator.{h,cpp}    # AI/LLM generator
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration
