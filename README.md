@@ -19,6 +19,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - Style/prompt text input; **Plan** fills sections/chords (editable) then **Generate MIDI** realises them
   - **MIDI import**: file chooser, drag-drop, or host MIDI capture. Detects key/scale/tempo, per-bar chords (editable in the lock field) and part roles
   - Import modes: **Accompany** (keep the user's part, write the rest + drums), **Extend** (continue N bars with song form), **Rewrite** (same chords, new voicings/melody/bass), **Restyle** (same harmony/melody in another genre groove)
+  - **Style profiles**: learn chord vocabulary, voicings, rhythm grids, bass approaches, swing and melody intervals from several `.mid` files (or a folder). Named JSON profiles live in user app data; a **Blend** slider mixes them with the selected genre (arranger, LLM plan, and import modes)
   - Settings: API key, base URL, model, last/session token counts
   
 - **Preview & Export**:
@@ -67,6 +68,7 @@ Current implementations:
 - `LLMGenerator`: Asks an OpenAI-compatible chat endpoint for an `ArrangementPlan` JSON object (never notes). `ArrangementPlan` validates/repairs the schema; missing keys fall back to a keyword heuristic.
 - `ArrangementPlan`: Compact form/chords/energy/density/motif schema. The arranger realises MIDI from the plan.
 - `MidiImporter`: Loads a `.mid` (or captured host MIDI), estimates key/scale/tempo/chords/part roles, and overlays the user's part for Accompany / Extend / Restyle.
+- `StyleProfile`: Learns a named style from MIDI and blends it with a `GenreProfile` at generate time.
 
 **Extension Point**: New generators can be added by:
 1. Inheriting from `MidiGenerator`
@@ -137,7 +139,8 @@ multi-track `.mid`). `--plan file.json` / `--plan-json` feed a compact arrangeme
 plan through the same arranger path. `--style` is the free-text brief; without an
 API key the planner uses a keyword heuristic. `--import file.mid` analyses a clip
 (key, chords, part roles) and `--import-mode accompany|extend|rewrite|restyle`
-keeps or rewrites it through the arranger. `--part` selects chords, bass, synth,
+keeps or rewrites it through the arranger. `--style-profile file.json` and
+`--style-blend 0..1` mix a learned style with the genre. `--part` selects chords, bass, synth,
 piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
 It exits non-zero if the render is silent, clips, or plays a different number of
 notes than the clip contains.
@@ -161,6 +164,15 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
 build/SynthesiaRender_artefacts/Release/SynthesiaRender \
     --import Tools/midi/piano-melody-8bar.mid --import-mode accompany \
     --genre lofi --out /tmp/accompany.wav
+
+# Learn a style from a folder of MIDI, then generate at 100% blend
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --write-style-fixtures Tools/midi/style
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --learn-style Tools/midi/style --save-style-json Tools/midi/style/neo-soul.json
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --genre pop --style-profile Tools/midi/style/neo-soul.json --style-blend 1 \
+    --out /tmp/style.wav
 ```
 
 ## Installation
@@ -241,6 +253,10 @@ Drop a `.mid` onto the plugin, use **Import MIDI...**, or **Capture MIDI** from 
 - **Rewrite** — same chords, new melody, bass and voicings
 - **Restyle** — keep melody/harmony, re-render drums and groove in the selected genre
 
+### Style profiles
+
+**Learn style...** takes several `.mid` files or a folder (drop works too). Named JSON profiles are stored in user app data. The **Style** selector and **Blend** slider mix them with the current genre: chord Markov, voicings/extensions, bass approaches, swing, rhythm grids and melody intervals. Blend 0% is the genre alone; 100% follows the learned tendencies. Plan, Generate and import modes all see the blend.
+
 ## Testing
 
 The project includes comprehensive unit tests:
@@ -274,6 +290,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   ├── DrumLibrary.{h,cpp}         # Embedded CC0 one-shots for the preview kit
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
 │   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes
+│   ├── StyleProfile.{h,cpp}        # Learn/save style JSON and blend with genre profiles
 │   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings, chord-symbol parser
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
@@ -283,7 +300,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │       ├── MarkovGenerator.{h,cpp} # Algorithmic melody generator
 │       └── LLMGenerator.{h,cpp}    # LLM planner (JSON plan only)
 ├── Tools/plans/                    # Example arrangement-plan JSON files
-├── Tools/midi/                     # Small MIDI fixtures for import demos
+├── Tools/midi/                     # Small MIDI fixtures for import / style-learning demos
 ├── Samples/                        # CC0 preview drum one-shots + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration

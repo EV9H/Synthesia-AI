@@ -180,4 +180,31 @@ wav="$OUT/import-restyle-trap.wav"
     --genre trap --seed 17
 encode_wav "$wav"
 
+echo "== neo-soul style fixtures =="
+"$HOST" --write-style-fixtures "$ROOT/Tools/midi/style"
+"$HOST" --learn-style "$ROOT/Tools/midi/style" \
+    --save-style-json "$ROOT/Tools/midi/style/neo-soul.json"
+
+echo "== style blend 0% (pop, same seed) =="
+wav="$OUT/style-blend-0-pop.wav"
+"$HOST" --out "$wav" --midi "$OUT/style-blend-0-pop.mid" \
+    --genre pop --key C --scale minor --bars 8 --seed 17 \
+    --style-profile "$ROOT/Tools/midi/style/neo-soul.json" --style-blend 0
+encode_wav "$wav"
+
+echo "== style blend 100% (pop, same seed) =="
+wav="$OUT/style-blend-100-pop.wav"
+"$HOST" --out "$wav" --midi "$OUT/style-blend-100-pop.mid" \
+    --genre pop --key C --scale minor --bars 8 --seed 17 \
+    --style-profile "$ROOT/Tools/midi/style/neo-soul.json" --style-blend 1
+encode_wav "$wav"
+
+echo "== accompany with neo-soul style =="
+wav="$OUT/style-accompany-neosoul.wav"
+"$HOST" --out "$wav" --midi "$OUT/style-accompany-neosoul.mid" \
+    --import "$ROOT/Tools/midi/style/neo-soul-lead-8bar.mid" --import-mode accompany \
+    --genre pop --seed 17 \
+    --style-profile "$ROOT/Tools/midi/style/neo-soul.json" --style-blend 1
+encode_wav "$wav"
+
 exit "$failed"

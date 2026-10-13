@@ -7,6 +7,7 @@
 #include "Generators/GenreProfiles.h"
 #include "Generators/ArrangementPlan.h"
 #include "MidiImporter.h"
+#include "StyleProfile.h"
 #include "Music/MusicTheory.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
@@ -85,6 +86,11 @@ namespace
             "  --import <file.mid>     analyse a MIDI file (key, chords, part roles)\n"
             "  --import-mode <name>    off|accompany|extend|rewrite|restyle (default off)\n"
             "  --write-fixtures <dir>  write demo piano-melody and chord-loop .mid files\n"
+            "  --write-style-fixtures <dir>  write neo-soul style-learning .mid files\n"
+            "  --learn-style <dir>     learn a style profile from a folder of .mid files\n"
+            "  --save-style-json <file.json>  write the learned (or loaded) profile\n"
+            "  --style-profile <file.json>    blend this learned profile with the genre\n"
+            "  --style-blend <0-1>     0 = genre only, 1 = full learned style (default 1)\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
@@ -122,10 +128,69 @@ int main(int argc, char* argv[])
                   << "Wrote " << chords.getFullPathName() << "\n";
     }
 
+    const auto styleFixturesDir = option("--write-style-fixtures", {});
+    if (styleFixturesDir.isNotEmpty())
+    {
+        const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(styleFixturesDir);
+        if (!StyleProfile::writeNeoSoulFixtures(dir))
+        {
+            std::cerr << "Failed to write style fixture MIDI files\n";
+            return 1;
+        }
+        std::cout << "Wrote neo-soul style fixtures in " << dir.getFullPathName() << "\n";
+    }
+
+    StyleProfile learnedStyle;
+    const auto learnDir = option("--learn-style", {});
+    if (learnDir.isNotEmpty())
+    {
+        const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(learnDir);
+        learnedStyle = StyleProfile::learnFromFolder(dir);
+        if (learnedStyle.empty())
+        {
+            std::cerr << "Learn-style found no usable MIDI in " << dir.getFullPathName() << "\n";
+            return 1;
+        }
+        const auto saveName = option("--save-style-json", {});
+        if (saveName.isNotEmpty())
+            learnedStyle.name = juce::File(saveName).getFileNameWithoutExtension().toStdString();
+        else if (learnedStyle.name.empty() || learnedStyle.name == "style")
+            learnedStyle.name = "neo-soul";
+        learnedStyle.finaliseSummary();
+        std::cout << learnedStyle.summary << "\n";
+    }
+
+    const auto saveStylePath = option("--save-style-json", {});
+    if (saveStylePath.isNotEmpty())
+    {
+        if (learnedStyle.empty())
+        {
+            const auto loadPath = option("--style-profile", {});
+            if (loadPath.isNotEmpty())
+                learnedStyle = StyleProfile::fromJson(
+                    juce::File::getCurrentWorkingDirectory().getChildFile(loadPath).loadFileAsString());
+        }
+        if (learnedStyle.empty())
+        {
+            std::cerr << "No style profile to save\n";
+            return 1;
+        }
+        const juce::File out = juce::File::getCurrentWorkingDirectory().getChildFile(saveStylePath);
+        out.getParentDirectory().createDirectory();
+        if (!out.replaceWithText(learnedStyle.toJson()))
+        {
+            std::cerr << "Failed to write " << out.getFullPathName() << "\n";
+            return 1;
+        }
+        std::cout << "Wrote " << out.getFullPathName() << "\n";
+        StyleProfile::saveNamed(learnedStyle);
+    }
+
     const auto outPath = option("--out", {});
     if (outPath.isEmpty() || args.contains("--help"))
     {
-        if (fixturesDir.isNotEmpty() && !args.contains("--help"))
+        if ((fixturesDir.isNotEmpty() || styleFixturesDir.isNotEmpty() || learnDir.isNotEmpty()
+             || saveStylePath.isNotEmpty()) && !args.contains("--help"))
             return 0;
         printUsage();
         return outPath.isEmpty() ? 1 : 0;
@@ -203,6 +268,37 @@ int main(int argc, char* argv[])
         planJson = planFile.loadFileAsString();
     }
     params.planJson = planJson.toStdString();
+
+    const auto styleProfilePath = option("--style-profile", {});
+    if (styleProfilePath.isNotEmpty())
+    {
+        const juce::File styleFile = juce::File::getCurrentWorkingDirectory().getChildFile(styleProfilePath);
+        if (!styleFile.existsAsFile())
+        {
+            std::cerr << "Style profile not found: " << styleFile.getFullPathName() << "\n";
+            return 1;
+        }
+        const auto loaded = StyleProfile::fromJson(styleFile.loadFileAsString());
+        if (loaded.empty())
+        {
+            std::cerr << "Style profile was empty: " << styleFile.getFullPathName() << "\n";
+            return 1;
+        }
+        params.styleProfileJson = loaded.toJson().toStdString();
+        params.styleProfileName = loaded.name;
+        params.styleBlend = juce::jlimit(0.0, 1.0, option("--style-blend", "1").getDoubleValue());
+        std::cout << loaded.summary << "\n  blend " << juce::roundToInt(params.styleBlend * 100.0) << "%\n";
+    }
+    else if (!learnedStyle.empty())
+    {
+        params.styleProfileJson = learnedStyle.toJson().toStdString();
+        params.styleProfileName = learnedStyle.name;
+        params.styleBlend = juce::jlimit(0.0, 1.0, option("--style-blend", "1").getDoubleValue());
+    }
+    else if (args.contains("--style-blend"))
+    {
+        params.styleBlend = juce::jlimit(0.0, 1.0, option("--style-blend", "0").getDoubleValue());
+    }
 
     const double sampleRate = option("--sample-rate", "48000").getDoubleValue();
     const int blockSize = juce::jmax(16, option("--block", "512").getIntValue());
@@ -384,6 +480,9 @@ int main(int argc, char* argv[])
               << realisedKey;
     if (params.importMode != ImportMode::None)
         std::cout << ", " << importModeName(params.importMode);
+    if (!params.styleProfileJson.empty())
+        std::cout << ", style " << (params.styleProfileName.empty() ? "profile" : params.styleProfileName)
+                  << " " << juce::roundToInt(params.styleBlend * 100.0) << "%";
     std::cout << "\n";
     if (chordChart.isNotEmpty())
         std::cout << "  chords: " << chordChart << "\n";
