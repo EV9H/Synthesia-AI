@@ -7,6 +7,8 @@
 #include "MidiImporter.h"
 #include "StyleProfile.h"
 #include "SimpleSynth.h"
+#include "PresetStore.h"
+#include "LicenseStub.h"
 
 class SynthesiaAIProcessor : public juce::AudioProcessor
 {
@@ -95,6 +97,38 @@ public:
     int getStyleVersion() const { return styleVersion; }
     juce::StringArray listStyleProfiles() const { return StyleProfile::listSaved(); }
 
+    void setLastUiParams(const MidiGenerationParams& params);
+    MidiGenerationParams getLastUiParams() const { return lastUiParams; }
+    int getUiParamsVersion() const { return uiParamsVersion; }
+
+    bool applyPreset(const juce::String& idOrName);
+    bool saveUserPreset(const juce::String& name);
+    juce::String getCurrentPresetName() const { return currentPresetName; }
+    int getPresetVersion() const { return presetVersion; }
+
+    void setPartMuted(Part part, bool shouldMute);
+    void setPartSoloed(Part part, bool shouldSolo);
+    bool isPartMuted(Part part) const;
+    bool isPartSoloed(Part part) const;
+    int getMuteMask() const { return muteMask.load(); }
+    int getSoloMask() const { return soloMask.load(); }
+    bool isPartAudible(Part part) const;
+
+    juce::File writeTempMidi(Part part) const;
+
+    void setLicenseKey(const juce::String& key);
+    juce::String getLicenseKey() const { return licenseKey; }
+    bool isLicensed() const { return LicenseStub::isLicensed(licenseKey); }
+
+    void setApiProvider(const juce::String& name);
+    juce::String getApiProvider() const { return apiProvider; }
+    static juce::String openaiChatUrl() { return "https://api.openai.com/v1/chat/completions"; }
+    static juce::String groqChatUrl() { return "https://api.groq.com/openai/v1/chat/completions"; }
+    static juce::String groqDefaultModel() { return "openai/gpt-oss-120b"; }
+
+    void persistLocalSettings() const;
+    void loadLocalSettings();
+
 private:
     struct ClipEvent
     {
@@ -124,6 +158,10 @@ private:
     void collectClipEvents(double startBeat, double endBeat, double samplesPerBeat,
                            int numSamples, juce::MidiBuffer& out) const;
     void sendAllNotesOff(juce::MidiBuffer& out);
+    static juce::File localSettingsFile();
+    static juce::String completeChatUrl(juce::String url);
+    juce::String encodeClipMidi() const;
+    bool restoreClipMidi(const juce::String& base64);
 
     // Shared so a background generation keeps its generator alive if the type changes mid-run
     std::shared_ptr<MidiGenerator> generator;
@@ -159,6 +197,15 @@ private:
     juce::String apiKey;
     juce::String apiEndpoint{ "https://api.openai.com/v1/chat/completions" };
     juce::String apiModel{ "gpt-4o-mini" };
+    juce::String apiProvider{ "OpenAI" };
+    juce::String licenseKey;
+    MidiGenerationParams lastUiParams;
+    juce::String currentPresetName;
+    int currentProgram{0};
+    int uiParamsVersion{0};
+    int presetVersion{0};
+    std::atomic<int> muteMask{0};
+    std::atomic<int> soloMask{0};
     ArrangementPlan lastPlan;
     TokenUsage sessionUsage;
     int planVersion{0};

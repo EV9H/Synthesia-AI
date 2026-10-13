@@ -17,7 +17,6 @@ public:
     ArrangementPlan plan(const MidiGenerationParams& params);
 
     void setApiKey(const juce::String& key) { apiKey = key; }
-    juce::String getApiKey() const { return apiKey; }
 
     void setEndpoint(const juce::String& url);
     juce::String getEndpoint() const { return apiEndpoint; }

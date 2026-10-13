@@ -112,6 +112,7 @@ std::optional<LLMGenerator::ApiResult> LLMGenerator::callLLMAPI(const juce::Stri
 
     const juce::String requestBody = juce::JSON::toString(juce::var(requestObj.get()));
     juce::URL url = juce::URL(apiEndpoint).withPOSTData(requestBody);
+    // Authorization uses the local key; never log extraHeaders or apiKey.
     const juce::String extraHeaders = "Content-Type: application/json\r\n"
                                       "Authorization: Bearer " + apiKey + "\r\n";
 
@@ -123,7 +124,7 @@ std::optional<LLMGenerator::ApiResult> LLMGenerator::callLLMAPI(const juce::Stri
 
     if (stream == nullptr)
     {
-        DBG("Failed to create input stream for API request");
+        DBG("LLM request failed (endpoint unreachable)");
         return std::nullopt;
     }
 

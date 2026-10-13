@@ -15,7 +15,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
-# Plugin configuration
+# VST3 on Windows, macOS and Linux. AU is added on Apple hosts.
+# Build the VST3 target explicitly, e.g. cmake --build build --target SynthesiaAI_VST3
+if(APPLE)
+    set(SYNTHESIA_FORMATS VST3 AU Standalone)
+else()
+    set(SYNTHESIA_FORMATS VST3 Standalone)
+endif()
+
 juce_add_plugin(SynthesiaAI
     COMPANY_NAME "SynthesiaAI"
     IS_SYNTH TRUE
@@ -26,16 +33,9 @@ juce_add_plugin(SynthesiaAI
     COPY_PLUGIN_AFTER_BUILD FALSE
     PLUGIN_MANUFACTURER_CODE Synt
     PLUGIN_CODE SyAI
-    FORMATS VST3 Standalone
+    FORMATS ${SYNTHESIA_FORMATS}
     PRODUCT_NAME "Synthesia AI"
 )
-
-# macOS-specific: Add AU format
-if(APPLE)
-    set_target_properties(SynthesiaAI PROPERTIES
-        JUCE_FORMATS "VST3;AU;Standalone"
-    )
-endif()
 
 # Source files (shared with the SynthesiaRender host below)
 set(SYNTHESIA_SOURCES
@@ -53,6 +53,8 @@ set(SYNTHESIA_SOURCES
     Source/MidiExporter.cpp
     Source/MidiImporter.cpp
     Source/StyleProfile.cpp
+    Source/PresetStore.cpp
+    Source/LicenseStub.cpp
 )
 target_sources(SynthesiaAI PRIVATE ${SYNTHESIA_SOURCES})
 

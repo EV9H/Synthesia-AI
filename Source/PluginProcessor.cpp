@@ -7,6 +7,8 @@
 #include "Music/MusicTheory.h"
 #include "MidiExporter.h"
 #include "StyleProfile.h"
+#include "PresetStore.h"
+#include "LicenseStub.h"
 #include <cmath>
 #include <thread>
 
@@ -20,6 +22,9 @@ SynthesiaAIProcessor::SynthesiaAIProcessor()
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
     generator = std::make_shared<ArrangementGenerator>();
+    lastUiParams = PresetStore::factoryByIndex(0).params;
+    currentPresetName = PresetStore::factoryByIndex(0).name;
+    loadLocalSettings();
 }
 
 SynthesiaAIProcessor::~SynthesiaAIProcessor()
@@ -53,23 +58,29 @@ double SynthesiaAIProcessor::getTailLengthSeconds() const
 
 int SynthesiaAIProcessor::getNumPrograms()
 {
-    return 1;
+    return PresetStore::factoryPresets().size();
 }
 
 int SynthesiaAIProcessor::getCurrentProgram()
 {
-    return 0;
+    return currentProgram;
 }
 
 void SynthesiaAIProcessor::setCurrentProgram(int index)
 {
-    juce::ignoreUnused(index);
+    const auto factories = PresetStore::factoryPresets();
+    if (index < 0 || index >= factories.size())
+        return;
+    currentProgram = index;
+    applyPreset(factories.getReference(index).id);
 }
 
 const juce::String SynthesiaAIProcessor::getProgramName(int index)
 {
-    juce::ignoreUnused(index);
-    return {};
+    const auto factories = PresetStore::factoryPresets();
+    if (index < 0 || index >= factories.size())
+        return {};
+    return factories.getReference(index).name;
 }
 
 void SynthesiaAIProcessor::changeProgramName(int index, const juce::String& newName)
@@ -227,6 +238,10 @@ void SynthesiaAIProcessor::collectClipEvents(double startBeat, double endBeat,
 
             if (beat >= windowStart && beat < windowEnd)
             {
+                if (event.message.getChannel() > 0
+                    && !isPartAudible(partFromChannel(event.message.getChannel())))
+                    continue;
+
                 const int samplePos = juce::jlimit(0, numSamples - 1,
                     static_cast<int>(std::floor((beat - startBeat) * samplesPerBeat + 0.5)));
                 out.addEvent(event.message, samplePos);
@@ -254,13 +269,28 @@ juce::AudioProcessorEditor* SynthesiaAIProcessor::createEditor()
 void SynthesiaAIProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     juce::XmlElement xml("SynthesiaAIState");
+    xml.setAttribute("version", 2);
     xml.setAttribute("generatorType", static_cast<int>(currentGeneratorType));
-    xml.setAttribute("apiKey", apiKey);
     xml.setAttribute("apiEndpoint", apiEndpoint);
     xml.setAttribute("apiModel", apiModel);
+    xml.setAttribute("apiProvider", apiProvider);
     xml.setAttribute("styleName", currentStyleName);
     xml.setAttribute("styleBlend", styleBlend);
-    
+    xml.setAttribute("presetName", currentPresetName);
+    xml.setAttribute("program", currentProgram);
+    xml.setAttribute("muteMask", muteMask.load());
+    xml.setAttribute("soloMask", soloMask.load());
+    xml.setAttribute("licenseKey", licenseKey);
+    xml.setAttribute("clipTempo", previewTempo.load());
+    xml.setAttribute("clipLengthBeats", clipLengthBeats);
+    xml.setAttribute("clipMidi", encodeClipMidi());
+
+    auto* paramsXml = xml.createNewChildElement("UiParams");
+    PresetStore::writeParams(*paramsXml, lastUiParams);
+
+    if (!currentStyle.empty())
+        xml.setAttribute("styleJson", currentStyle.toJson());
+
     copyXmlToBinary(xml, destData);
 }
 
@@ -268,25 +298,55 @@ void SynthesiaAIProcessor::setStateInformation(const void* data, int sizeInBytes
 {
     std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
     
-    if (xml != nullptr && xml->hasTagName("SynthesiaAIState"))
+    if (xml == nullptr || !xml->hasTagName("SynthesiaAIState"))
+        return;
+
+    currentGeneratorType = static_cast<GeneratorType>(
+        xml->getIntAttribute("generatorType", static_cast<int>(GeneratorType::Genre)));
+    apiEndpoint = xml->getStringAttribute("apiEndpoint", apiEndpoint);
+    apiModel = xml->getStringAttribute("apiModel", apiModel);
+    apiProvider = xml->getStringAttribute("apiProvider", apiProvider);
+    setStyleBlend(xml->getDoubleAttribute("styleBlend", styleBlend));
+    const auto styleName = xml->getStringAttribute("styleName");
+    const auto styleJson = xml->getStringAttribute("styleJson");
+    if (styleJson.isNotEmpty())
     {
-        currentGeneratorType = static_cast<GeneratorType>(
-            xml->getIntAttribute("generatorType", static_cast<int>(GeneratorType::Genre)));
-        apiKey = xml->getStringAttribute("apiKey");
-        apiEndpoint = xml->getStringAttribute("apiEndpoint", apiEndpoint);
-        apiModel = xml->getStringAttribute("apiModel", apiModel);
-        setStyleBlend(xml->getDoubleAttribute("styleBlend", 0.0));
-        setCurrentStyle(xml->getStringAttribute("styleName"));
-        
-        setGeneratorType(currentGeneratorType);
+        currentStyle = StyleProfile::fromJson(styleJson);
+        currentStyleName = styleName.isNotEmpty() ? styleName : juce::String(currentStyle.name);
+        ++styleVersion;
     }
+    else
+    {
+        setCurrentStyle(styleName);
+    }
+
+    currentPresetName = xml->getStringAttribute("presetName", currentPresetName);
+    currentProgram = xml->getIntAttribute("program", currentProgram);
+    muteMask.store(xml->getIntAttribute("muteMask", 0));
+    soloMask.store(xml->getIntAttribute("soloMask", 0));
+    licenseKey = xml->getStringAttribute("licenseKey", licenseKey);
+
+    if (auto* paramsXml = xml->getChildByName("UiParams"))
+        setLastUiParams(PresetStore::readParams(*paramsXml));
+
+    const auto clipB64 = xml->getStringAttribute("clipMidi");
+    if (clipB64.isNotEmpty())
+        restoreClipMidi(clipB64);
+
+    const auto savedTempo = xml->getDoubleAttribute("clipTempo", previewTempo.load());
+    if (savedTempo > 0.0)
+        previewTempo.store(savedTempo);
+
+    setGeneratorType(currentGeneratorType);
+    persistLocalSettings();
 }
 
 void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
 {
     if (isGeneratingMidi.load())
         return;
-    
+
+    setLastUiParams(params);
     isGeneratingMidi.store(true);
 
     bool merge = false;
@@ -314,6 +374,7 @@ void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
 
 void SynthesiaAIProcessor::generateMidiBlocking(const MidiGenerationParams& params)
 {
+    setLastUiParams(params);
     bool merge = false;
     const auto prepared = prepareParams(params, merge);
     applyResult(runGenerator(*generator, prepared), prepared, merge);
@@ -325,6 +386,7 @@ void SynthesiaAIProcessor::planArrangement(const MidiGenerationParams& params)
     if (isGeneratingMidi.load())
         return;
 
+    setLastUiParams(params);
     isGeneratingMidi.store(true);
     bool merge = false;
     const auto prepared = prepareParams(params, merge);
@@ -634,6 +696,7 @@ void SynthesiaAIProcessor::setApiKey(const juce::String& key)
 {
     apiKey = key;
     configureLlm(*generator);
+    persistLocalSettings();
 }
 
 juce::String SynthesiaAIProcessor::getApiKey() const
@@ -643,10 +706,11 @@ juce::String SynthesiaAIProcessor::getApiKey() const
 
 void SynthesiaAIProcessor::setApiEndpoint(const juce::String& url)
 {
-    const auto trimmed = url.trim();
+    const auto trimmed = completeChatUrl(url);
     if (trimmed.isNotEmpty())
         apiEndpoint = trimmed;
     configureLlm(*generator);
+    persistLocalSettings();
 }
 
 void SynthesiaAIProcessor::applyImport(MidiAnalysis analysis)
@@ -776,6 +840,217 @@ void SynthesiaAIProcessor::setApiModel(const juce::String& name)
     if (trimmed.isNotEmpty())
         apiModel = trimmed;
     configureLlm(*generator);
+    persistLocalSettings();
+}
+
+void SynthesiaAIProcessor::setLastUiParams(const MidiGenerationParams& params)
+{
+    lastUiParams = params;
+    ++uiParamsVersion;
+}
+
+bool SynthesiaAIProcessor::applyPreset(const juce::String& idOrName)
+{
+    auto found = PresetStore::find(idOrName);
+    if (!found)
+        return false;
+
+    currentPresetName = found->name;
+    const auto factories = PresetStore::factoryPresets();
+    currentProgram = 0;
+    for (int i = 0; i < factories.size(); ++i)
+        if (factories.getReference(i).id == found->id)
+            currentProgram = i;
+
+    setGeneratorType(found->generator);
+    if (!found->params.styleProfileName.empty())
+        setCurrentStyle(juce::String(found->params.styleProfileName));
+    setStyleBlend(found->params.styleBlend);
+    setLastUiParams(found->params);
+    ++presetVersion;
+    return true;
+}
+
+bool SynthesiaAIProcessor::saveUserPreset(const juce::String& name)
+{
+    if (!PresetStore::saveUser(name, lastUiParams, currentGeneratorType))
+        return false;
+    currentPresetName = name;
+    ++presetVersion;
+    return true;
+}
+
+void SynthesiaAIProcessor::setPartMuted(Part part, bool shouldMute)
+{
+    int mask = muteMask.load();
+    const int bit = partLockBit(part);
+    mask = shouldMute ? (mask | bit) : (mask & ~bit);
+    muteMask.store(mask);
+}
+
+void SynthesiaAIProcessor::setPartSoloed(Part part, bool shouldSolo)
+{
+    int mask = soloMask.load();
+    const int bit = partLockBit(part);
+    mask = shouldSolo ? (mask | bit) : (mask & ~bit);
+    soloMask.store(mask);
+}
+
+bool SynthesiaAIProcessor::isPartMuted(Part part) const
+{
+    return (muteMask.load() & partLockBit(part)) != 0;
+}
+
+bool SynthesiaAIProcessor::isPartSoloed(Part part) const
+{
+    return (soloMask.load() & partLockBit(part)) != 0;
+}
+
+bool SynthesiaAIProcessor::isPartAudible(Part part) const
+{
+    const int solo = soloMask.load();
+    if (solo != 0)
+        return (solo & partLockBit(part)) != 0;
+    return (muteMask.load() & partLockBit(part)) == 0;
+}
+
+juce::File SynthesiaAIProcessor::writeTempMidi(Part part) const
+{
+    auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                   .getChildFile("SynthesiaAI-drag");
+    dir.createDirectory();
+    const auto stem = juce::String(partName(part)).replaceCharacters(" /", "--").replace("--", "-");
+    auto file = dir.getChildFile(stem + ".mid");
+    const auto midi = MidiExporter::filterPart(generatedMidi, part);
+    MidiExporter::exportToFile(midi, file, previewTempo.load());
+    return file;
+}
+
+void SynthesiaAIProcessor::setLicenseKey(const juce::String& key)
+{
+    licenseKey = key.trim();
+    persistLocalSettings();
+}
+
+void SynthesiaAIProcessor::setApiProvider(const juce::String& name)
+{
+    apiProvider = name.trim();
+    if (apiProvider.equalsIgnoreCase("Groq"))
+    {
+        apiEndpoint = groqChatUrl();
+        apiModel = groqDefaultModel();
+    }
+    else if (apiProvider.equalsIgnoreCase("OpenAI"))
+    {
+        apiEndpoint = openaiChatUrl();
+        apiModel = "gpt-4o-mini";
+    }
+    configureLlm(*generator);
+    persistLocalSettings();
+}
+
+juce::String SynthesiaAIProcessor::completeChatUrl(juce::String url)
+{
+    url = url.trim();
+    if (url.endsWithChar('/'))
+        url = url.dropLastCharacters(1);
+    if (url.isNotEmpty() && !url.containsIgnoreCase("chat/completions"))
+        url += "/chat/completions";
+    return url;
+}
+
+juce::File SynthesiaAIProcessor::localSettingsFile()
+{
+    auto dir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                   .getChildFile("SynthesiaAI");
+    dir.createDirectory();
+    return dir.getChildFile("settings.xml");
+}
+
+void SynthesiaAIProcessor::persistLocalSettings() const
+{
+    juce::XmlElement xml("SynthesiaAILocal");
+    xml.setAttribute("apiKey", apiKey);
+    xml.setAttribute("apiEndpoint", apiEndpoint);
+    xml.setAttribute("apiModel", apiModel);
+    xml.setAttribute("apiProvider", apiProvider);
+    xml.setAttribute("licenseKey", licenseKey);
+    xml.writeTo(localSettingsFile());
+}
+
+void SynthesiaAIProcessor::loadLocalSettings()
+{
+    const auto file = localSettingsFile();
+    if (!file.existsAsFile())
+        return;
+    auto xml = juce::XmlDocument::parse(file);
+    if (xml == nullptr || !xml->hasTagName("SynthesiaAILocal"))
+        return;
+    apiKey = xml->getStringAttribute("apiKey");
+    apiEndpoint = xml->getStringAttribute("apiEndpoint", apiEndpoint);
+    apiModel = xml->getStringAttribute("apiModel", apiModel);
+    apiProvider = xml->getStringAttribute("apiProvider", apiProvider);
+    licenseKey = xml->getStringAttribute("licenseKey");
+    configureLlm(*generator);
+}
+
+juce::String SynthesiaAIProcessor::encodeClipMidi() const
+{
+    if (generatedMidi.isEmpty())
+        return {};
+
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(960);
+    juce::MidiMessageSequence track;
+    for (const auto metadata : generatedMidi)
+        track.addEvent(metadata.getMessage(), 0.0);
+    midiFile.addTrack(track);
+
+    juce::MemoryOutputStream stream;
+    if (!midiFile.writeTo(stream))
+        return {};
+    return juce::Base64::toBase64(stream.getData(), stream.getDataSize());
+}
+
+bool SynthesiaAIProcessor::restoreClipMidi(const juce::String& base64)
+{
+    juce::MemoryOutputStream decoded;
+    if (!juce::Base64::convertFromBase64(decoded, base64))
+        return false;
+
+    juce::MemoryInputStream input(decoded.getData(), decoded.getDataSize(), false);
+    juce::MidiFile midiFile;
+    if (!midiFile.readFrom(input))
+        return false;
+
+    juce::MidiBuffer restored;
+    const int ticks = midiFile.getTimeFormat() > 0 ? midiFile.getTimeFormat() : 960;
+    const double scale = 960.0 / static_cast<double>(ticks);
+    double lastTick = 0.0;
+    for (int t = 0; t < midiFile.getNumTracks(); ++t)
+    {
+        if (auto* track = midiFile.getTrack(t))
+        {
+            for (int i = 0; i < track->getNumEvents(); ++i)
+            {
+                const auto* held = track->getEventPointer(i);
+                const auto message = held->message;
+                if (message.isMetaEvent())
+                    continue;
+                const int tick = juce::roundToInt(message.getTimeStamp() * scale);
+                restored.addEvent(message, tick);
+                lastTick = juce::jmax(lastTick, static_cast<double>(tick));
+            }
+        }
+    }
+
+    const double length = clipLengthBeats > 0.0 ? clipLengthBeats
+                                                : juce::jmax(4.0, lastTick / 960.0);
+    simpleSynth.setKit(lastUiParams.genre);
+    clipParams = lastUiParams;
+    setGeneratedClip(std::move(restored), length);
+    setPreviewPlaying(false);
+    return true;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
