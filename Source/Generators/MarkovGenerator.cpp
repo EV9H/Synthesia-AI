@@ -65,22 +65,35 @@ int MarkovGenerator::selectNextNote(int currentNote, const std::vector<int>& sca
     std::uniform_real_distribution<> dist(0.0, 1.0);
     double rand = dist(rng);
     
-    int newIndex;
+    int step;
     if (rand < 0.4) // 40% step up or down
     {
-        newIndex = currentIndex + (rng() % 2 == 0 ? 1 : -1);
+        step = rng() % 2 == 0 ? 1 : -1;
     }
     else if (rand < 0.7) // 30% small jump
     {
-        newIndex = currentIndex + (rng() % 2 == 0 ? 2 : -2);
+        step = rng() % 2 == 0 ? 2 : -2;
     }
     else // 30% larger jump
     {
-        newIndex = currentIndex + (rng() % 7 - 3);
+        step = static_cast<int>(rng() % 7) - 3;
     }
-    
-    // Clamp to scale range
-    newIndex = juce::jlimit(0, static_cast<int>(scale.size()) - 1, newIndex);
+
+    // Pull back toward the middle of the range so the line doesn't drift to an edge
+    const int lastIndex = static_cast<int>(scale.size()) - 1;
+    const double centre = lastIndex / 2.0;
+    const double offset = centre > 0.0 ? (currentIndex - centre) / centre : 0.0;
+    if (step != 0 && (step > 0) == (offset > 0.0) && dist(rng) < std::abs(offset))
+        step = -step;
+
+    // Reflect off the range edges instead of clamping (clamping repeats the edge note)
+    int newIndex = currentIndex + step;
+    if (newIndex < 0)
+        newIndex = -newIndex;
+    if (newIndex > lastIndex)
+        newIndex = 2 * lastIndex - newIndex;
+
+    newIndex = juce::jlimit(0, lastIndex, newIndex);
     
     return scale[newIndex];
 }
