@@ -51,6 +51,7 @@ set(SYNTHESIA_SOURCES
     Source/SimpleSynth.cpp
     Source/SynthPatch.cpp
     Source/DrumLibrary.cpp
+    Source/InstrumentLibrary.cpp
     Source/MidiExporter.cpp
     Source/MidiImporter.cpp
     Source/StyleProfile.cpp
