@@ -11,20 +11,22 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - **LLM planner**: OpenAI-compatible endpoint (your key, configurable base URL + model) returns a compact JSON arrangement plan only — form, chords, energy/density, motif, parts, tempo/swing, genre. The genre engine realises every note, so nothing is out of key. Without a key, prompt keywords pick genre/energy offline.
   
 - **UI Controls**:
+  - Dark, resizable editor with **Generate / Plan / Import / Style** tabs, readable 15pt fonts, and a persistent piano-roll footer
   - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
   - Form (loop or song: intro / verse / pre / chorus / drop / bridge / break / outro) and length (1-32 bars)
   - Chord input (symbols like `Am9 Fmaj9` or Roman numerals, `|` for bar groups) with a lock so regenerating keeps the progression
-  - Per-part locks (keep drums, regenerate bass, etc.)
+  - Per-part locks (keep drums, regenerate bass, etc.) and per-part **mute / solo** on the piano roll
   - Tempo (60-180 bpm, defaults follow the genre) and grid / quantization
   - Style/prompt text input; **Plan** fills sections/chords (editable) then **Generate MIDI** realises them
   - **MIDI import**: file chooser, drag-drop, or host MIDI capture. Detects key/scale/tempo, per-bar chords (editable in the lock field) and part roles
   - Import modes: **Accompany** (keep the user's part, write the rest + drums), **Extend** (continue N bars with song form), **Rewrite** (same chords, new voicings/melody/bass), **Restyle** (same harmony/melody in another genre groove)
   - **Style profiles**: learn chord vocabulary, voicings, rhythm grids, bass approaches, swing and melody intervals from several `.mid` files (or a folder). Named JSON profiles live in user app data; a **Blend** slider mixes them with the selected genre (arranger, LLM plan, and import modes)
-  - Settings: API key, base URL, model, last/session token counts
+  - **Factory presets** (~10 across pop, lo-fi, house, trap, neo-soul, cinematic, song form, locked jazz changes). Save your own; the host restores full generator state plus the last clip via `getStateInformation`
+  - Settings: OpenAI or **Groq** preset (or a custom OpenAI-compatible URL), API key, model, last/session token counts, offline license key
   
 - **Preview & Export**:
   - Built-in synth with a distinct timbre per part, plus per-genre drum kits built from CC0 one-shot samples (synthesized fallback if a slot is missing). See `Samples/README.md`.
-  - Export multi-track `.mid`, separate files per part, or a single part
+  - **Drag a part (or All parts) out of the plugin as `.mid`** into a DAW; also **Export MIDI** for multi-track, per-part files, or a single part
   - MIDI output routing to DAW tracks
   
 - **Non-Blocking Generation**: All generation happens off the audio thread for smooth performance
@@ -32,8 +34,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 ### Roadmap
 - **AI Timbre/Patch Generation**: Generate synth patches and timbres using AI
 - **More generator types**: Genetic algorithms, reinforcement learning
-- **Style presets**: Pre-configured generation styles
-- **MIDI drag & drop**: Direct drag-drop into DAW piano roll
+- **Licensing**: Signed / online license check (the current build is an offline `SYN-` stub + Trial badge)
 
 ## Design Decisions
 
@@ -85,50 +86,47 @@ For AI timbre generation, the same pattern applies: create a `TimbrerGenerator` 
 - C++17 compatible compiler
 - Git (for JUCE submodule)
 
-### Windows
+CMake always builds **VST3 + Standalone**. On macOS it also builds **AU**. There is no required CI; build locally with the commands below.
+
+### Windows (VST3 + Standalone)
+
+Visual Studio 2019 or later (x64). From a Developer Command Prompt or PowerShell:
 
 ```bash
-# Configure
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-# Build
-cmake --build build --config Release
-
-# Run tests
-cd build
-ctest -C Release --output-on-failure
+cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaAI_Standalone
 
 # Plugin location
-build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
+build/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3
+build/SynthesiaAI_artefacts/Release/Standalone/Synthesia AI.exe
 ```
 
-### macOS
+Ninja also works: `cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release`.
+
+### macOS (VST3 + AU + Standalone)
+
+Xcode command-line tools (or the Xcode generator):
 
 ```bash
-# Configure
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-# Build
-cmake --build build --config Release
-
-# Run tests
-cd build
-ctest -C Release --output-on-failure
+cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaAI_AU SynthesiaAI_Standalone
 
 # Plugin locations
-build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
-build/SynthesiaAI_artefacts/Release/AU/SynthesiaAI.component
+build/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3
+build/SynthesiaAI_artefacts/Release/AU/Synthesia AI.component
+build/SynthesiaAI_artefacts/Release/Standalone/Synthesia AI.app
 ```
 
-### Linux (for development/testing)
+Universal binaries are optional; omit `-DCMAKE_OSX_ARCHITECTURES` for a native-only build.
+
+### Linux (development)
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
-cd build && ctest --output-on-failure
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaAI_Standalone SynthesiaRender
 ```
 
-Note: Linux builds produce only the Standalone version (no VST3/AU for DAW use on Linux).
+Linux produces both Standalone and VST3 (`build/SynthesiaAI_artefacts/Release/VST3/`). AU is macOS-only.
 
 ### Offline render host (headless "DAW")
 
@@ -140,7 +138,8 @@ plan through the same arranger path. `--style` is the free-text brief; without a
 API key the planner uses a keyword heuristic. `--import file.mid` analyses a clip
 (key, chords, part roles) and `--import-mode accompany|extend|rewrite|restyle`
 keeps or rewrites it through the arranger. `--style-profile file.json` and
-`--style-blend 0..1` mix a learned style with the genre. `--part` selects chords, bass, synth,
+`--style-blend 0..1` mix a learned style with the genre. `--preset <id>` loads a factory
+(or user) preset; `--list-presets` prints ids. `--part` selects chords, bass, synth,
 piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
 It exits non-zero if the render is silent, clips, or plays a different number of
 notes than the clip contains.
@@ -173,6 +172,10 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
 build/SynthesiaRender_artefacts/Release/SynthesiaRender \
     --genre pop --style-profile Tools/midi/style/neo-soul.json --style-blend 1 \
     --out /tmp/style.wav
+
+# Factory preset (productized defaults)
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --preset lofi-am-dusty --out /tmp/preset.wav --midi /tmp/preset.mid
 ```
 
 ## Installation
@@ -215,7 +218,8 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
    - **Audition**: The built-in synth plays the generated MIDI immediately
    - **Record**: Enable recording on the track and play to capture MIDI
    - **Route**: Disable Synthesia AI's audio, create another instrument track, route MIDI to it
-   - **Export**: Click "Export MIDI..." for a multi-track file, separate files per part, or one part only, then drag into Live
+   - **Drag to Live**: after Generate, drag **All parts** or a single part chip onto a track / the Arrangement view (drops a `.mid`)
+   - **Export**: Click **Export MIDI** for a multi-track file, separate files per part, or one part only
 
 ### In FL Studio
 
@@ -227,22 +231,35 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
    
 3. **Use the Output**:
    - **Audition**: Preview using the built-in synth
-   - **Export & Import**: Click "Export as .mid", then drag the file into FL Studio's piano roll
+   - **Drag to piano roll**: drag a part chip (or All parts) out of the plugin onto the playlist / piano roll
+   - **Export**: Click **Export MIDI**, then drag the file into FL Studio's piano roll if you prefer a chooser
    - **Alternative**: Route MIDI output to another channel (FL Studio 21.2+)
 
 ### Using the LLM planner
 
 1. Click **Settings**
-2. Enter your OpenAI-compatible API key, base URL (default `https://api.openai.com/v1/chat/completions`) and model (default `gpt-4o-mini`)
-3. Save. Token usage from the last request and the session is shown in this dialog.
-4. Select **LLM (OpenAI API)** from Generator
-5. Type a prompt, e.g. `late-night synthwave, chorus should explode`
-6. Click **Plan** — the UI fills genre, tempo, form, length, and a chord chart you can edit
-7. Click **Generate MIDI** — the genre engine writes notes in key from that plan
+2. Pick **OpenAI** (default `https://api.openai.com/v1/chat/completions`, model `gpt-4o-mini`) or **Groq** (base `https://api.groq.com/openai/v1`, chat URL `.../chat/completions`, model `openai/gpt-oss-120b`). **Custom** leaves the URL and model as you type them.
+3. Enter your API key. It is stored only in local user app data (`SynthesiaAI/settings.xml`) and is never written to logs. Host project state stores generator settings and the clip, not the key.
+4. Save. Token usage from the last request and the session is shown in this dialog.
+5. Select **LLM planner** from Engine on the Generate tab
+6. Type a prompt, e.g. `late-night synthwave, chorus should explode`
+7. Click **Plan** — the UI fills genre, tempo, form, length, and a chord chart you can edit
+8. Click **Generate MIDI** — the genre engine writes notes in key from that plan
 
 With no key, Plan still works: keywords in the prompt map to genre, energy and density.
 
-**Note**: API keys are stored in plugin state and saved with your project. Never share project files containing API keys.
+### Quick start (users)
+
+1. Load **Synthesia AI** as an instrument.
+2. Pick a **Preset** (Pop Radio, Lo-fi Dust, Peak Hour House, Trap Drop, Neo-Soul Pocket, Cinematic Pads, Lo-fi Song, House Anthem, Jazz Changes, Pop Uplift) or set key / genre yourself.
+3. Click **Generate MIDI**. Mute or solo parts on the piano roll.
+4. Drag **All parts** (or Chords / Bass / Synth / Piano / Drums) into your DAW, or click **Export MIDI**.
+5. Optional: **Plan** tab for an LLM/heuristic arrangement, **Import** to accompany a `.mid`, **Style** to learn from your MIDI.
+6. The header shows a **TRIAL** badge until you enter a license key starting with `SYN-` (12+ characters) in Settings. That check is an offline stub and can be replaced later.
+
+### Presets and host recall
+
+Factory presets ship in the binary. **Save** writes a JSON preset to user app data (`SynthesiaAI/presets`). DAW save/restore (`getStateInformation` / `setStateInformation`) keeps generator type, UI params, mute/solo, style, license key, and the last generated clip. API keys stay on the local machine only.
 
 ### MIDI import
 
@@ -291,6 +308,8 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
 │   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes
 │   ├── StyleProfile.{h,cpp}        # Learn/save style JSON and blend with genre profiles
+│   ├── PresetStore.{h,cpp}         # Factory + user generator presets
+│   ├── LicenseStub.h               # Offline SYN- license check (swap later)
 │   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings, chord-symbol parser
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
@@ -333,7 +352,9 @@ Suggested approach:
 
 ## License
 
-[Specify your license here]
+[Specify your product license here.]
+
+The in-plugin **TRIAL / LICENSED** badge is an offline stub (`LicenseStub`): a key that starts with `SYN-` and is at least 12 characters counts as licensed. Swap `LicenseStub::isLicensed` for a signed or online check when you ship.
 
 ## Contributing
 

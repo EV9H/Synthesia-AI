@@ -8,9 +8,11 @@
 #include "Generators/ArrangementPlan.h"
 #include "MidiImporter.h"
 #include "StyleProfile.h"
+#include "PresetStore.h"
 #include "Music/MusicTheory.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
+#include <optional>
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter();
 
@@ -91,6 +93,8 @@ namespace
             "  --save-style-json <file.json>  write the learned (or loaded) profile\n"
             "  --style-profile <file.json>    blend this learned profile with the genre\n"
             "  --style-blend <0-1>     0 = genre only, 1 = full learned style (default 1)\n"
+            "  --preset <id>           factory/user preset (overrides genre/key/form/etc.)\n"
+            "  --list-presets          print factory (and user) preset ids and exit\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
@@ -111,6 +115,15 @@ int main(int argc, char* argv[])
         const int index = args.indexOf(name);
         return (index >= 0 && index + 1 < args.size()) ? args[index + 1] : fallback;
     };
+
+    if (args.contains("--list-presets"))
+    {
+        for (const auto& preset : PresetStore::factoryPresets())
+            std::cout << preset.id << "\t" << preset.name << "\t" << preset.description << "\n";
+        for (const auto& userId : PresetStore::listUserIds())
+            std::cout << userId << "\t(user)\n";
+        return 0;
+    }
 
     const auto fixturesDir = option("--write-fixtures", {});
     if (fixturesDir.isNotEmpty())
@@ -196,9 +209,22 @@ int main(int argc, char* argv[])
         return outPath.isEmpty() ? 1 : 0;
     }
 
+    const auto presetId = option("--preset", {});
+    std::optional<GeneratorPreset> loadedPreset;
+    if (presetId.isNotEmpty())
+    {
+        loadedPreset = PresetStore::find(presetId);
+        if (!loadedPreset)
+        {
+            std::cerr << "Unknown preset: " << presetId << "\n";
+            return 1;
+        }
+    }
+
     const int genreIndex = genreNames.indexOf(option("--genre", "pop"), true);
     const int partIndex = partNames.indexOf(option("--part", "all"), true);
-    const auto generatorName = option("--generator", "genre").toLowerCase();
+    const auto generatorName = option("--generator", loadedPreset ? PresetStore::generatorName(loadedPreset->generator)
+                                                                  : "genre").toLowerCase();
     const bool useMarkov = generatorName == "markov";
     const bool useLlm = generatorName == "llm";
 
@@ -210,8 +236,10 @@ int main(int argc, char* argv[])
     }
 
     MidiGenerationParams params;
-    params.genre = static_cast<Genre>(genreIndex);
-    params.part = static_cast<Part>(partIndex);
+    if (loadedPreset)
+        params = loadedPreset->params;
+    params.genre = args.contains("--genre") || !loadedPreset ? static_cast<Genre>(genreIndex) : params.genre;
+    params.part = args.contains("--part") || !loadedPreset ? static_cast<Part>(partIndex) : params.part;
     const auto& profile = getGenreProfile(params.genre);
     static const char* gridNames[] = { "1/16", "1/8", "1/4", "1/2" };
 
@@ -220,17 +248,28 @@ int main(int argc, char* argv[])
     const bool tempoWasSet = args.contains("--tempo");
     const bool barsWasSet = args.contains("--bars");
 
-    params.rootNote = parseKey(option("--key", "C"));
-    const int scaleIndex = parseScale(option("--scale", "major"));
+    static const char* noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    static const char* scaleNames[] = { "major", "minor", "dorian", "mixolydian", "pentatonic" };
+    const juce::String keyFallback = loadedPreset ? juce::String(noteNames[juce::jlimit(0, 11, params.rootNote)]) : "C";
+    const juce::String scaleFallback = loadedPreset ? juce::String(scaleNames[static_cast<int>(params.scale)]) : "major";
+    const juce::String barsFallback = loadedPreset ? juce::String(params.lengthInBars) : "8";
+    const juce::String tempoFallback = loadedPreset ? juce::String(params.tempo) : juce::String(profile.defaultTempo);
+    const juce::String formFallback = loadedPreset && params.form == ArrangementForm::Song ? "song" : "loop";
+    const juce::String styleFallback = loadedPreset ? juce::String(params.stylePrompt) : "";
+    const juce::String chordsFallback = loadedPreset ? juce::String(params.chordText) : "";
+    const juce::String seedFallback = loadedPreset ? juce::String(static_cast<int>(params.seed)) : "1";
+
+    params.rootNote = parseKey(option("--key", keyFallback));
+    const int scaleIndex = parseScale(option("--scale", scaleFallback));
     const int quantIndex = parseQuantization(option("--quant", gridNames[static_cast<int>(profile.defaultGrid)]));
-    params.lengthInBars = juce::jlimit(1, 32, option("--bars", "8").getIntValue());
-    params.tempo = juce::jlimit(20.0, 300.0, option("--tempo", juce::String(profile.defaultTempo)).getDoubleValue());
-    params.seed = static_cast<unsigned int>(option("--seed", "1").getLargeIntValue());
-    params.stylePrompt = option("--style", "").toStdString();
-    params.chordText = option("--chords", "").toStdString();
+    params.lengthInBars = juce::jlimit(1, 32, option("--bars", barsFallback).getIntValue());
+    params.tempo = juce::jlimit(20.0, 300.0, option("--tempo", tempoFallback).getDoubleValue());
+    params.seed = static_cast<unsigned int>(option("--seed", seedFallback).getLargeIntValue());
+    params.stylePrompt = option("--style", styleFallback).toStdString();
+    params.chordText = option("--chords", chordsFallback).toStdString();
     params.lockProgression = args.contains("--lock-chords") || params.chordText.size() > 0;
-    params.form = option("--form", "loop").equalsIgnoreCase("song") ? ArrangementForm::Song
-                                                                   : ArrangementForm::Loop;
+    params.form = option("--form", formFallback).equalsIgnoreCase("song") ? ArrangementForm::Song
+                                                                         : ArrangementForm::Loop;
 
     const auto lockParts = option("--lock-parts", {});
     if (lockParts.isNotEmpty())
