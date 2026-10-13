@@ -162,7 +162,7 @@ private:
     void setupVoices();
     void prepareFx(double sampleRate, int samplesPerBlock);
     void applyPartInserts(int partIndex, juce::AudioBuffer<float>& buffer, int start, int num);
-    void applyBusMix(int start, int num);
+    void applyBusMix(int start, int num, const juce::MidiBuffer& drumMidi);
     void applyMaster(juce::AudioBuffer<float>& buffer, int start, int num);
     void ensureAuxSize(int start, int num);
 

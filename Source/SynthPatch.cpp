@@ -551,6 +551,33 @@ SynthPatch PatchLibrary::defaultFor(Genre genre, Part part)
     return found;
 }
 
+namespace
+{
+    void writeBus(juce::XmlElement& xml, const char* prefix, const BusComp& b)
+    {
+        xml.setAttribute(juce::String(prefix) + "Comp", b.amount);
+        xml.setAttribute(juce::String(prefix) + "Atk", b.attack);
+        xml.setAttribute(juce::String(prefix) + "Rel", b.release);
+        xml.setAttribute(juce::String(prefix) + "Ratio", b.ratio);
+        xml.setAttribute(juce::String(prefix) + "Thresh", b.thresh);
+    }
+
+    BusComp readBus(const juce::XmlElement& xml, const char* prefix, BusComp fallback)
+    {
+        fallback.amount = (float) xml.getDoubleAttribute(juce::String(prefix) + "Comp", fallback.amount);
+        fallback.attack = (float) xml.getDoubleAttribute(juce::String(prefix) + "Atk", fallback.attack);
+        fallback.release = (float) xml.getDoubleAttribute(juce::String(prefix) + "Rel", fallback.release);
+        fallback.ratio = (float) xml.getDoubleAttribute(juce::String(prefix) + "Ratio", fallback.ratio);
+        fallback.thresh = (float) xml.getDoubleAttribute(juce::String(prefix) + "Thresh", fallback.thresh);
+        return fallback;
+    }
+
+    BusComp bus(float amount, float attack, float release, float ratio, float thresh)
+    {
+        return { amount, attack, release, ratio, thresh };
+    }
+}
+
 void MixSettings::writeXml(juce::XmlElement& xml) const
 {
     xml.setAttribute("id", id);
@@ -560,10 +587,10 @@ void MixSettings::writeXml(juce::XmlElement& xml) const
     xml.setAttribute("scRelease", sidechainRelease);
     xml.setAttribute("scBass", sidechainBass);
     xml.setAttribute("comp", compAmount);
-    xml.setAttribute("drumComp", drumComp);
-    xml.setAttribute("bassComp", bassComp);
-    xml.setAttribute("musicComp", musicComp);
-    xml.setAttribute("masterComp", masterComp);
+    writeBus(xml, "drum", drum);
+    writeBus(xml, "bass", bass);
+    writeBus(xml, "music", music);
+    writeBus(xml, "master", master);
 }
 
 MixSettings MixSettings::fromXml(const juce::XmlElement& xml)
@@ -577,10 +604,10 @@ MixSettings MixSettings::fromXml(const juce::XmlElement& xml)
     m.sidechainRelease = (float) xml.getDoubleAttribute("scRelease", m.sidechainRelease);
     m.sidechainBass = (float) xml.getDoubleAttribute("scBass", m.sidechainBass);
     m.compAmount = (float) xml.getDoubleAttribute("comp", m.compAmount);
-    m.drumComp = (float) xml.getDoubleAttribute("drumComp", m.drumComp);
-    m.bassComp = (float) xml.getDoubleAttribute("bassComp", m.bassComp);
-    m.musicComp = (float) xml.getDoubleAttribute("musicComp", m.musicComp);
-    m.masterComp = (float) xml.getDoubleAttribute("masterComp", m.masterComp);
+    m.drum = readBus(xml, "drum", m.drum);
+    m.bass = readBus(xml, "bass", m.bass);
+    m.music = readBus(xml, "music", m.music);
+    m.master = readBus(xml, "master", m.master);
     return m;
 }
 
@@ -597,10 +624,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.14f;
         m.sidechainBass = 0.92f;
         m.compAmount = 0.78f;
-        m.drumComp = 0.7f;
-        m.bassComp = 0.45f;
-        m.musicComp = 0.38f;
-        m.masterComp = 0.55f;
+        m.drum = bus(0.70f, 0.003f, 0.08f, 3.6f, 0.20f);   // punch
+        m.bass = bus(0.45f, 0.008f, 0.12f, 2.5f, 0.26f);
+        m.music = bus(0.38f, 0.012f, 0.16f, 2.2f, 0.32f);
+        m.master = bus(0.55f, 0.018f, 0.14f, 1.9f, 0.36f);
         mixes.add(m);
     }
     {
@@ -612,10 +639,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.2f;
         m.sidechainBass = 0.12f; // keep 808 vs kick
         m.compAmount = 0.72f;
-        m.drumComp = 0.62f;
-        m.bassComp = 0.28f;
-        m.musicComp = 0.42f;
-        m.masterComp = 0.5f;
+        m.drum = bus(0.62f, 0.002f, 0.07f, 3.2f, 0.22f);
+        m.bass = bus(0.28f, 0.018f, 0.22f, 1.6f, 0.34f);   // light 808 glue
+        m.music = bus(0.42f, 0.014f, 0.18f, 2.6f, 0.30f);
+        m.master = bus(0.50f, 0.016f, 0.14f, 2.0f, 0.36f);
         mixes.add(m);
     }
     {
@@ -627,10 +654,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.28f;
         m.sidechainBass = 0.35f;
         m.compAmount = 0.48f;
-        m.drumComp = 0.4f;
-        m.bassComp = 0.38f;
-        m.musicComp = 0.32f;
-        m.masterComp = 0.42f;
+        m.drum = bus(0.40f, 0.008f, 0.20f, 2.0f, 0.28f);
+        m.bass = bus(0.38f, 0.014f, 0.18f, 2.0f, 0.30f);
+        m.music = bus(0.32f, 0.022f, 0.26f, 1.8f, 0.34f);
+        m.master = bus(0.42f, 0.028f, 0.22f, 1.6f, 0.40f);
         mixes.add(m);
     }
     {
@@ -642,10 +669,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.22f;
         m.sidechainBass = 0.55f;
         m.compAmount = 0.62f;
-        m.drumComp = 0.5f;
-        m.bassComp = 0.42f;
-        m.musicComp = 0.4f;
-        m.masterComp = 0.48f;
+        m.drum = bus(0.50f, 0.006f, 0.14f, 2.5f, 0.24f);
+        m.bass = bus(0.42f, 0.012f, 0.16f, 2.2f, 0.28f);
+        m.music = bus(0.40f, 0.018f, 0.20f, 2.0f, 0.32f);
+        m.master = bus(0.48f, 0.022f, 0.18f, 1.8f, 0.38f);
         mixes.add(m);
     }
     {
@@ -657,10 +684,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.4f;
         m.sidechainBass = 0.2f;
         m.compAmount = 0.4f;
-        m.drumComp = 0.35f;
-        m.bassComp = 0.3f;
-        m.musicComp = 0.28f;
-        m.masterComp = 0.38f;
+        m.drum = bus(0.35f, 0.010f, 0.25f, 2.0f, 0.30f);
+        m.bass = bus(0.30f, 0.020f, 0.28f, 1.8f, 0.32f);
+        m.music = bus(0.28f, 0.025f, 0.32f, 1.6f, 0.36f);
+        m.master = bus(0.38f, 0.030f, 0.26f, 1.5f, 0.42f);
         mixes.add(m);
     }
     {
@@ -672,10 +699,10 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.16f;
         m.sidechainBass = 0.65f;
         m.compAmount = 0.68f;
-        m.drumComp = 0.55f;
-        m.bassComp = 0.48f;
-        m.musicComp = 0.4f;
-        m.masterComp = 0.52f;
+        m.drum = bus(0.55f, 0.004f, 0.09f, 3.0f, 0.22f);
+        m.bass = bus(0.48f, 0.010f, 0.13f, 2.5f, 0.26f);
+        m.music = bus(0.40f, 0.012f, 0.15f, 2.2f, 0.30f);
+        m.master = bus(0.52f, 0.018f, 0.14f, 2.0f, 0.36f);
         mixes.add(m);
     }
 

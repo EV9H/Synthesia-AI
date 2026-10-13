@@ -94,6 +94,15 @@ public:
     static int pitchedIndex(Part part);
 };
 
+struct BusComp
+{
+    float amount{0.4f};
+    float attack{0.01f};    // seconds
+    float release{0.12f};
+    float ratio{2.4f};
+    float thresh{0.28f};
+};
+
 struct MixSettings
 {
     juce::String id;
@@ -105,10 +114,10 @@ struct MixSettings
     float sidechainBass{0.7f};       // 0 = leave bass/808 unducked
 
     float compAmount{0.7f};          // UI macro 0-1
-    float drumComp{0.45f};
-    float bassComp{0.4f};
-    float musicComp{0.3f};
-    float masterComp{0.45f};
+    BusComp drum { 0.45f, 0.004f, 0.09f, 3.0f, 0.22f };
+    BusComp bass { 0.40f, 0.012f, 0.14f, 2.4f, 0.28f };
+    BusComp music { 0.30f, 0.018f, 0.16f, 2.2f, 0.32f };
+    BusComp master { 0.45f, 0.020f, 0.16f, 1.8f, 0.38f };
 
     void writeXml(juce::XmlElement& xml) const;
     static MixSettings fromXml(const juce::XmlElement& xml);

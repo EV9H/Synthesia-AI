@@ -56,18 +56,28 @@ namespace
     }
 
     void compressStereo(float* left, float* right, int num, float& env,
-                        float amount, float thresh, float atk, float rel)
+                        const BusComp& bus, float macro, double sr)
     {
+        const float amount = juce::jlimit(0.0f, 1.0f, bus.amount * macro);
         if (amount < 0.02f)
             return;
-        const float makeup = 1.0f + 0.22f * amount;
+        const float atk = coeffFor(bus.attack, sr);
+        const float rel = coeffFor(bus.release, sr);
+        const float ratio = juce::jmax(1.05f, bus.ratio);
+        const float thresh = juce::jmax(0.02f, bus.thresh);
+        const float makeup = 1.0f + 0.12f * amount * (1.0f - 1.0f / ratio);
         for (int i = 0; i < num; ++i)
         {
             const float s = 0.5f * (std::abs(left[i]) + std::abs(right[i]));
             env += (s > env ? atk : rel) * (s - env);
             float gain = 1.0f;
             if (env > thresh)
-                gain = std::pow(thresh / (env + 1.0e-8f), amount * 0.85f);
+            {
+                const float over = env / thresh;
+                const float compressed = std::pow(over, 1.0f / ratio);
+                gain = (thresh * compressed) / (env + 1.0e-8f);
+                gain = 1.0f + amount * (gain - 1.0f);
+            }
             left[i] *= gain * makeup;
             right[i] *= gain * makeup;
         }
@@ -589,7 +599,7 @@ void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buff
     }
 }
 
-void SimpleSynth::applyBusMix(int start, int num)
+void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMidi)
 {
     const double sr = juce::jmax(1.0, currentSampleRate);
     const float macro = juce::jlimit(0.0f, 1.0f, mix.compAmount);
@@ -600,34 +610,44 @@ void SimpleSynth::applyBusMix(int start, int num)
     auto* dL = drumBus.getWritePointer(0, start);
     auto* dR = drumBus.getWritePointer(1, start);
 
-    compressStereo(dL, dR, num, drumEnv, mix.drumComp * macro, 0.22f,
-                   coeffFor(0.004, sr), coeffFor(0.09, sr));
-    compressStereo(bL, bR, num, bassEnv, mix.bassComp * macro, 0.28f,
-                   coeffFor(0.012, sr), coeffFor(0.14, sr));
-    compressStereo(mL, mR, num, musicEnv, mix.musicComp * macro, 0.32f,
-                   coeffFor(0.018, sr), coeffFor(0.16, sr));
+    compressStereo(dL, dR, num, drumEnv, mix.drum, macro, sr);
+    compressStereo(bL, bR, num, bassEnv, mix.bass, macro, sr);
+    compressStereo(mL, mR, num, musicEnv, mix.music, macro, sr);
 
     const float scAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainAmount);
-    if (scAmt > 0.01f)
+    if (scAmt < 0.01f)
+        return;
+
+    std::vector<float> kickTrig((size_t) num, 0.0f);
+    for (const auto metadata : drumMidi)
     {
-        const float atk = coeffFor(mix.sidechainAttack, sr);
-        const float rel = coeffFor(mix.sidechainRelease, sr);
-        const float lpCoeff = (float) (1.0 - std::exp(-twoPi * 140.0 / sr));
-        const float bassAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainBass);
-        for (int i = 0; i < num; ++i)
-        {
-            const float mid = 0.5f * (dL[i] + dR[i]);
-            kickLp += lpCoeff * (mid - kickLp);
-            const float s = std::abs(kickLp) * 3.4f;
-            scEnv += (s > scEnv ? atk : rel) * (s - scEnv);
-            const float duck = juce::jlimit(0.0f, 0.92f, scEnv * scAmt * 1.65f);
-            const float musicG = 1.0f - duck;
-            const float bassG = 1.0f - duck * bassAmt;
-            mL[i] *= musicG;
-            mR[i] *= musicG;
-            bL[i] *= bassG;
-            bR[i] *= bassG;
-        }
+        const auto message = metadata.getMessage();
+        if (!message.isNoteOn() || message.getVelocity() <= 0)
+            continue;
+        if (DrumLibrary::pieceFromNote(message.getNoteNumber()) != DrumPiece::Kick)
+            continue;
+        const int pos = juce::jlimit(0, num - 1, metadata.samplePosition - start);
+        kickTrig[(size_t) pos] = juce::jmax(kickTrig[(size_t) pos],
+                                            0.35f + 0.65f * message.getFloatVelocity());
+    }
+
+    const float atk = coeffFor(mix.sidechainAttack, sr);
+    const float rel = coeffFor(mix.sidechainRelease, sr);
+    const float lpCoeff = (float) (1.0 - std::exp(-twoPi * 90.0 / sr));
+    const float bassAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainBass);
+    for (int i = 0; i < num; ++i)
+    {
+        const float mid = 0.5f * (dL[i] + dR[i]);
+        kickLp += lpCoeff * (mid - kickLp);
+        const float key = juce::jmax(std::abs(kickLp) * 3.2f, kickTrig[(size_t) i]);
+        scEnv += (key > scEnv ? atk : rel) * (key - scEnv);
+        const float duck = juce::jlimit(0.0f, 0.92f, scEnv * scAmt * 1.65f);
+        const float musicG = 1.0f - duck;
+        const float bassG = 1.0f - duck * bassAmt;
+        mL[i] *= musicG;
+        mR[i] *= musicG;
+        bL[i] *= bassG;
+        bR[i] *= bassG;
     }
 }
 
@@ -695,9 +715,8 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         oR[i] = hpR + (hpR - shelfStateR) * (shelfGain - 1.0f);
     }
 
-    const float glueAmt = mix.masterComp * juce::jlimit(0.0f, 1.0f, mix.compAmount);
-    compressStereo(oL, oR, num, masterEnv, glueAmt, 0.38f,
-                   coeffFor(0.02, sr), coeffFor(0.16, sr));
+    compressStereo(oL, oR, num, masterEnv, mix.master,
+                   juce::jlimit(0.0f, 1.0f, mix.compAmount), sr);
 
     float vinyl = 0.0f;
     float tape = 0.12f;
@@ -794,7 +813,7 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     for (int ch = 0; ch < 2; ++ch)
         drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 1.05f);
 
-    applyBusMix(startSample, numSamples);
+    applyBusMix(startSample, numSamples, drumMidi);
 
     for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
     {
