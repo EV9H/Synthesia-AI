@@ -98,7 +98,7 @@ juce::Array<GeneratorPreset> PresetStore::factoryPresets()
                            "festival house anthem, build and drop, big chorus",
                            {}, 11));
     presets.add(makePreset("locked-jazz-changes", "Jazz Changes",
-                           "Locked ii–V–I jazz changes in C",
+                           "Locked ii-V-I jazz changes in C",
                            Genre::LoFiJazz, 0, ScaleType::Major, 8, 92.0,
                            ArrangementForm::Loop,
                            "bebop jazz changes, walking bass, comping piano",

@@ -408,10 +408,11 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Generate, plan, import, learn a style — then drag MIDI into your DAW",
+    subtitleLabel.setText("Presets, piano roll, drag MIDI to your DAW",
                           juce::dontSendNotification);
     subtitleLabel.setFont(juce::Font(13.0f));
     subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    subtitleLabel.setMinimumHorizontalScale(0.75f);
     addAndMakeVisible(subtitleLabel);
 
     licenseBadge.setJustificationType(juce::Justification::centred);
@@ -566,7 +567,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     generateButton.onClick = [this]() { onGenerateClicked(); };
-    generatePage.addAndMakeVisible(generateButton);
+    addAndMakeVisible(generateButton);
 
     setUpLabel(planLabel, "Arrangement plan");
     planPage.addAndMakeVisible(planLabel);
@@ -669,6 +670,11 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addAndMakeVisible(mixLabel);
     for (auto part : allParts)
     {
+        auto* name = mixPartLabels.add(new juce::Label({}, partName(part)));
+        name->setFont(juce::Font(12.0f));
+        name->setColour(juce::Label::textColourId, Theme::dimText);
+        addAndMakeVisible(name);
+
         auto* mute = muteButtons.add(new juce::TextButton("M"));
         mute->setClickingTogglesState(true);
         mute->setColour(juce::TextButton::buttonOnColourId, Theme::trial);
@@ -771,7 +777,7 @@ void SynthesiaAIEditor::paint(juce::Graphics& g)
     g.setColour(Theme::outline);
     g.drawHorizontalLine(header.getBottom() - 1, 0.0f, static_cast<float>(getWidth()));
 
-    auto footer = getLocalBounds().removeFromBottom(268);
+    auto footer = getLocalBounds().removeFromBottom(250);
     g.setColour(Theme::panel.withAlpha(0.35f));
     g.fillRect(footer.removeFromTop(1).withHeight(1));
 
@@ -807,15 +813,19 @@ void SynthesiaAIEditor::resized()
     titleLabel.setBounds(titleCol.removeFromTop(22));
     subtitleLabel.setBounds(titleCol);
 
-    auto footer = area.removeFromBottom(268);
+    auto footer = area.removeFromBottom(250);
     footer.reduce(16, 8);
-    statusLabel.setBounds(footer.removeFromBottom(20));
-    footer.removeFromBottom(6);
+    statusLabel.setBounds(footer.removeFromBottom(18));
+    footer.removeFromBottom(4);
     auto transport = footer.removeFromBottom(32);
-    previewButton.setBounds(transport.removeFromLeft((transport.getWidth() - 10) / 2));
-    transport.removeFromLeft(10);
+    const int btnGap = 8;
+    const int btnW = (transport.getWidth() - btnGap * 2) / 3;
+    generateButton.setBounds(transport.removeFromLeft(btnW));
+    transport.removeFromLeft(btnGap);
+    previewButton.setBounds(transport.removeFromLeft(btnW));
+    transport.removeFromLeft(btnGap);
     exportButton.setBounds(transport);
-    footer.removeFromBottom(8);
+    footer.removeFromBottom(6);
 
     auto dragRow = footer.removeFromBottom(32);
     dragHintLabel.setBounds(dragRow.removeFromLeft(86));
@@ -830,11 +840,10 @@ void SynthesiaAIEditor::resized()
     for (int i = 0; i < muteButtons.size(); ++i)
     {
         auto slot = mixRow.removeFromLeft(mixSlot);
-        muteButtons[i]->setBounds(slot.removeFromLeft(28).reduced(1));
-        slot.removeFromLeft(4);
-        soloButtons[i]->setBounds(slot.removeFromLeft(28).reduced(1));
-        auto name = juce::String(partName(allParts[static_cast<size_t>(i)]));
-        juce::ignoreUnused(name);
+        mixPartLabels[i]->setBounds(slot.removeFromLeft(52));
+        muteButtons[i]->setBounds(slot.removeFromLeft(26).reduced(1));
+        slot.removeFromLeft(3);
+        soloButtons[i]->setBounds(slot.removeFromLeft(26).reduced(1));
     }
     footer.removeFromBottom(6);
     clipView.setBounds(footer);
@@ -895,9 +904,7 @@ void SynthesiaAIEditor::layoutGeneratePage()
     }
 
     styleLabel.setBounds(area.removeFromTop(20));
-    styleTextEditor.setBounds(area.removeFromTop(56));
-    area.removeFromTop(10);
-    generateButton.setBounds(area.removeFromTop(36));
+    styleTextEditor.setBounds(area);
 }
 
 void SynthesiaAIEditor::layoutPlanPage()
@@ -1213,7 +1220,7 @@ void SynthesiaAIEditor::onCaptureClicked()
         }
         else
         {
-            statusLabel.setText("Capture was empty — play MIDI into the plugin first",
+            statusLabel.setText("Capture was empty - play MIDI into the plugin first",
                                 juce::dontSendNotification);
         }
         return;
@@ -1493,7 +1500,7 @@ void SynthesiaAIEditor::updateUIState()
     clipView.setPlaybackBeat(audioProcessor.getPlaybackBeat());
 
     if (!isGenerating && statusLabel.getText() == "Generating...")
-        statusLabel.setText(hasMidi ? "Generation complete — drag a part into your DAW"
+        statusLabel.setText(hasMidi ? "Generation complete - drag a part into your DAW"
                                     : "Generation failed (check generator settings)",
                             juce::dontSendNotification);
     if (!isGenerating && statusLabel.getText() == "Planning...")

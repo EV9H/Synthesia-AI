@@ -510,7 +510,8 @@ int main(int argc, char* argv[])
     const auto& realisedGenre = synthesia->getLastPlan().sections.empty()
         ? params.genre : synthesia->getLastPlan().genre;
     const auto realisedKey = synthesia->getLastPlan().sections.empty()
-        ? option("--key", "C")
+        ? juce::String(theory::pitchClassName(params.rootNote,
+                                              theory::keyPrefersFlats(params.rootNote, params.scale)))
         : juce::String(theory::pitchClassName(synthesia->getLastPlan().rootNote,
                                               theory::keyPrefersFlats(synthesia->getLastPlan().rootNote,
                                                                       synthesia->getLastPlan().scale)));

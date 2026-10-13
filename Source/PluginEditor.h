@@ -172,6 +172,7 @@ private:
     juce::Label styleLabel;
     juce::TextEditor styleTextEditor;
     juce::TextButton generateButton;
+    juce::OwnedArray<juce::Label> mixPartLabels;
 
     juce::Label planLabel;
     juce::TextEditor planSummaryEditor;
