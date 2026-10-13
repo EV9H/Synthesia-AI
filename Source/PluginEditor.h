@@ -4,11 +4,12 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 
-// Read-only piano-roll view of the generated clip with a playback cursor
+// Piano-roll of the generated clip: one colour per part, chord symbols, playback cursor
 class ClipView : public juce::Component
 {
 public:
-    void setClip(const juce::MidiBuffer& midi, double lengthInBeats);
+    void setClip(const juce::MidiBuffer& midi, double lengthInBeats,
+                 const std::vector<ChordInfo>& chords);
     void setPlaybackBeat(double beat);
 
     void paint(juce::Graphics&) override;
@@ -20,9 +21,11 @@ private:
         double start;
         double length;
         int velocity;
+        int channel;
     };
 
     std::vector<DisplayNote> notes;
+    std::vector<ChordInfo> progression;
     double clipLength{0.0};
     double playbackBeat{-1.0};
     int lowestPitch{60};
@@ -43,11 +46,12 @@ public:
 private:
     void onGenerateClicked();
     void onExportMidi();
+    void applyGenreDefaults();
     void updateUIState();
+    void exportToChooser(int menuId);
 
     SynthesiaAIProcessor& audioProcessor;
     
-    // UI Components
     juce::Label titleLabel;
     juce::Label subtitleLabel;
     
@@ -56,9 +60,18 @@ private:
     
     juce::Label scaleLabel;
     juce::ComboBox scaleComboBox;
+
+    juce::Label genreLabel;
+    juce::ComboBox genreComboBox;
+
+    juce::Label partLabel;
+    juce::ComboBox partComboBox;
     
     juce::Label lengthLabel;
     juce::Slider lengthSlider;
+
+    juce::Label tempoLabel;
+    juce::Slider tempoSlider;
     
     juce::Label tempoSyncLabel;
     juce::ComboBox tempoSyncComboBox;
@@ -78,7 +91,6 @@ private:
     
     juce::Label statusLabel;
     
-    // Settings
     juce::TextButton settingsButton;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIEditor)
