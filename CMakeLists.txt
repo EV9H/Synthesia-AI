@@ -48,9 +48,17 @@ set(SYNTHESIA_SOURCES
     Source/Generators/ArrangementGenerator.cpp
     Source/Music/MusicTheory.cpp
     Source/SimpleSynth.cpp
+    Source/DrumLibrary.cpp
     Source/MidiExporter.cpp
 )
 target_sources(SynthesiaAI PRIVATE ${SYNTHESIA_SOURCES})
+
+file(GLOB SYNTHESIA_DRUM_WAVS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Samples/*.wav")
+juce_add_binary_data(SynthesiaDrumSamples
+    HEADER_NAME DrumBinaryData.h
+    NAMESPACE DrumBinaryData
+    SOURCES ${SYNTHESIA_DRUM_WAVS})
+set_target_properties(SynthesiaDrumSamples PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # JUCE modules
 target_compile_definitions(SynthesiaAI
@@ -68,6 +76,7 @@ target_link_libraries(SynthesiaAI
         juce::juce_audio_utils
         juce::juce_dsp
         CURL::libcurl
+        SynthesiaDrumSamples
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -90,6 +99,7 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
         juce::juce_audio_utils
         juce::juce_dsp
         CURL::libcurl
+        SynthesiaDrumSamples
         juce::juce_recommended_config_flags)
 endif()
 
