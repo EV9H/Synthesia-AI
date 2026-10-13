@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, cursor/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
+    
+    - name: Upload VST3
+      uses: actions/upload-artifact@v4
+      with:
+        name: SynthesiaAI-Windows-VST3
+        path: build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
+    
+    - name: Upload VST3
+      uses: actions/upload-artifact@v4
+      with:
+        name: SynthesiaAI-macOS-VST3
+        path: build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
+    
+    - name: Upload AU
+      uses: actions/upload-artifact@v4
+      with:
+        name: SynthesiaAI-macOS-AU
+        path: build/SynthesiaAI_artefacts/Release/AU/SynthesiaAI.component
