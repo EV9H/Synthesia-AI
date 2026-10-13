@@ -20,9 +20,8 @@ fi
 
 mkdir -p "$OUT"
 
-# Mix + each part solo for a handful of genres. Same seed so a solo matches
-# that part inside the mix. Tempo and grid come from the genre profile unless
-# overridden; we pin them here so the filenames stay accurate.
+# Mix (now including drums) plus a drums-solo for the main genres. Same seed
+# so the solo matches the drums track inside the mix.
 #
 # name | genre | key | scale | bpm | seed
 DEMOS=(
@@ -31,14 +30,14 @@ DEMOS=(
     "trap-am-140bpm|trap|A|minor|140|7"
 )
 
-# Extra full-arrangement mixes (no solos) so every genre has a listen-check.
+# Extra full-arrangement mixes (with drums) so every genre has a listen-check.
 MIXES=(
     "pop-am-110bpm|pop|A|minor|110|7"
     "rnb-am-88bpm|rnb|A|minor|88|7"
     "cinematic-am-80bpm|cinematic|A|minor|80|7"
 )
 
-PARTS=(chords bass synth piano)
+PARTS=(drums)
 
 failed=0
 
@@ -85,7 +84,7 @@ render() {
 for demo in "${DEMOS[@]}"; do
     IFS='|' read -r name genre key scale bpm seed <<< "$demo"
 
-    echo "== $name mix (chords+bass+synth+piano) =="
+    echo "== $name mix (chords+bass+synth+piano+drums) =="
     render "${name}-mix" "$genre" "$key" "$scale" "$bpm" "$seed" all
 
     for part in "${PARTS[@]}"; do

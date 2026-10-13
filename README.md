@@ -6,18 +6,18 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 
 ### Current (MVP)
 - **Three generators**:
-  - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp and piano, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic
+  - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp, piano and drums, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic. Drums use the General MIDI percussion map on channel 10.
   - **Markov Generator**: classic single-line melody (no internet required)
   - **LLM Generator**: AI-powered MIDI generation using OpenAI-compatible APIs
   
 - **UI Controls**:
-  - Genre, part (All / Chords / Bass / Synth / Piano), key and scale
+  - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
   - Length (1-16 bars) and tempo (60-180 bpm, defaults follow the genre)
   - Grid / quantization (1/16, 1/8, 1/4, 1/2 notes)
   - Style/prompt text input for AI generation
   
 - **Preview & Export**:
-  - Built-in synth with a distinct timbre per part
+  - Built-in synth with a distinct timbre per part, including a synthesized drum kit per genre
   - Export multi-track `.mid`, separate files per part, or a single part
   - MIDI output routing to DAW tracks
   
@@ -57,7 +57,7 @@ class MidiGenerator {
 ```
 
 Current implementations:
-- `ArrangementGenerator`: Genre-aware multi-part arranger (chords, bass, synth, piano) using `GenreProfiles` and `MusicTheory`
+- `ArrangementGenerator`: Genre-aware multi-part arranger (chords, bass, synth, piano, drums) using `GenreProfiles` and `MusicTheory`
 - `MarkovGenerator`: Offline algorithmic generation using Markov chains for note selection
 - `LLMGenerator`: Calls OpenAI-compatible APIs with structured prompts (including genre, part and chord context), parses JSON responses
 
@@ -126,7 +126,7 @@ Note: Linux builds produce only the Standalone version (no VST3/AU for DAW use o
 `SynthesiaRender` loads the plugin processor, generates a clip with the genre
 arranger (or `--generator markov`), plays it through the built-in synth with a
 running host transport and bounces it to WAV (and optionally a multi-track
-`.mid`). `--part` selects chords, bass, synth, piano, or all four. `--split-midi`
+`.mid`). `--part` selects chords, bass, synth, piano, drums, or all five. `--split-midi`
 also writes one `.mid` per part. It exits non-zero if the render is silent,
 clips, or plays a different number of notes than the clip contains.
 
@@ -236,7 +236,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 ├── Source/
 │   ├── PluginProcessor.{h,cpp}     # Main audio processor
 │   ├── PluginEditor.{h,cpp}        # UI implementation
-│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part)
+│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part, drum kits)
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
 │   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings
 │   └── Generators/
