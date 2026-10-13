@@ -2,13 +2,19 @@
 #include "PluginEditor.h"
 #include "Generators/MarkovGenerator.h"
 #include "Generators/LLMGenerator.h"
+#include <cmath>
 #include <thread>
+
+namespace
+{
+    constexpr double ticksPerQuarterNote = 960.0;
+}
 
 SynthesiaAIProcessor::SynthesiaAIProcessor()
     : AudioProcessor(BusesProperties()
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
-    generator = std::make_unique<MarkovGenerator>();
+    generator = std::make_shared<MarkovGenerator>();
 }
 
 SynthesiaAIProcessor::~SynthesiaAIProcessor()
@@ -37,7 +43,7 @@ bool SynthesiaAIProcessor::isMidiEffect() const
 
 double SynthesiaAIProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+    return SimpleSynth::releaseSeconds;
 }
 
 int SynthesiaAIProcessor::getNumPrograms()
@@ -68,7 +74,12 @@ void SynthesiaAIProcessor::changeProgramName(int index, const juce::String& newN
 
 void SynthesiaAIProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+    currentSampleRate = sampleRate;
     simpleSynth.prepare(sampleRate, samplesPerBlock);
+    blockMidi.ensureSize(4096);
+    previewBeat = 0.0;
+    wasPlaying = false;
+    hostWasPlaying = false;
 }
 
 void SynthesiaAIProcessor::releaseResources()
@@ -90,15 +101,116 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
     
     buffer.clear();
-    
-    // Process generated MIDI through simple synth for preview
-    if (!generatedMidi.isEmpty())
+    const int numSamples = buffer.getNumSamples();
+
+    double bpm = 120.0;
+    bool hostPlaying = false;
+    double hostBeat = 0.0;
+
+    if (auto* playHead = getPlayHead())
     {
-        simpleSynth.renderNextBlock(buffer, generatedMidi, 0, buffer.getNumSamples());
+        if (auto position = playHead->getPosition())
+        {
+            if (auto hostBpm = position->getBpm())
+                bpm = *hostBpm;
+
+            if (position->getIsPlaying())
+            {
+                if (auto ppq = position->getPpqPosition())
+                {
+                    hostPlaying = true;
+                    hostBeat = *ppq;
+                }
+            }
+        }
     }
-    
-    // Also output MIDI (for DAW routing)
-    midiMessages.addEvents(generatedMidi, 0, buffer.getNumSamples(), 0);
+
+    const bool preview = previewPlaying.load();
+    const bool playing = hostPlaying || preview;
+    const double samplesPerBeat = currentSampleRate * 60.0 / juce::jmax(1.0, bpm);
+    // Host PPQ positions carry rounding error; continue from the previous block's end
+    // when the host is still contiguous so boundary events aren't triggered twice.
+    bool hostJumped = false;
+    double startBeat = previewBeat;
+
+    if (hostPlaying)
+    {
+        const double tolerance = 2.0 / samplesPerBeat;
+        const bool contiguous = hostWasPlaying && std::abs(hostBeat - nextHostBeat) < tolerance;
+        hostJumped = hostWasPlaying && !contiguous;
+        startBeat = contiguous ? nextHostBeat : hostBeat;
+    }
+
+    const double endBeat = startBeat + numSamples / samplesPerBeat;
+
+    // Live MIDI from the host keyboard/track also drives the preview synth.
+    blockMidi.clear();
+    blockMidi.addEvents(midiMessages, 0, numSamples, 0);
+
+    {
+        const juce::SpinLock::ScopedTryLockType lock(clipLock);
+
+        if (lock.isLocked())
+        {
+            if (clipChanged || hostJumped || (wasPlaying && !playing))
+            {
+                sendAllNotesOff(blockMidi);
+                clipChanged = false;
+            }
+
+            if (playing)
+                collectClipEvents(startBeat, endBeat, samplesPerBeat, numSamples, blockMidi);
+
+            if (preview && !hostPlaying && clipEventsLength > 0.0)
+                previewBeat = std::fmod(endBeat, clipEventsLength);
+        }
+    }
+
+    wasPlaying = playing;
+    hostWasPlaying = hostPlaying;
+    nextHostBeat = endBeat;
+
+    simpleSynth.renderNextBlock(buffer, blockMidi, 0, numSamples);
+
+    // Pass the same events on so the DAW can record/route them.
+    midiMessages.swapWith(blockMidi);
+}
+
+void SynthesiaAIProcessor::collectClipEvents(double startBeat, double endBeat,
+                                             double samplesPerBeat, int numSamples,
+                                             juce::MidiBuffer& out) const
+{
+    if (clipEvents.empty() || clipEventsLength <= 0.0)
+        return;
+
+    // Events are assigned to their nearest sample, so shift the window by half a sample.
+    const double halfSample = 0.5 / samplesPerBeat;
+    const double windowStart = startBeat - halfSample;
+    const double windowEnd = endBeat - halfSample;
+
+    // Start one loop early so note-offs sitting exactly on the loop end are not dropped.
+    const double firstLoop = (std::floor(windowStart / clipEventsLength) - 1.0) * clipEventsLength;
+
+    for (double loopStart = firstLoop; loopStart < windowEnd; loopStart += clipEventsLength)
+    {
+        for (const auto& event : clipEvents)
+        {
+            const double beat = loopStart + event.beat;
+
+            if (beat >= windowStart && beat < windowEnd)
+            {
+                const int samplePos = juce::jlimit(0, numSamples - 1,
+                    static_cast<int>(std::floor((beat - startBeat) * samplesPerBeat + 0.5)));
+                out.addEvent(event.message, samplePos);
+            }
+        }
+    }
+}
+
+void SynthesiaAIProcessor::sendAllNotesOff(juce::MidiBuffer& out)
+{
+    for (int channel = 1; channel <= 16; ++channel)
+        out.addEvent(juce::MidiMessage::allNotesOff(channel), 0);
 }
 
 bool SynthesiaAIProcessor::hasEditor() const
@@ -140,19 +252,58 @@ void SynthesiaAIProcessor::generateMidi(const MidiGenerationParams& params)
         return;
     
     isGeneratingMidi.store(true);
+
+    std::weak_ptr<bool> alive = aliveToken;
     
-    // Run generation on background thread using async
-    std::thread([this, params]()
+    std::thread([this, alive, params, gen = generator]()
     {
-        auto newMidi = generator->generate(params);
+        auto newMidi = gen->generate(params);
         
-        // Update generated MIDI on message thread
-        juce::MessageManager::callAsync([this, newMidi = std::move(newMidi)]() mutable
+        juce::MessageManager::callAsync([this, alive, params, newMidi = std::move(newMidi)]() mutable
         {
-            generatedMidi = std::move(newMidi);
+            if (alive.expired())
+                return;
+
+            setGeneratedClip(std::move(newMidi), params.lengthInBars * 4.0);
             isGeneratingMidi.store(false);
+
+            if (!generatedMidi.isEmpty())
+                setPreviewPlaying(true);
         });
     }).detach();
+}
+
+void SynthesiaAIProcessor::generateMidiBlocking(const MidiGenerationParams& params)
+{
+    setGeneratedClip(generator->generate(params), params.lengthInBars * 4.0);
+}
+
+void SynthesiaAIProcessor::setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats)
+{
+    std::vector<ClipEvent> events;
+
+    for (const auto metadata : newMidi)
+        events.push_back({ metadata.samplePosition / ticksPerQuarterNote, metadata.getMessage() });
+
+    generatedMidi = std::move(newMidi);
+    clipLengthBeats = lengthInBeats;
+
+    const juce::SpinLock::ScopedLockType lock(clipLock);
+    clipEvents = std::move(events);
+    clipEventsLength = lengthInBeats;
+    clipChanged = true;
+    previewBeat = 0.0;
+}
+
+void SynthesiaAIProcessor::setPreviewPlaying(bool shouldPlay)
+{
+    if (shouldPlay)
+    {
+        const juce::SpinLock::ScopedLockType lock(clipLock);
+        previewBeat = 0.0;
+    }
+
+    previewPlaying.store(shouldPlay);
 }
 
 bool SynthesiaAIProcessor::isGenerating() const
@@ -167,10 +318,10 @@ void SynthesiaAIProcessor::setGeneratorType(GeneratorType type)
     switch (type)
     {
         case GeneratorType::Markov:
-            generator = std::make_unique<MarkovGenerator>();
+            generator = std::make_shared<MarkovGenerator>();
             break;
         case GeneratorType::LLM:
-            generator = std::make_unique<LLMGenerator>(apiKey);
+            generator = std::make_shared<LLMGenerator>(apiKey);
             break;
     }
 }

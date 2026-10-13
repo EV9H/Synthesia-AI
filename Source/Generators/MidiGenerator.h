@@ -36,6 +36,7 @@ struct MidiGenerationParams
     Quantization quantization{Quantization::Eighth};
     double tempo{120.0};
     std::string stylePrompt;
+    unsigned int seed{0};  // 0 = non-deterministic
 };
 
 struct Note

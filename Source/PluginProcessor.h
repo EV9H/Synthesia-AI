@@ -39,8 +39,14 @@ public:
 
     // MIDI generation
     void generateMidi(const MidiGenerationParams& params);
+    void generateMidiBlocking(const MidiGenerationParams& params);
     const juce::MidiBuffer& getGeneratedMidi() const { return generatedMidi; }
+    double getClipLengthInBeats() const { return clipLengthBeats; }
     bool isGenerating() const;
+
+    // Preview playback, used when the host transport is not running (e.g. Standalone)
+    void setPreviewPlaying(bool shouldPlay);
+    bool isPreviewPlaying() const { return previewPlaying.load(); }
     
     // Generator management
     void setGeneratorType(GeneratorType type);
@@ -51,11 +57,39 @@ public:
     juce::String getApiKey() const;
 
 private:
-    std::unique_ptr<MidiGenerator> generator;
+    struct ClipEvent
+    {
+        double beat;
+        juce::MidiMessage message;
+    };
+
+    void setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats);
+    void collectClipEvents(double startBeat, double endBeat, double samplesPerBeat,
+                           int numSamples, juce::MidiBuffer& out) const;
+    void sendAllNotesOff(juce::MidiBuffer& out);
+
+    // Shared so a background generation keeps its generator alive if the type changes mid-run
+    std::shared_ptr<MidiGenerator> generator;
+    std::shared_ptr<bool> aliveToken{std::make_shared<bool>(true)};
     GeneratorType currentGeneratorType{GeneratorType::Markov};
     
     juce::MidiBuffer generatedMidi;
+    double clipLengthBeats{0.0};
+
+    // Audio-thread copy of the clip, guarded by clipLock
+    juce::SpinLock clipLock;
+    std::vector<ClipEvent> clipEvents;
+    double clipEventsLength{0.0};
+    bool clipChanged{false};
+
     SimpleSynth simpleSynth;
+    juce::MidiBuffer blockMidi;
+    double currentSampleRate{44100.0};
+    double previewBeat{0.0};
+    bool wasPlaying{false};
+    bool hostWasPlaying{false};
+    double nextHostBeat{0.0};
+    std::atomic<bool> previewPlaying{false};
     
     std::atomic<bool> isGeneratingMidi{false};
     

@@ -7,6 +7,9 @@ MarkovGenerator::MarkovGenerator()
 
 juce::MidiBuffer MarkovGenerator::generate(const MidiGenerationParams& params)
 {
+    if (params.seed != 0)
+        rng.seed(params.seed);
+
     auto notes = generateMarkovSequence(params);
     return notesToMidiBuffer(notes, params.tempo);
 }
