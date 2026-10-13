@@ -1,7 +1,9 @@
 #include "SimpleSynth.h"
 
-// SineWaveVoice implementation
-SineWaveVoice::SineWaveVoice() {}
+SineWaveVoice::SineWaveVoice()
+{
+    envelope.setParameters({ 0.005f, 0.25f, 0.6f, static_cast<float>(SimpleSynth::releaseSeconds) });
+}
 
 bool SineWaveVoice::canPlaySound(juce::SynthesiserSound* sound)
 {
@@ -12,23 +14,26 @@ void SineWaveVoice::startNote(int midiNoteNumber, float velocity,
                               juce::SynthesiserSound*, int)
 {
     currentAngle = 0.0;
-    level = velocity * 0.15;
-    tailOff = 0.0;
+    level = velocity * 0.18;
     
     auto cyclesPerSecond = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
     auto cyclesPerSample = cyclesPerSecond / getSampleRate();
     angleDelta = cyclesPerSample * 2.0 * juce::MathConstants<double>::pi;
+
+    envelope.setSampleRate(getSampleRate());
+    envelope.reset();
+    envelope.noteOn();
 }
 
 void SineWaveVoice::stopNote(float, bool allowTailOff)
 {
     if (allowTailOff)
     {
-        if (tailOff == 0.0)
-            tailOff = 1.0;
+        envelope.noteOff();
     }
     else
     {
+        envelope.reset();
         clearCurrentNote();
         angleDelta = 0.0;
     }
@@ -37,42 +42,27 @@ void SineWaveVoice::stopNote(float, bool allowTailOff)
 void SineWaveVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                                    int startSample, int numSamples)
 {
-    if (angleDelta != 0.0)
+    if (angleDelta == 0.0)
+        return;
+
+    while (--numSamples >= 0)
     {
-        if (tailOff > 0.0)
+        const auto tone = std::sin(currentAngle)
+                        + 0.3 * std::sin(2.0 * currentAngle)
+                        + 0.1 * std::sin(3.0 * currentAngle);
+        const auto currentSample = static_cast<float>(tone * level * envelope.getNextSample());
+
+        for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
+            outputBuffer.addSample(i, startSample, currentSample);
+
+        currentAngle += angleDelta;
+        ++startSample;
+
+        if (!envelope.isActive())
         {
-            while (--numSamples >= 0)
-            {
-                auto currentSample = (float)(std::sin(currentAngle) * level * tailOff);
-                
-                for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-                    outputBuffer.addSample(i, startSample, currentSample);
-                
-                currentAngle += angleDelta;
-                ++startSample;
-                
-                tailOff *= 0.99;
-                
-                if (tailOff <= 0.005)
-                {
-                    clearCurrentNote();
-                    angleDelta = 0.0;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            while (--numSamples >= 0)
-            {
-                auto currentSample = (float)(std::sin(currentAngle) * level);
-                
-                for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-                    outputBuffer.addSample(i, startSample, currentSample);
-                
-                currentAngle += angleDelta;
-                ++startSample;
-            }
+            clearCurrentNote();
+            angleDelta = 0.0;
+            break;
         }
     }
 }
@@ -85,14 +75,14 @@ SimpleSynth::SimpleSynth()
 
 void SimpleSynth::prepare(double sampleRate, int samplesPerBlock)
 {
+    juce::ignoreUnused(samplesPerBlock);
     currentSampleRate = sampleRate;
     synth.setCurrentPlaybackSampleRate(sampleRate);
 }
 
 void SimpleSynth::releaseResources()
 {
-    synth.clearVoices();
-    synth.clearSounds();
+    synth.allNotesOff(0, false);
 }
 
 void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
@@ -108,10 +98,8 @@ void SimpleSynth::setupVoices()
     synth.clearVoices();
     synth.clearSounds();
     
-    // Add 16 sine wave voices
     for (int i = 0; i < 16; ++i)
         synth.addVoice(new SineWaveVoice());
     
-    // Add a sine wave sound
     synth.addSound(new SineWaveSound());
 }

@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
-// Simple sine wave voice
+// Simple additive voice (fundamental + two soft harmonics) with an ADSR envelope
 class SineWaveVoice : public juce::SynthesiserVoice
 {
 public:
@@ -17,7 +17,8 @@ public:
     void renderNextBlock(juce::AudioBuffer<float>&, int startSample, int numSamples) override;
     
 private:
-    double currentAngle = 0.0, angleDelta = 0.0, level = 0.0, tailOff = 0.0;
+    double currentAngle = 0.0, angleDelta = 0.0, level = 0.0;
+    juce::ADSR envelope;
 };
 
 // Simple sine wave sound
@@ -31,6 +32,8 @@ public:
 class SimpleSynth
 {
 public:
+    static constexpr double releaseSeconds = 0.3;
+
     SimpleSynth();
     ~SimpleSynth() = default;
     
