@@ -2,32 +2,23 @@
 #include "PluginEditor.h"
 #include "MidiExporter.h"
 #include "Generators/GenreProfiles.h"
+#include "PresetStore.h"
+#include "LicenseStub.h"
 #include <map>
-
-namespace Theme
-{
-    const juce::Colour background{0xff1b1f2a};
-    const juce::Colour header{0xff232838};
-    const juce::Colour outline{0xff2e3445};
-    const juce::Colour clipBackground{0xff141822};
-    const juce::Colour accent{0xff4f8cff};
-    const juce::Colour label{0xffb8c0d0};
-    const juce::Colour dimText{0xff7a8396};
-}
 
 namespace
 {
-    constexpr int labelWidth = 92;
+    constexpr int labelWidth = 88;
 
     juce::Colour colourForChannel(int channel)
     {
         switch (channel)
         {
-            case 1:  return juce::Colour(0xffe8b86d); // chords
-            case 2:  return juce::Colour(0xfff07178); // bass
-            case 3:  return juce::Colour(0xff4f8cff); // synth
-            case 4:  return juce::Colour(0xff7dcea0); // piano
-            case 10: return juce::Colour(0xffc4a5e8); // drums
+            case 1:  return juce::Colour(0xffe8b86d);
+            case 2:  return juce::Colour(0xfff07178);
+            case 3:  return juce::Colour(0xff5b8def);
+            case 4:  return juce::Colour(0xff7dcea0);
+            case 10: return juce::Colour(0xffc4a5e8);
             default: return Theme::accent;
         }
     }
@@ -36,6 +27,7 @@ namespace
     {
         label.setText(text, juce::dontSendNotification);
         label.setColour(juce::Label::textColourId, Theme::label);
+        label.setFont(juce::Font(14.5f));
     }
 
     int generatorComboId(GeneratorType type)
@@ -58,6 +50,110 @@ namespace
             default: return GeneratorType::Genre;
         }
     }
+
+    bool partAudible(int muteMask, int soloMask, int channel)
+    {
+        const auto part = partFromChannel(channel);
+        if (soloMask != 0)
+            return (soloMask & partLockBit(part)) != 0;
+        return (muteMask & partLockBit(part)) == 0;
+    }
+}
+
+SynthesiaLookAndFeel::SynthesiaLookAndFeel()
+{
+    setColourScheme({
+        0xff12151c, 0xff1c2230, 0xff1a1f2b, 0xff2c3448,
+        0xffd5dbe8, 0xff5b8def, 0xffffffff, 0xff5b8def, 0xffffffff
+    });
+    setColour(juce::ResizableWindow::backgroundColourId, Theme::background);
+    setColour(juce::TextButton::buttonColourId, Theme::panel);
+    setColour(juce::TextButton::textColourOffId, Theme::label);
+    setColour(juce::ComboBox::backgroundColourId, Theme::clipBackground);
+    setColour(juce::ComboBox::textColourId, Theme::label);
+    setColour(juce::ComboBox::outlineColourId, Theme::outline);
+    setColour(juce::ComboBox::arrowColourId, Theme::dimText);
+    setColour(juce::PopupMenu::backgroundColourId, Theme::header);
+    setColour(juce::PopupMenu::textColourId, Theme::label);
+    setColour(juce::PopupMenu::highlightedBackgroundColourId, Theme::accent);
+    setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
+    setColour(juce::TabbedComponent::backgroundColourId, Theme::background);
+    setColour(juce::TabbedComponent::outlineColourId, Theme::outline);
+    setColour(juce::TabbedButtonBar::tabOutlineColourId, Theme::outline);
+    setColour(juce::TabbedButtonBar::frontOutlineColourId, Theme::accent);
+    setColour(juce::Slider::thumbColourId, Theme::accent);
+    setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.65f));
+    setColour(juce::Slider::backgroundColourId, Theme::clipBackground);
+    setColour(juce::Slider::textBoxTextColourId, Theme::label);
+    setColour(juce::Slider::textBoxBackgroundColourId, Theme::clipBackground);
+    setColour(juce::Slider::textBoxOutlineColourId, Theme::outline);
+    setColour(juce::ToggleButton::textColourId, Theme::label);
+    setColour(juce::ToggleButton::tickColourId, Theme::accent);
+    setColour(juce::Label::textColourId, Theme::label);
+    setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
+    setColour(juce::TextEditor::textColourId, Theme::label);
+    setColour(juce::TextEditor::outlineColourId, Theme::outline);
+    setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
+    setColour(juce::TextEditor::highlightColourId, Theme::accent.withAlpha(0.35f));
+    setColour(juce::ScrollBar::thumbColourId, Theme::outline);
+}
+
+juce::Font SynthesiaLookAndFeel::getTextButtonFont(juce::TextButton&, int)
+{
+    return juce::Font(15.0f);
+}
+
+juce::Font SynthesiaLookAndFeel::getLabelFont(juce::Label&)
+{
+    return juce::Font(14.5f);
+}
+
+juce::Font SynthesiaLookAndFeel::getComboBoxFont(juce::ComboBox&)
+{
+    return juce::Font(15.0f);
+}
+
+juce::Font SynthesiaLookAndFeel::getPopupMenuFont()
+{
+    return juce::Font(15.0f);
+}
+
+MidiDragChip::MidiDragChip(std::function<void()> dragFn, juce::String text)
+    : onDrag(std::move(dragFn)), label(std::move(text))
+{
+    setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+}
+
+void MidiDragChip::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    g.setColour(hasMidi ? Theme::panel : Theme::clipBackground);
+    g.fillRoundedRectangle(bounds, 6.0f);
+    g.setColour(hasMidi ? Theme::accent.withAlpha(0.85f) : Theme::outline);
+    g.drawRoundedRectangle(bounds, 6.0f, 1.2f);
+    g.setColour(hasMidi ? Theme::label : Theme::dimText);
+    g.setFont(juce::Font(13.5f, juce::Font::bold));
+    g.drawText(label, getLocalBounds().reduced(6, 0), juce::Justification::centred, false);
+}
+
+void MidiDragChip::mouseDown(const juce::MouseEvent&)
+{
+    dragging = false;
+}
+
+void MidiDragChip::mouseDrag(const juce::MouseEvent& event)
+{
+    if (dragging || !hasMidi || event.getDistanceFromDragStart() < 4)
+        return;
+    dragging = true;
+    if (onDrag)
+        onDrag();
+}
+
+void MidiDragChip::setEnabledLook(bool midiReady)
+{
+    hasMidi = midiReady;
+    repaint();
 }
 
 void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
@@ -110,11 +206,13 @@ void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
     highestPitch = 0;
     for (const auto& note : notes)
     {
+        if (!noteAudible(note.channel))
+            continue;
         lowestPitch = juce::jmin(lowestPitch, note.pitch);
         highestPitch = juce::jmax(highestPitch, note.pitch);
     }
 
-    if (notes.empty())
+    if (lowestPitch > highestPitch)
     {
         lowestPitch = 60;
         highestPitch = 72;
@@ -132,6 +230,34 @@ void ClipView::setPlaybackBeat(double beat)
     }
 }
 
+void ClipView::setMuteSolo(int mute, int solo)
+{
+    if (mute == muteMask && solo == soloMask)
+        return;
+    muteMask = mute;
+    soloMask = solo;
+    lowestPitch = 127;
+    highestPitch = 0;
+    for (const auto& note : notes)
+    {
+        if (!noteAudible(note.channel))
+            continue;
+        lowestPitch = juce::jmin(lowestPitch, note.pitch);
+        highestPitch = juce::jmax(highestPitch, note.pitch);
+    }
+    if (lowestPitch > highestPitch)
+    {
+        lowestPitch = 60;
+        highestPitch = 72;
+    }
+    repaint();
+}
+
+bool ClipView::noteAudible(int channel) const
+{
+    return partAudible(muteMask, soloMask, channel);
+}
+
 void ClipView::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
@@ -143,8 +269,9 @@ void ClipView::paint(juce::Graphics& g)
     if (clipLength <= 0.0 || notes.empty())
     {
         g.setColour(Theme::dimText);
-        g.setFont(14.0f);
-        g.drawText("Generate a clip to see it here", getLocalBounds(), juce::Justification::centred);
+        g.setFont(15.0f);
+        g.drawText("Generate a clip, then drag a part out as .mid", getLocalBounds(),
+                   juce::Justification::centred);
         return;
     }
 
@@ -164,31 +291,37 @@ void ClipView::paint(juce::Graphics& g)
     if (drawChords)
         area.removeFromTop(2.0f);
 
+    int audibleNotes = 0;
+    for (const auto& note : notes)
+        if (noteAudible(note.channel))
+            ++audibleNotes;
+
     g.setColour(Theme::dimText);
-    g.setFont(12.0f);
+    g.setFont(12.5f);
     g.drawText(juce::String(juce::roundToInt(clipLength / 4.0)) + " bars  |  "
-                   + juce::String(static_cast<int>(notes.size())) + " notes  |  "
+                   + juce::String(audibleNotes) + " notes  |  "
                    + juce::MidiMessage::getMidiNoteName(lowestPitch, true, true, 4) + " - "
                    + juce::MidiMessage::getMidiNoteName(highestPitch, true, true, 4),
                caption, juce::Justification::centredLeft);
 
     float legendX = legend.getX();
-    g.setFont(11.0f);
+    g.setFont(11.5f);
     for (Part part : allParts)
     {
-        const auto colour = colourForChannel(partChannel(part));
+        const bool audible = partAudible(muteMask, soloMask, partChannel(part));
+        const auto colour = colourForChannel(partChannel(part)).withAlpha(audible ? 1.0f : 0.28f);
         g.setColour(colour);
         g.fillRoundedRectangle(legendX, legend.getY() + 3.0f, 10.0f, 10.0f, 2.0f);
-        g.setColour(Theme::dimText);
+        g.setColour(audible ? Theme::dimText : Theme::dimText.withAlpha(0.45f));
         const auto name = juce::String(partName(part));
         g.drawText(name, juce::roundToInt(legendX + 14.0f), juce::roundToInt(legend.getY()),
-                   48, juce::roundToInt(legend.getHeight()), juce::Justification::centredLeft, false);
-        legendX += 58.0f;
+                   56, juce::roundToInt(legend.getHeight()), juce::Justification::centredLeft, false);
+        legendX += 68.0f;
     }
 
     const float pixelsPerBeat = area.getWidth() / static_cast<float>(clipLength);
     const int pitchRows = highestPitch - lowestPitch + 3;
-    const float rowHeight = area.getHeight() / static_cast<float>(pitchRows);
+    const float rowHeight = area.getHeight() / static_cast<float>(juce::jmax(1, pitchRows));
 
     if (drawSections)
     {
@@ -197,7 +330,7 @@ void ClipView::paint(juce::Graphics& g)
             juce::Colour(0xff6a4a3a), juce::Colour(0xff4a3d63), juce::Colour(0xff6a3d4a),
             juce::Colour(0xff3d3d3d), juce::Colour(0xff3d4a4a)
         };
-        g.setFont(10.0f);
+        g.setFont(10.5f);
         for (const auto& section : sections)
         {
             const float x = sectionStrip.getX() + static_cast<float>(section.startBeat) * pixelsPerBeat;
@@ -227,7 +360,7 @@ void ClipView::paint(juce::Graphics& g)
 
     if (drawChords)
     {
-        g.setFont(11.0f);
+        g.setFont(12.0f);
         for (const auto& chord : progression)
         {
             const float x = chordStrip.getX() + static_cast<float>(chord.startBeat) * pixelsPerBeat;
@@ -242,10 +375,12 @@ void ClipView::paint(juce::Graphics& g)
 
     for (const auto& note : notes)
     {
+        const bool audible = noteAudible(note.channel);
         const float x = area.getX() + static_cast<float>(note.start) * pixelsPerBeat;
         const float w = juce::jmax(2.0f, static_cast<float>(note.length) * pixelsPerBeat - 1.0f);
         const float y = area.getY() + (highestPitch + 1 - note.pitch) * rowHeight;
-        const float alpha = juce::jmap(static_cast<float>(note.velocity), 0.0f, 127.0f, 0.45f, 1.0f);
+        const float alpha = juce::jmap(static_cast<float>(note.velocity), 0.0f, 127.0f, 0.45f, 1.0f)
+                            * (audible ? 1.0f : 0.18f);
 
         g.setColour(colourForChannel(note.channel).withAlpha(alpha));
         g.fillRoundedRectangle(x, y, w, juce::jmax(2.0f, rowHeight - 1.0f), 2.0f);
@@ -266,59 +401,94 @@ void ClipView::paint(juce::Graphics& g)
 SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    setLookAndFeel(&lookAndFeel);
+
     titleLabel.setText("Synthesia AI", juce::dontSendNotification);
     titleLabel.setFont(juce::Font(22.0f, juce::Font::bold));
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Import MIDI, learn a style, then generate around it", juce::dontSendNotification);
+    subtitleLabel.setText("Generate, plan, import, learn a style — then drag MIDI into your DAW",
+                          juce::dontSendNotification);
     subtitleLabel.setFont(juce::Font(13.0f));
     subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(subtitleLabel);
-    
+
+    licenseBadge.setJustificationType(juce::Justification::centred);
+    licenseBadge.setFont(juce::Font(12.5f, juce::Font::bold));
+    licenseBadge.setColour(juce::Label::textColourId, juce::Colours::white);
+    addAndMakeVisible(licenseBadge);
+    updateLicenseBadge();
+
+    setUpLabel(presetLabel, "Preset");
+    addAndMakeVisible(presetLabel);
+    presetComboBox.onChange = [this]() { applyPresetFromCombo(); };
+    addAndMakeVisible(presetComboBox);
+
+    savePresetButton.setButtonText("Save");
+    savePresetButton.onClick = [this]() { onSavePresetClicked(); };
+    addAndMakeVisible(savePresetButton);
+
+    settingsButton.setButtonText("Settings");
+    settingsButton.onClick = [this]()
+    {
+        auto* dialog = new SettingsDialog(audioProcessor);
+        dialog->setSize(460, 520);
+        juce::DialogWindow::LaunchOptions options;
+        options.content.setOwned(dialog);
+        options.dialogTitle = "Synthesia AI Settings";
+        options.useNativeTitleBar = true;
+        options.resizable = false;
+        options.dialogBackgroundColour = Theme::background;
+        options.launchAsync();
+    };
+    addAndMakeVisible(settingsButton);
+
+    tabs.setOutline(0);
+    tabs.setTabBarDepth(32);
+    tabs.setColour(juce::TabbedComponent::backgroundColourId, Theme::background);
+    tabs.addTab("Generate", Theme::header, &generatePage, false);
+    tabs.addTab("Plan", Theme::header, &planPage, false);
+    tabs.addTab("Import", Theme::header, &importPage, false);
+    tabs.addTab("Style", Theme::header, &stylePage, false);
+    addAndMakeVisible(tabs);
+
     setUpLabel(keyLabel, "Key");
-    addAndMakeVisible(keyLabel);
-    
+    generatePage.addAndMakeVisible(keyLabel);
     const char* keyNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     for (int i = 0; i < 12; ++i)
         keyComboBox.addItem(keyNames[i], i + 1);
     keyComboBox.setSelectedId(1, juce::dontSendNotification);
-    addAndMakeVisible(keyComboBox);
-    
+    generatePage.addAndMakeVisible(keyComboBox);
+
     setUpLabel(scaleLabel, "Scale");
-    addAndMakeVisible(scaleLabel);
-    
+    generatePage.addAndMakeVisible(scaleLabel);
     scaleComboBox.addItem("Major", 1);
     scaleComboBox.addItem("Minor", 2);
     scaleComboBox.addItem("Dorian", 3);
     scaleComboBox.addItem("Mixolydian", 4);
     scaleComboBox.addItem("Pentatonic", 5);
     scaleComboBox.setSelectedId(1, juce::dontSendNotification);
-    addAndMakeVisible(scaleComboBox);
+    generatePage.addAndMakeVisible(scaleComboBox);
 
     setUpLabel(genreLabel, "Genre");
-    addAndMakeVisible(genreLabel);
-
+    generatePage.addAndMakeVisible(genreLabel);
     for (int i = 0; i < numGenres; ++i)
         genreComboBox.addItem(genreName(static_cast<Genre>(i)), i + 1);
     genreComboBox.setSelectedId(1, juce::dontSendNotification);
     genreComboBox.onChange = [this]() { applyGenreDefaults(); };
-    addAndMakeVisible(genreComboBox);
+    generatePage.addAndMakeVisible(genreComboBox);
 
     setUpLabel(partLabel, "Part");
-    addAndMakeVisible(partLabel);
-
+    generatePage.addAndMakeVisible(partLabel);
     partComboBox.addItem(partName(Part::All), 1);
     for (auto part : allParts)
         partComboBox.addItem(partName(part), static_cast<int>(part) + 1);
     partComboBox.setSelectedId(1, juce::dontSendNotification);
-    addAndMakeVisible(partComboBox);
-    
-    setUpLabel(lengthLabel, "Length (bars)");
-    addAndMakeVisible(lengthLabel);
-    
+    generatePage.addAndMakeVisible(partComboBox);
+
     setUpLabel(formLabel, "Form");
-    addAndMakeVisible(formLabel);
+    generatePage.addAndMakeVisible(formLabel);
     formComboBox.addItem("Loop", 1);
     formComboBox.addItem("Song form", 2);
     formComboBox.setSelectedId(1, juce::dontSendNotification);
@@ -327,83 +497,92 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
         if (formComboBox.getSelectedId() == 2 && lengthSlider.getValue() < 16)
             lengthSlider.setValue(24, juce::dontSendNotification);
     };
-    addAndMakeVisible(formComboBox);
+    generatePage.addAndMakeVisible(formComboBox);
 
+    setUpLabel(lengthLabel, "Length");
+    generatePage.addAndMakeVisible(lengthLabel);
     lengthSlider.setRange(1, 32, 1);
     lengthSlider.setValue(8, juce::dontSendNotification);
-    lengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 24);
-    lengthSlider.setColour(juce::Slider::thumbColourId, Theme::accent);
-    lengthSlider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
-    addAndMakeVisible(lengthSlider);
+    lengthSlider.setTextValueSuffix(" bars");
+    lengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 24);
+    styleSlider(lengthSlider);
+    generatePage.addAndMakeVisible(lengthSlider);
 
     setUpLabel(tempoLabel, "Tempo");
-    addAndMakeVisible(tempoLabel);
-
+    generatePage.addAndMakeVisible(tempoLabel);
     tempoSlider.setRange(60, 180, 1);
     tempoSlider.setTextValueSuffix(" bpm");
     tempoSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 24);
-    tempoSlider.setColour(juce::Slider::thumbColourId, Theme::accent);
-    tempoSlider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
-    addAndMakeVisible(tempoSlider);
-    
+    styleSlider(tempoSlider);
+    generatePage.addAndMakeVisible(tempoSlider);
+
     setUpLabel(tempoSyncLabel, "Grid");
-    addAndMakeVisible(tempoSyncLabel);
-    
+    generatePage.addAndMakeVisible(tempoSyncLabel);
     tempoSyncComboBox.addItem("1/16", 1);
     tempoSyncComboBox.addItem("1/8", 2);
     tempoSyncComboBox.addItem("1/4", 3);
     tempoSyncComboBox.addItem("1/2", 4);
-    addAndMakeVisible(tempoSyncComboBox);
-    
-    setUpLabel(styleLabel, "Style / prompt");
-    addAndMakeVisible(styleLabel);
-    
-    setUpLabel(chordsLabel, "Chords");
-    addAndMakeVisible(chordsLabel);
-    chordsEditor.setMultiLine(false);
-    chordsEditor.setTextToShowWhenEmpty("Am9 Fmaj9 Dm7 E7b9   or   Am9 | Fmaj9 | Dm7 | E7b9", Theme::dimText);
-    chordsEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
-    chordsEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
-    chordsEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
-    addAndMakeVisible(chordsEditor);
+    generatePage.addAndMakeVisible(tempoSyncComboBox);
 
-    lockProgressionButton.setButtonText("Lock chords");
-    lockProgressionButton.setColour(juce::ToggleButton::textColourId, Theme::label);
-    addAndMakeVisible(lockProgressionButton);
-
-    setUpLabel(locksLabel, "Keep");
-    addAndMakeVisible(locksLabel);
-    for (auto part : allParts)
-    {
-        auto* button = partLockButtons.add(new juce::ToggleButton(partName(part)));
-        button->setColour(juce::ToggleButton::textColourId, Theme::label);
-        addAndMakeVisible(button);
-    }
-
-    styleTextEditor.setMultiLine(true);
-    styleTextEditor.setReturnKeyStartsNewLine(true);
-    styleTextEditor.setTextToShowWhenEmpty("late-night synthwave, chorus should explode", Theme::dimText);
-    styleTextEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
-    styleTextEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
-    styleTextEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
-    addAndMakeVisible(styleTextEditor);
-    
-    setUpLabel(generatorLabel, "Generator");
-    addAndMakeVisible(generatorLabel);
-    
+    setUpLabel(generatorLabel, "Engine");
+    generatePage.addAndMakeVisible(generatorLabel);
     generatorComboBox.addItem("Genre engine (offline)", 1);
     generatorComboBox.addItem("Markov (classic)", 2);
-    generatorComboBox.addItem("LLM (OpenAI API)", 3);
+    generatorComboBox.addItem("LLM planner", 3);
     generatorComboBox.setSelectedId(generatorComboId(audioProcessor.getCurrentGeneratorType()),
                                     juce::dontSendNotification);
     generatorComboBox.onChange = [this]()
     {
         audioProcessor.setGeneratorType(generatorFromComboId(generatorComboBox.getSelectedId()));
+        snapshotParams();
     };
-    addAndMakeVisible(generatorComboBox);
+    generatePage.addAndMakeVisible(generatorComboBox);
 
-    setUpLabel(importModeLabel, "Import");
-    addAndMakeVisible(importModeLabel);
+    setUpLabel(chordsLabel, "Chords");
+    generatePage.addAndMakeVisible(chordsLabel);
+    chordsEditor.setMultiLine(false);
+    chordsEditor.setTextToShowWhenEmpty("Am9 Fmaj9 Dm7 E7b9   or   Am9 | Fmaj9 | Dm7 | E7b9", Theme::dimText);
+    generatePage.addAndMakeVisible(chordsEditor);
+
+    lockProgressionButton.setButtonText("Lock chords");
+    generatePage.addAndMakeVisible(lockProgressionButton);
+
+    setUpLabel(locksLabel, "Keep");
+    generatePage.addAndMakeVisible(locksLabel);
+    for (auto part : allParts)
+    {
+        auto* button = partLockButtons.add(new juce::ToggleButton(partName(part)));
+        generatePage.addAndMakeVisible(button);
+    }
+
+    setUpLabel(styleLabel, "Style / prompt");
+    generatePage.addAndMakeVisible(styleLabel);
+    styleTextEditor.setMultiLine(true);
+    styleTextEditor.setReturnKeyStartsNewLine(true);
+    styleTextEditor.setTextToShowWhenEmpty("late-night synthwave, chorus should explode", Theme::dimText);
+    generatePage.addAndMakeVisible(styleTextEditor);
+
+    generateButton.setButtonText("Generate MIDI");
+    generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
+    generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    generateButton.onClick = [this]() { onGenerateClicked(); };
+    generatePage.addAndMakeVisible(generateButton);
+
+    setUpLabel(planLabel, "Arrangement plan");
+    planPage.addAndMakeVisible(planLabel);
+    planSummaryEditor.setMultiLine(true);
+    planSummaryEditor.setReadOnly(true);
+    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
+    planSummaryEditor.setTextToShowWhenEmpty(
+        "Plan a track to see sections and chords here. Edit Chords on the Generate tab, then Generate.",
+        Theme::dimText);
+    planPage.addAndMakeVisible(planSummaryEditor);
+    planButton.setButtonText("Plan");
+    planButton.onClick = [this]() { onPlanClicked(); };
+    planPage.addAndMakeVisible(planButton);
+
+    setUpLabel(importModeLabel, "Mode");
+    importPage.addAndMakeVisible(importModeLabel);
     importModeComboBox.addItem("Off", 1);
     importModeComboBox.addItem("Accompany", 2);
     importModeComboBox.addItem("Extend", 3);
@@ -418,18 +597,27 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
             formComboBox.setSelectedId(2, juce::dontSendNotification);
         }
     };
-    addAndMakeVisible(importModeComboBox);
+    importPage.addAndMakeVisible(importModeComboBox);
 
     importButton.setButtonText("Import MIDI...");
     importButton.onClick = [this]() { onImportClicked(); };
-    addAndMakeVisible(importButton);
+    importPage.addAndMakeVisible(importButton);
 
     captureButton.setButtonText("Capture MIDI");
     captureButton.onClick = [this]() { onCaptureClicked(); };
-    addAndMakeVisible(captureButton);
+    importPage.addAndMakeVisible(captureButton);
 
-    setUpLabel(styleProfileLabel, "Style");
-    addAndMakeVisible(styleProfileLabel);
+    importHintLabel.setText("Drop a .mid onto the plugin, import a file, or capture host MIDI. "
+                            "Detected chords land on Generate (locked). Then pick Accompany, Extend, "
+                            "Rewrite or Restyle and generate.",
+                            juce::dontSendNotification);
+    importHintLabel.setFont(juce::Font(14.5f));
+    importHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    importHintLabel.setJustificationType(juce::Justification::topLeft);
+    importPage.addAndMakeVisible(importHintLabel);
+
+    setUpLabel(styleProfileLabel, "Profile");
+    stylePage.addAndMakeVisible(styleProfileLabel);
     styleProfileComboBox.onChange = [this]()
     {
         if (styleProfileComboBox.getSelectedId() <= 1)
@@ -441,51 +629,83 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
             planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
         if (styleProfileComboBox.getSelectedId() > 1 && blendSlider.getValue() < 25.0)
             blendSlider.setValue(100.0, juce::sendNotification);
+        snapshotParams();
     };
-    addAndMakeVisible(styleProfileComboBox);
+    stylePage.addAndMakeVisible(styleProfileComboBox);
 
     setUpLabel(blendLabel, "Blend");
-    addAndMakeVisible(blendLabel);
+    stylePage.addAndMakeVisible(blendLabel);
     blendSlider.setRange(0, 100, 1);
     blendSlider.setValue(0, juce::dontSendNotification);
     blendSlider.setTextValueSuffix("%");
     blendSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 24);
-    blendSlider.setColour(juce::Slider::thumbColourId, Theme::accent);
-    blendSlider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
+    styleSlider(blendSlider);
     blendSlider.onValueChange = [this]()
     {
         audioProcessor.setStyleBlend(blendSlider.getValue() / 100.0);
+        snapshotParams();
     };
-    addAndMakeVisible(blendSlider);
+    stylePage.addAndMakeVisible(blendSlider);
 
     learnStyleButton.setButtonText("Learn style...");
     learnStyleButton.onClick = [this]() { onLearnStyleClicked(); };
-    addAndMakeVisible(learnStyleButton);
+    stylePage.addAndMakeVisible(learnStyleButton);
+
+    styleHintLabel.setText("Learn chord vocabulary, voicings, rhythm and swing from MIDI files "
+                           "or a folder. Blend 0% is the genre alone; 100% follows the learned profile.",
+                           juce::dontSendNotification);
+    styleHintLabel.setFont(juce::Font(14.5f));
+    styleHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    styleHintLabel.setJustificationType(juce::Justification::topLeft);
+    stylePage.addAndMakeVisible(styleHintLabel);
+
     refreshStyleCombo();
-
-    applyGenreDefaults();
-    
-    setUpLabel(planLabel, "Plan");
-    addAndMakeVisible(planLabel);
-    planSummaryEditor.setMultiLine(true);
-    planSummaryEditor.setReadOnly(true);
-    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 12.0f, juce::Font::plain));
-    planSummaryEditor.setTextToShowWhenEmpty("Plan a track to see sections and chords here. Edit the Chords field before Generate.", Theme::dimText);
-    planSummaryEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
-    planSummaryEditor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
-    addAndMakeVisible(planSummaryEditor);
-
-    planButton.setButtonText("Plan");
-    planButton.onClick = [this]() { onPlanClicked(); };
-    addAndMakeVisible(planButton);
-
-    generateButton.setButtonText("Generate MIDI");
-    generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
-    generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    generateButton.onClick = [this]() { onGenerateClicked(); };
-    addAndMakeVisible(generateButton);
+    refreshPresetCombo();
+    applyParamsToUI(audioProcessor.getLastUiParams());
 
     addAndMakeVisible(clipView);
+
+    setUpLabel(mixLabel, "Mix");
+    addAndMakeVisible(mixLabel);
+    for (auto part : allParts)
+    {
+        auto* mute = muteButtons.add(new juce::TextButton("M"));
+        mute->setClickingTogglesState(true);
+        mute->setColour(juce::TextButton::buttonOnColourId, Theme::trial);
+        mute->setTooltip(juce::String(partName(part)) + " mute");
+        mute->onClick = [this, part, mute]()
+        {
+            audioProcessor.setPartMuted(part, mute->getToggleState());
+            clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
+        };
+        addAndMakeVisible(mute);
+
+        auto* solo = soloButtons.add(new juce::TextButton("S"));
+        solo->setClickingTogglesState(true);
+        solo->setColour(juce::TextButton::buttonOnColourId, Theme::accentAlt);
+        solo->setTooltip(juce::String(partName(part)) + " solo");
+        solo->onClick = [this, part, solo]()
+        {
+            audioProcessor.setPartSoloed(part, solo->getToggleState());
+            clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
+        };
+        addAndMakeVisible(solo);
+    }
+
+    dragHintLabel.setText("Drag MIDI", juce::dontSendNotification);
+    dragHintLabel.setFont(juce::Font(13.5f, juce::Font::bold));
+    dragHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    addAndMakeVisible(dragHintLabel);
+
+    auto addChip = [this](Part part)
+    {
+        auto* chip = dragChips.add(new MidiDragChip([this, part]() { startExternalMidiDrag(part); },
+                                                    partName(part)));
+        addAndMakeVisible(chip);
+    };
+    addChip(Part::All);
+    for (auto part : allParts)
+        addChip(part);
 
     previewButton.setButtonText("Play Preview");
     previewButton.setEnabled(false);
@@ -494,42 +714,43 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
         audioProcessor.setPreviewPlaying(!audioProcessor.isPreviewPlaying());
     };
     addAndMakeVisible(previewButton);
-    
-    exportButton.setButtonText("Export MIDI...");
+
+    exportButton.setButtonText("Export MIDI");
     exportButton.setEnabled(false);
     exportButton.onClick = [this]() { onExportMidi(); };
     addAndMakeVisible(exportButton);
-    
+
     statusLabel.setText("Ready", juce::dontSendNotification);
-    statusLabel.setJustificationType(juce::Justification::centred);
+    statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(statusLabel);
-    
-    settingsButton.setButtonText("Settings");
-    settingsButton.onClick = [this]()
-    {
-        auto* dialog = new SettingsDialog(audioProcessor);
-        dialog->setSize(440, 360);
-        juce::DialogWindow::LaunchOptions options;
-        options.content.setOwned(dialog);
-        options.dialogTitle = "Synthesia AI Settings";
-        options.useNativeTitleBar = true;
-        options.resizable = false;
-        options.dialogBackgroundColour = Theme::background;
-        options.launchAsync();
-    };
-    addAndMakeVisible(settingsButton);
 
-    setSize(700, 1090);
+    setResizable(true, true);
+    setResizeLimits(760, 620, 1400, 1100);
+    setSize(920, 720);
     startTimerHz(30);
 }
 
 SynthesiaAIEditor::~SynthesiaAIEditor()
 {
+    snapshotParams();
+    setLookAndFeel(nullptr);
+}
+
+void SynthesiaAIEditor::styleSlider(juce::Slider& slider)
+{
+    slider.setColour(juce::Slider::thumbColourId, Theme::accent);
+    slider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
+}
+
+void SynthesiaAIEditor::styleControl(juce::Component&)
+{
 }
 
 void SynthesiaAIEditor::applyGenreDefaults()
 {
+    if (applyingPreset)
+        return;
     const int id = genreComboBox.getSelectedId();
     if (id <= 0)
         return;
@@ -544,11 +765,15 @@ void SynthesiaAIEditor::paint(juce::Graphics& g)
 {
     g.fillAll(Theme::background);
 
-    auto header = getLocalBounds().removeFromTop(64);
+    auto header = getLocalBounds().removeFromTop(56);
     g.setColour(Theme::header);
     g.fillRect(header);
     g.setColour(Theme::outline);
     g.drawHorizontalLine(header.getBottom() - 1, 0.0f, static_cast<float>(getWidth()));
+
+    auto footer = getLocalBounds().removeFromBottom(268);
+    g.setColour(Theme::panel.withAlpha(0.35f));
+    g.fillRect(footer.removeFromTop(1).withHeight(1));
 
     if (draggingFiles)
     {
@@ -567,21 +792,69 @@ void SynthesiaAIEditor::resized()
 {
     auto area = getLocalBounds();
 
-    auto header = area.removeFromTop(64).reduced(20, 8);
-    settingsButton.setBounds(header.removeFromRight(96).withSizeKeepingCentre(96, 30));
-    titleLabel.setBounds(header.removeFromTop(28));
-    subtitleLabel.setBounds(header);
+    auto header = area.removeFromTop(56).reduced(16, 8);
+    settingsButton.setBounds(header.removeFromRight(92).withSizeKeepingCentre(92, 30));
+    header.removeFromRight(8);
+    savePresetButton.setBounds(header.removeFromRight(64).withSizeKeepingCentre(64, 30));
+    header.removeFromRight(8);
+    presetComboBox.setBounds(header.removeFromRight(168).withSizeKeepingCentre(168, 30));
+    header.removeFromRight(6);
+    presetLabel.setBounds(header.removeFromRight(56).withSizeKeepingCentre(56, 24));
+    header.removeFromRight(10);
+    licenseBadge.setBounds(header.removeFromRight(84).withSizeKeepingCentre(84, 24));
 
-    area = area.reduced(20, 0);
-    area.removeFromTop(16);
+    auto titleCol = header;
+    titleLabel.setBounds(titleCol.removeFromTop(22));
+    subtitleLabel.setBounds(titleCol);
 
+    auto footer = area.removeFromBottom(268);
+    footer.reduce(16, 8);
+    statusLabel.setBounds(footer.removeFromBottom(20));
+    footer.removeFromBottom(6);
+    auto transport = footer.removeFromBottom(32);
+    previewButton.setBounds(transport.removeFromLeft((transport.getWidth() - 10) / 2));
+    transport.removeFromLeft(10);
+    exportButton.setBounds(transport);
+    footer.removeFromBottom(8);
+
+    auto dragRow = footer.removeFromBottom(32);
+    dragHintLabel.setBounds(dragRow.removeFromLeft(86));
+    const int chipW = dragRow.getWidth() / juce::jmax(1, dragChips.size());
+    for (auto* chip : dragChips)
+        chip->setBounds(dragRow.removeFromLeft(chipW).reduced(3, 2));
+    footer.removeFromBottom(6);
+
+    auto mixRow = footer.removeFromBottom(26);
+    mixLabel.setBounds(mixRow.removeFromLeft(40));
+    const int mixSlot = mixRow.getWidth() / 5;
+    for (int i = 0; i < muteButtons.size(); ++i)
+    {
+        auto slot = mixRow.removeFromLeft(mixSlot);
+        muteButtons[i]->setBounds(slot.removeFromLeft(28).reduced(1));
+        slot.removeFromLeft(4);
+        soloButtons[i]->setBounds(slot.removeFromLeft(28).reduced(1));
+        auto name = juce::String(partName(allParts[static_cast<size_t>(i)]));
+        juce::ignoreUnused(name);
+    }
+    footer.removeFromBottom(6);
+    clipView.setBounds(footer);
+
+    tabs.setBounds(area.reduced(12, 8));
+    layoutGeneratePage();
+    layoutPlanPage();
+    layoutImportPage();
+    layoutStylePage();
+}
+
+void SynthesiaAIEditor::layoutGeneratePage()
+{
+    auto area = generatePage.getLocalBounds().reduced(12, 10);
     auto layoutCell = [](juce::Rectangle<int> cell, juce::Label& label, juce::Component& control)
     {
         label.setBounds(cell.removeFromLeft(labelWidth));
         control.setBounds(cell);
     };
-
-    const int columnGap = 24;
+    const int columnGap = 20;
     auto twoColumnRow = [&](juce::Label& leftLabel, juce::Component& left,
                             juce::Label& rightLabel, juce::Component& right)
     {
@@ -590,7 +863,7 @@ void SynthesiaAIEditor::resized()
         row.removeFromLeft(columnGap);
         layoutCell(leftCell, leftLabel, left);
         layoutCell(row, rightLabel, right);
-        area.removeFromTop(10);
+        area.removeFromTop(8);
     };
 
     twoColumnRow(keyLabel, keyComboBox, scaleLabel, scaleComboBox);
@@ -601,26 +874,7 @@ void SynthesiaAIEditor::resized()
     {
         auto row = area.removeFromTop(28);
         layoutCell(row, generatorLabel, generatorComboBox);
-        area.removeFromTop(10);
-    }
-
-    {
-        auto row = area.removeFromTop(28);
-        auto left = row.removeFromLeft((row.getWidth() - columnGap) / 2);
-        row.removeFromLeft(columnGap);
-        layoutCell(left, importModeLabel, importModeComboBox);
-        importButton.setBounds(row.removeFromLeft((row.getWidth() - 8) / 2));
-        row.removeFromLeft(8);
-        captureButton.setBounds(row);
-        area.removeFromTop(10);
-    }
-
-    twoColumnRow(styleProfileLabel, styleProfileComboBox, blendLabel, blendSlider);
-
-    {
-        auto row = area.removeFromTop(28);
-        learnStyleButton.setBounds(row);
-        area.removeFromTop(10);
+        area.removeFromTop(8);
     }
 
     {
@@ -628,7 +882,7 @@ void SynthesiaAIEditor::resized()
         layoutCell(row.removeFromLeft((row.getWidth() - columnGap) / 2), chordsLabel, chordsEditor);
         row.removeFromLeft(columnGap);
         lockProgressionButton.setBounds(row);
-        area.removeFromTop(10);
+        area.removeFromTop(8);
     }
 
     {
@@ -637,35 +891,54 @@ void SynthesiaAIEditor::resized()
         const int lockW = row.getWidth() / juce::jmax(1, partLockButtons.size());
         for (auto* button : partLockButtons)
             button->setBounds(row.removeFromLeft(lockW));
-        area.removeFromTop(10);
+        area.removeFromTop(8);
     }
 
-    styleLabel.setBounds(area.removeFromTop(22));
-    styleTextEditor.setBounds(area.removeFromTop(48));
+    styleLabel.setBounds(area.removeFromTop(20));
+    styleTextEditor.setBounds(area.removeFromTop(56));
     area.removeFromTop(10);
+    generateButton.setBounds(area.removeFromTop(36));
+}
 
+void SynthesiaAIEditor::layoutPlanPage()
+{
+    auto area = planPage.getLocalBounds().reduced(12, 10);
     planLabel.setBounds(area.removeFromTop(22));
-    planSummaryEditor.setBounds(area.removeFromTop(88));
-    area.removeFromTop(10);
+    area.removeFromTop(6);
+    planButton.setBounds(area.removeFromBottom(36));
+    area.removeFromBottom(10);
+    planSummaryEditor.setBounds(area);
+}
 
-    {
-        auto row = area.removeFromTop(40);
-        planButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
-        row.removeFromLeft(10);
-        generateButton.setBounds(row);
-        area.removeFromTop(14);
-    }
-
-    clipView.setBounds(area.removeFromTop(210));
+void SynthesiaAIEditor::layoutImportPage()
+{
+    auto area = importPage.getLocalBounds().reduced(12, 10);
+    auto row = area.removeFromTop(28);
+    importModeLabel.setBounds(row.removeFromLeft(labelWidth));
+    importModeComboBox.setBounds(row);
     area.removeFromTop(12);
-
-    auto row = area.removeFromTop(34);
-    previewButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
+    row = area.removeFromTop(36);
+    importButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
     row.removeFromLeft(10);
-    exportButton.setBounds(row);
-    area.removeFromTop(8);
+    captureButton.setBounds(row);
+    area.removeFromTop(16);
+    importHintLabel.setBounds(area.removeFromTop(80));
+}
 
-    statusLabel.setBounds(area.removeFromTop(22));
+void SynthesiaAIEditor::layoutStylePage()
+{
+    auto area = stylePage.getLocalBounds().reduced(12, 10);
+    auto row = area.removeFromTop(28);
+    styleProfileLabel.setBounds(row.removeFromLeft(labelWidth));
+    styleProfileComboBox.setBounds(row);
+    area.removeFromTop(10);
+    row = area.removeFromTop(28);
+    blendLabel.setBounds(row.removeFromLeft(labelWidth));
+    blendSlider.setBounds(row);
+    area.removeFromTop(12);
+    learnStyleButton.setBounds(area.removeFromTop(36));
+    area.removeFromTop(16);
+    styleHintLabel.setBounds(area.removeFromTop(72));
 }
 
 void SynthesiaAIEditor::timerCallback()
@@ -706,6 +979,133 @@ MidiGenerationParams SynthesiaAIEditor::collectParams() const
         params.styleProfileJson = audioProcessor.getCurrentStyleJson().toStdString();
     }
     return params;
+}
+
+void SynthesiaAIEditor::snapshotParams()
+{
+    audioProcessor.setLastUiParams(collectParams());
+}
+
+void SynthesiaAIEditor::applyParamsToUI(const MidiGenerationParams& params)
+{
+    applyingPreset = true;
+    keyComboBox.setSelectedId(params.rootNote + 1, juce::dontSendNotification);
+    scaleComboBox.setSelectedId(static_cast<int>(params.scale) + 1, juce::dontSendNotification);
+    genreComboBox.setSelectedId(static_cast<int>(params.genre) + 1, juce::dontSendNotification);
+    partComboBox.setSelectedId(static_cast<int>(params.part) + 1, juce::dontSendNotification);
+    formComboBox.setSelectedId(params.form == ArrangementForm::Song ? 2 : 1, juce::dontSendNotification);
+    lengthSlider.setValue(params.lengthInBars, juce::dontSendNotification);
+    tempoSlider.setValue(params.tempo, juce::dontSendNotification);
+    tempoSyncComboBox.setSelectedId(static_cast<int>(params.quantization) + 1, juce::dontSendNotification);
+    styleTextEditor.setText(params.stylePrompt);
+    chordsEditor.setText(params.chordText);
+    lockProgressionButton.setToggleState(params.lockProgression, juce::dontSendNotification);
+    for (int i = 0; i < partLockButtons.size(); ++i)
+        partLockButtons[i]->setToggleState(isPartLocked(params.lockedParts, allParts[static_cast<size_t>(i)]),
+                                           juce::dontSendNotification);
+    importModeComboBox.setSelectedId(static_cast<int>(params.importMode) + 1, juce::dontSendNotification);
+    blendSlider.setValue(params.styleBlend * 100.0, juce::dontSendNotification);
+    generatorComboBox.setSelectedId(generatorComboId(audioProcessor.getCurrentGeneratorType()),
+                                    juce::dontSendNotification);
+    applyingPreset = false;
+}
+
+void SynthesiaAIEditor::refreshPresetCombo()
+{
+    const auto current = audioProcessor.getCurrentPresetName();
+    presetComboBox.clear(juce::dontSendNotification);
+    int id = 1;
+    int selected = 0;
+    presetComboBox.addSectionHeading("Factory");
+    for (const auto& preset : PresetStore::factoryPresets())
+    {
+        presetComboBox.addItem(preset.name, id);
+        if (preset.name == current || preset.id == PresetStore::sanitiseId(current))
+            selected = id;
+        ++id;
+    }
+    const auto users = PresetStore::listUserIds();
+    if (!users.isEmpty())
+        presetComboBox.addSectionHeading("User");
+    for (const auto& userId : users)
+    {
+        auto loaded = PresetStore::loadUser(userId);
+        const auto label = loaded ? loaded->name : userId;
+        presetComboBox.addItem(label, id);
+        if (label == current || userId == PresetStore::sanitiseId(current))
+            selected = id;
+        ++id;
+    }
+    if (selected > 0)
+        presetComboBox.setSelectedId(selected, juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::applyPresetFromCombo()
+{
+    if (applyingPreset)
+        return;
+    const auto name = presetComboBox.getText();
+    if (name.isEmpty())
+        return;
+    if (!audioProcessor.applyPreset(name))
+        return;
+    shownPresetVersion = audioProcessor.getPresetVersion();
+    shownUiParamsVersion = audioProcessor.getUiParamsVersion();
+    applyParamsToUI(audioProcessor.getLastUiParams());
+    statusLabel.setText("Loaded preset " + name, juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::onSavePresetClicked()
+{
+    snapshotParams();
+    auto* window = new juce::AlertWindow(
+        "Save preset",
+        "Stores the current generator settings (key, genre, form, chords, prompt, style blend).",
+        juce::AlertWindow::NoIcon);
+    window->addTextEditor("name", audioProcessor.getCurrentPresetName(), "Preset name");
+    window->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    window->enterModalState(true, juce::ModalCallbackFunction::create(
+        [this, window](int result)
+        {
+            if (result != 1)
+                return;
+            const auto name = window->getTextEditorContents("name");
+            if (!audioProcessor.saveUserPreset(name))
+            {
+                statusLabel.setText("Could not save preset", juce::dontSendNotification);
+                return;
+            }
+            shownPresetVersion = audioProcessor.getPresetVersion();
+            refreshPresetCombo();
+            statusLabel.setText("Saved preset " + name, juce::dontSendNotification);
+        }), true);
+}
+
+void SynthesiaAIEditor::startExternalMidiDrag(Part part)
+{
+    if (audioProcessor.getGeneratedMidi().isEmpty())
+        return;
+
+    const auto file = audioProcessor.writeTempMidi(part);
+    if (!file.existsAsFile())
+    {
+        statusLabel.setText("Could not write a temp MIDI file", juce::dontSendNotification);
+        return;
+    }
+
+    juce::StringArray files;
+    files.add(file.getFullPathName());
+    performExternalDragDropOfFiles(files, false, this);
+}
+
+void SynthesiaAIEditor::updateLicenseBadge()
+{
+    const bool licensed = audioProcessor.isLicensed();
+    licenseBadge.setText(licensed ? "LICENSED" : "TRIAL", juce::dontSendNotification);
+    licenseBadge.setColour(juce::Label::backgroundColourId,
+                           licensed ? Theme::licensed : Theme::trial);
+    licenseBadge.setColour(juce::Label::textColourId, juce::Colours::black);
 }
 
 void SynthesiaAIEditor::applyPlanToUI(const ArrangementPlan& plan)
@@ -980,10 +1380,10 @@ void SynthesiaAIEditor::exportToChooser(int menuId)
         "Save MIDI file...",
         juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
         "*.mid");
-    
-    auto chooserFlags = juce::FileBrowserComponent::saveMode 
+
+    auto chooserFlags = juce::FileBrowserComponent::saveMode
                       | juce::FileBrowserComponent::canSelectFiles;
-    
+
     chooser->launchAsync(chooserFlags, [this, chooser, menuId](const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
@@ -1025,13 +1425,38 @@ void SynthesiaAIEditor::updateUIState()
     bool isGenerating = audioProcessor.isGenerating();
     generateButton.setEnabled(!isGenerating);
     planButton.setEnabled(!isGenerating);
-    
+
     bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     exportButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setEnabled(hasMidi && !isGenerating);
     previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
+    for (auto* chip : dragChips)
+        chip->setEnabledLook(hasMidi && !isGenerating);
 
     captureButton.setButtonText(audioProcessor.isCapturingMidi() ? "Stop capture" : "Capture MIDI");
+    updateLicenseBadge();
+
+    clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
+    for (int i = 0; i < muteButtons.size(); ++i)
+    {
+        muteButtons[i]->setToggleState(audioProcessor.isPartMuted(allParts[static_cast<size_t>(i)]),
+                                       juce::dontSendNotification);
+        soloButtons[i]->setToggleState(audioProcessor.isPartSoloed(allParts[static_cast<size_t>(i)]),
+                                       juce::dontSendNotification);
+    }
+
+    if (shownPresetVersion != audioProcessor.getPresetVersion())
+    {
+        shownPresetVersion = audioProcessor.getPresetVersion();
+        refreshPresetCombo();
+        applyParamsToUI(audioProcessor.getLastUiParams());
+        shownUiParamsVersion = audioProcessor.getUiParamsVersion();
+    }
+
+    if (shownUiParamsVersion != audioProcessor.getUiParamsVersion() && !isGenerating)
+    {
+        shownUiParamsVersion = audioProcessor.getUiParamsVersion();
+    }
 
     if (shownStyleVersion != audioProcessor.getStyleVersion())
     {
@@ -1063,11 +1488,12 @@ void SynthesiaAIEditor::updateUIState()
                          audioProcessor.getClipLengthInBeats(),
                          audioProcessor.getProgression(),
                          audioProcessor.getSections());
+        clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
     }
     clipView.setPlaybackBeat(audioProcessor.getPlaybackBeat());
-    
+
     if (!isGenerating && statusLabel.getText() == "Generating...")
-        statusLabel.setText(hasMidi ? "Generation complete!"
+        statusLabel.setText(hasMidi ? "Generation complete — drag a part into your DAW"
                                     : "Generation failed (check generator settings)",
                             juce::dontSendNotification);
     if (!isGenerating && statusLabel.getText() == "Planning...")
@@ -1080,6 +1506,7 @@ void SynthesiaAIEditor::updateUIState()
         else
             text << " · offline heuristic (no API key)";
         statusLabel.setText(text, juce::dontSendNotification);
+        tabs.setCurrentTabIndex(1);
     }
 }
 
@@ -1091,14 +1518,31 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
         editor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
         editor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
         editor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
+        editor.setColour(juce::TextEditor::textColourId, Theme::label);
+        editor.setFont(juce::Font(15.0f));
     };
 
-    setUpLabel(apiKeyLabel, "OpenAI API key");
+    setUpLabel(providerLabel, "Provider");
+    addAndMakeVisible(providerLabel);
+    providerComboBox.addItem("OpenAI", 1);
+    providerComboBox.addItem("Groq", 2);
+    providerComboBox.addItem("Custom", 3);
+    const auto provider = processor.getApiProvider();
+    if (provider.equalsIgnoreCase("Groq"))
+        providerComboBox.setSelectedId(2, juce::dontSendNotification);
+    else if (provider.equalsIgnoreCase("Custom"))
+        providerComboBox.setSelectedId(3, juce::dontSendNotification);
+    else
+        providerComboBox.setSelectedId(1, juce::dontSendNotification);
+    providerComboBox.onChange = [this]() { applyProviderDefaults(); };
+    addAndMakeVisible(providerComboBox);
+
+    setUpLabel(apiKeyLabel, "API key");
     addAndMakeVisible(apiKeyLabel);
-    
+
     apiKeyEditor.setText(processor.getApiKey());
     apiKeyEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
-    apiKeyEditor.setTextToShowWhenEmpty("sk-... (leave empty for offline heuristic)", Theme::dimText);
+    apiKeyEditor.setTextToShowWhenEmpty("sk-... or gsk-... (leave empty for offline heuristic)", Theme::dimText);
     styleEditor(apiKeyEditor);
     addAndMakeVisible(apiKeyEditor);
 
@@ -1116,6 +1560,14 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
     styleEditor(modelEditor);
     addAndMakeVisible(modelEditor);
 
+    setUpLabel(licenseLabel, "License key");
+    addAndMakeVisible(licenseLabel);
+    licenseEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
+    licenseEditor.setText(processor.getLicenseKey());
+    licenseEditor.setTextToShowWhenEmpty("SYN-... (optional, offline stub)", Theme::dimText);
+    styleEditor(licenseEditor);
+    addAndMakeVisible(licenseEditor);
+
     const auto last = processor.getLastTokenUsage();
     const auto session = processor.getSessionTokenUsage();
     juce::String usage;
@@ -1124,33 +1576,38 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
           << "Session: " << session.promptTokens << " prompt / "
           << session.completionTokens << " completion · " << session.requests << " calls";
     usageLabel.setText(usage, juce::dontSendNotification);
-    usageLabel.setFont(juce::Font(12.5f));
+    usageLabel.setFont(juce::Font(13.0f));
     usageLabel.setColour(juce::Label::textColourId, Theme::label);
     usageLabel.setJustificationType(juce::Justification::topLeft);
     addAndMakeVisible(usageLabel);
 
-    hintLabel.setText("OpenAI-compatible endpoint. Without a key, Plan maps prompt keywords "
-                      "offline. The key is saved with your project — don't share those files.",
+    hintLabel.setText("Keys stay on this machine (user app data) and are never logged. "
+                      "Without a key, Plan maps prompt keywords offline. Groq uses "
+                      "https://api.groq.com/openai/v1 and model openai/gpt-oss-120b. "
+                      "A license key starting with SYN- (12+ chars) swaps the Trial badge.",
                       juce::dontSendNotification);
-    hintLabel.setFont(juce::Font(12.5f));
+    hintLabel.setFont(juce::Font(13.0f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
     hintLabel.setJustificationType(juce::Justification::topLeft);
     hintLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(hintLabel);
-    
+
     saveButton.setButtonText("Save");
     saveButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     saveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     saveButton.onClick = [this]()
     {
+        const auto providerId = providerComboBox.getSelectedId();
+        processor.setApiProvider(providerId == 2 ? "Groq" : (providerId == 3 ? "Custom" : "OpenAI"));
         processor.setApiKey(apiKeyEditor.getText());
         processor.setApiEndpoint(endpointEditor.getText());
         processor.setApiModel(modelEditor.getText());
+        processor.setLicenseKey(licenseEditor.getText());
         if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
             dw->exitModalState(1);
     };
     addAndMakeVisible(saveButton);
-    
+
     cancelButton.setButtonText("Cancel");
     cancelButton.onClick = [this]()
     {
@@ -1158,6 +1615,21 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
             dw->exitModalState(0);
     };
     addAndMakeVisible(cancelButton);
+}
+
+void SettingsDialog::applyProviderDefaults()
+{
+    const int id = providerComboBox.getSelectedId();
+    if (id == 2)
+    {
+        endpointEditor.setText(SynthesiaAIProcessor::groqChatUrl(), juce::dontSendNotification);
+        modelEditor.setText(SynthesiaAIProcessor::groqDefaultModel(), juce::dontSendNotification);
+    }
+    else if (id == 1)
+    {
+        endpointEditor.setText(SynthesiaAIProcessor::openaiChatUrl(), juce::dontSendNotification);
+        modelEditor.setText("gpt-4o-mini", juce::dontSendNotification);
+    }
 }
 
 void SettingsDialog::paint(juce::Graphics& g)
@@ -1168,6 +1640,11 @@ void SettingsDialog::paint(juce::Graphics& g)
 void SettingsDialog::resized()
 {
     auto area = getLocalBounds().reduced(20);
+
+    providerLabel.setBounds(area.removeFromTop(20));
+    area.removeFromTop(2);
+    providerComboBox.setBounds(area.removeFromTop(28));
+    area.removeFromTop(8);
 
     auto field = [&area](juce::Label& label, juce::TextEditor& editor)
     {
@@ -1180,10 +1657,11 @@ void SettingsDialog::resized()
     field(apiKeyLabel, apiKeyEditor);
     field(endpointLabel, endpointEditor);
     field(modelLabel, modelEditor);
+    field(licenseLabel, licenseEditor);
 
     usageLabel.setBounds(area.removeFromTop(40));
     area.removeFromTop(6);
-    hintLabel.setBounds(area.removeFromTop(48));
+    hintLabel.setBounds(area.removeFromTop(72));
 
     auto buttonRow = area.removeFromBottom(32);
     saveButton.setBounds(buttonRow.removeFromRight(96));
