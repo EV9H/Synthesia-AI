@@ -58,7 +58,7 @@ check_mp3() {
     if awk "BEGIN { exit !($mean_db < -45) }" || [[ "$gaps" -gt 0 ]]; then status="SILENT"; fi
     [[ "$status" == "ok" ]] || failed=1
 
-    printf '  mp3: max %s dB, mean %s dB, silent gaps >1s: %s -> %s\n' "$max_db" "$mean_db" "$gaps" "$status"
+    printf '  mp3: max %s dB, mean %s dB, silent gaps >3s: %s -> %s\n' "$max_db" "$mean_db" "$gaps" "$status"
 }
 
 encode_wav() {
