@@ -8,7 +8,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 - **Three generators**:
   - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp, piano and drums, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic. Drums use the General MIDI percussion map on channel 10.
   - **Markov Generator**: classic single-line melody (no internet required)
-  - **LLM Generator**: AI-powered MIDI generation using OpenAI-compatible APIs
+  - **LLM planner**: OpenAI-compatible endpoint (your key, configurable base URL + model) returns a compact JSON arrangement plan only — form, chords, energy/density, motif, parts, tempo/swing, genre. The genre engine realises every note, so nothing is out of key. Without a key, prompt keywords pick genre/energy offline.
   
 - **UI Controls**:
   - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
@@ -16,7 +16,8 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - Chord input (symbols like `Am9 Fmaj9` or Roman numerals, `|` for bar groups) with a lock so regenerating keeps the progression
   - Per-part locks (keep drums, regenerate bass, etc.)
   - Tempo (60-180 bpm, defaults follow the genre) and grid / quantization
-  - Style/prompt text input for AI generation
+  - Style/prompt text input; **Plan** fills sections/chords (editable) then **Generate MIDI** realises them
+  - Settings: API key, base URL, model, last/session token counts
   
 - **Preview & Export**:
   - Built-in synth with a distinct timbre per part, plus per-genre drum kits built from CC0 one-shot samples (synthesized fallback if a slot is missing). See `Samples/README.md`.
@@ -61,7 +62,8 @@ class MidiGenerator {
 Current implementations:
 - `ArrangementGenerator`: Genre-aware multi-part arranger (chords, bass, synth, piano, drums) using `GenreProfiles` and `MusicTheory`
 - `MarkovGenerator`: Offline algorithmic generation using Markov chains for note selection
-- `LLMGenerator`: Calls OpenAI-compatible APIs with structured prompts (including genre, part and chord context), parses JSON responses
+- `LLMGenerator`: Asks an OpenAI-compatible chat endpoint for an `ArrangementPlan` JSON object (never notes). `ArrangementPlan` validates/repairs the schema; missing keys fall back to a keyword heuristic.
+- `ArrangementPlan`: Compact form/chords/energy/density/motif schema. The arranger realises MIDI from the plan.
 
 **Extension Point**: New generators can be added by:
 1. Inheriting from `MidiGenerator`
@@ -126,11 +128,14 @@ Note: Linux builds produce only the Standalone version (no VST3/AU for DAW use o
 ### Offline render host (headless "DAW")
 
 `SynthesiaRender` loads the plugin processor, generates a clip with the genre
-arranger (or `--generator markov`), plays it through the built-in synth with a
-running host transport and bounces it to WAV (and optionally a multi-track
-`.mid`). `--part` selects chords, bass, synth, piano, drums, or all five. `--split-midi`
-also writes one `.mid` per part. It exits non-zero if the render is silent,
-clips, or plays a different number of notes than the clip contains.
+arranger (`--generator genre`, default), Markov (`markov`), or the LLM planner
+(`llm`), plays it through the built-in synth and bounces WAV (and optional
+multi-track `.mid`). `--plan file.json` / `--plan-json` feed a compact arrangement
+plan through the same arranger path. `--style` is the free-text brief; without an
+API key the planner uses a keyword heuristic. `--part` selects chords, bass,
+synth, piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
+It exits non-zero if the render is silent, clips, or plays a different number of
+notes than the clip contains.
 
 ```bash
 cmake --build build --target SynthesiaRender
@@ -138,8 +143,14 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
     --genre lofi --part all --key A --scale minor --bars 8 --seed 7 \
     --out demo.wav --midi demo.mid --split-midi
 
-# Mix + per-part solos for a few genres, encoded to MP3 with level checks
+# Mix + per-part solos, song-form, locked chords, and LLM-plan demos
 Tools/render_demos.sh build/demos
+
+# Realise a hand-written plan (same path as the LLM JSON)
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --generator llm --plan Tools/plans/synthwave-explode.json \
+    --style "late-night synthwave, chorus should explode" \
+    --out /tmp/synthwave.wav --midi /tmp/synthwave.mid
 ```
 
 ## Installation
@@ -197,15 +208,17 @@ Tools/render_demos.sh build/demos
    - **Export & Import**: Click "Export as .mid", then drag the file into FL Studio's piano roll
    - **Alternative**: Route MIDI output to another channel (FL Studio 21.2+)
 
-### Using LLM Generator
+### Using the LLM planner
 
-1. Click the "Settings" button
-2. Enter your OpenAI API key (or OpenAI-compatible endpoint key)
-3. Click "Save"
-4. Select "LLM (OpenAI API)" from the Generator dropdown (the default is the offline genre engine)
-5. Generate MIDI as usual
+1. Click **Settings**
+2. Enter your OpenAI-compatible API key, base URL (default `https://api.openai.com/v1/chat/completions`) and model (default `gpt-4o-mini`)
+3. Save. Token usage from the last request and the session is shown in this dialog.
+4. Select **LLM (OpenAI API)** from Generator
+5. Type a prompt, e.g. `late-night synthwave, chorus should explode`
+6. Click **Plan** — the UI fills genre, tempo, form, length, and a chord chart you can edit
+7. Click **Generate MIDI** — the genre engine writes notes in key from that plan
 
-The LLM generator will send structured prompts to the AI and parse the returned JSON for notes.
+With no key, Plan still works: keywords in the prompt map to genre, energy and density.
 
 **Note**: API keys are stored in plugin state and saved with your project. Never share project files containing API keys.
 
@@ -245,9 +258,11 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
 │       ├── ArrangementGenerator.*  # Genre-aware multi-part arranger
+│       ├── ArrangementPlan.*       # LLM/heuristic JSON plan schema
 │       ├── GenreProfiles.{h,cpp}   # Per-genre progressions and patterns
 │       ├── MarkovGenerator.{h,cpp} # Algorithmic melody generator
-│       └── LLMGenerator.{h,cpp}    # AI/LLM generator
+│       └── LLMGenerator.{h,cpp}    # LLM planner (JSON plan only)
+├── Tools/plans/                    # Example arrangement-plan JSON files
 ├── Samples/                        # CC0 preview drum one-shots + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration

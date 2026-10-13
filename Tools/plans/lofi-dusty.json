@@ -1,0 +1,40 @@
+{
+  "genre": "lofi",
+  "key": "F",
+  "scale": "dorian",
+  "tempo": 84,
+  "swing": 0.64,
+  "bars": 24,
+  "parts": { "chords": true, "bass": true, "synth": true, "piano": true, "drums": true },
+  "motif": { "contour": "falling", "rhythm": "swung" },
+  "sections": [
+    {
+      "name": "intro",
+      "bars": 4,
+      "energy": 0.3,
+      "chords": "Fm9 Ebmaj9",
+      "density": { "chords": 0.45, "bass": 0.4, "synth": 0.2, "piano": 0.5, "drums": 0.25 }
+    },
+    {
+      "name": "verse",
+      "bars": 8,
+      "energy": 0.5,
+      "chords": "Fm9 Bb13 Ebmaj9 Abmaj7",
+      "density": { "chords": 0.55, "bass": 0.55, "synth": 0.35, "piano": 0.7, "drums": 0.4 }
+    },
+    {
+      "name": "chorus",
+      "bars": 8,
+      "energy": 0.72,
+      "chords": "Dbmaj9 Cm7 Bb13 C7",
+      "density": { "chords": 0.65, "bass": 0.6, "synth": 0.45, "piano": 0.8, "drums": 0.55 }
+    },
+    {
+      "name": "outro",
+      "bars": 4,
+      "energy": 0.28,
+      "chords": "Fm9 Ebmaj9",
+      "density": { "chords": 0.35, "bass": 0.3, "synth": 0.15, "piano": 0.4, "drums": 0.2 }
+    }
+  ]
+}

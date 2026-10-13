@@ -121,4 +121,20 @@ echo "== locked custom progression (lofi, 16 bars) =="
 render "lofi-locked-am9-mix" lofi A minor 84 13 all \
     --form song --bars 16 --chords "Am9 Fmaj9 Dm7 E7b9" --lock-chords
 
+PLANS=(
+    "synthwave-explode|late-night synthwave, chorus should explode|synthwave-explode.json"
+    "lofi-dusty|dusty lofi jazz, sparse drums, late night|lofi-dusty.json"
+    "trap-drop|trap banger, drop hits hard|trap-drop.json"
+)
+
+for demo in "${PLANS[@]}"; do
+    IFS='|' read -r name prompt plan <<< "$demo"
+    echo "== $name LLM-plan mix ($prompt) =="
+    wav="$OUT/${name}-plan.wav"
+    "$HOST" --out "$wav" --midi "$OUT/${name}-plan.mid" \
+        --generator llm --style "$prompt" \
+        --plan "$ROOT/Tools/plans/${plan}" --seed 17
+    encode_wav "$wav"
+done
+
 exit "$failed"

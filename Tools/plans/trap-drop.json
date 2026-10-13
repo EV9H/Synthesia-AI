@@ -1,0 +1,54 @@
+{
+  "genre": "trap",
+  "key": "C",
+  "scale": "minor",
+  "tempo": 140,
+  "swing": 0.5,
+  "bars": 32,
+  "parts": { "chords": true, "bass": true, "synth": true, "piano": true, "drums": true },
+  "motif": { "contour": "rising", "rhythm": "syncopated" },
+  "sections": [
+    {
+      "name": "intro",
+      "bars": 4,
+      "energy": 0.25,
+      "chords": "Cm",
+      "density": { "chords": 0.3, "bass": 0.35, "synth": 0.4, "piano": 0.2, "drums": 0.2 }
+    },
+    {
+      "name": "verse",
+      "bars": 8,
+      "energy": 0.55,
+      "chords": "Cm Abmaj7 Bb Gm",
+      "density": { "chords": 0.5, "bass": 0.7, "synth": 0.55, "piano": 0.35, "drums": 0.6 }
+    },
+    {
+      "name": "drop",
+      "bars": 8,
+      "energy": 1.0,
+      "chords": "Cm Abmaj7 Fm G7",
+      "density": { "chords": 0.7, "bass": 1.0, "synth": 0.85, "piano": 0.4, "drums": 1.0 }
+    },
+    {
+      "name": "break",
+      "bars": 4,
+      "energy": 0.22,
+      "chords": "Abmaj7",
+      "density": { "chords": 0.25, "bass": 0.2, "synth": 0.3, "piano": 0.2, "drums": 0.15 }
+    },
+    {
+      "name": "drop",
+      "bars": 4,
+      "energy": 1.0,
+      "chords": "Cm Abmaj7 Fm G7",
+      "density": { "chords": 0.75, "bass": 1.0, "synth": 0.9, "piano": 0.35, "drums": 1.0 }
+    },
+    {
+      "name": "outro",
+      "bars": 4,
+      "energy": 0.35,
+      "chords": "Cm Abmaj7",
+      "density": { "chords": 0.4, "bass": 0.45, "synth": 0.3, "piano": 0.25, "drums": 0.3 }
+    }
+  ]
+}

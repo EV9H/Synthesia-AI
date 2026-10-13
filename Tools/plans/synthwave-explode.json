@@ -1,0 +1,40 @@
+{
+  "genre": "house",
+  "key": "A",
+  "scale": "minor",
+  "tempo": 100,
+  "swing": 0.5,
+  "bars": 24,
+  "parts": { "chords": true, "bass": true, "synth": true, "piano": true, "drums": true },
+  "motif": { "contour": "arch", "rhythm": "straight" },
+  "sections": [
+    {
+      "name": "intro",
+      "bars": 4,
+      "energy": 0.22,
+      "chords": "Am9",
+      "density": { "chords": 0.35, "bass": 0.3, "synth": 0.2, "piano": 0.25, "drums": 0.28 }
+    },
+    {
+      "name": "verse",
+      "bars": 8,
+      "energy": 0.55,
+      "chords": "Am9 Fmaj9 Dm9 E7",
+      "density": { "chords": 0.6, "bass": 0.65, "synth": 0.5, "piano": 0.45, "drums": 0.55 }
+    },
+    {
+      "name": "chorus",
+      "bars": 8,
+      "energy": 1.0,
+      "chords": "Fmaj9 Cmaj7 G E7",
+      "density": { "chords": 0.95, "bass": 1.0, "synth": 1.0, "piano": 0.7, "drums": 1.0 }
+    },
+    {
+      "name": "outro",
+      "bars": 4,
+      "energy": 0.35,
+      "chords": "Am9 Fmaj9",
+      "density": { "chords": 0.4, "bass": 0.4, "synth": 0.3, "piano": 0.35, "drums": 0.32 }
+    }
+  ]
+}

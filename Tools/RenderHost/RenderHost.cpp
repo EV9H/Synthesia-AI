@@ -5,6 +5,8 @@
 #include "PluginProcessor.h"
 #include "MidiExporter.h"
 #include "Generators/GenreProfiles.h"
+#include "Generators/ArrangementPlan.h"
+#include "Music/MusicTheory.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
 
@@ -59,7 +61,7 @@ namespace
     {
         std::cout <<
             "Usage: SynthesiaRender --out clip.wav [options]\n"
-            "  --generator <genre|markov>  arranger (default) or the classic Markov melody\n"
+            "  --generator <genre|markov|llm>  arranger (default), Markov, or LLM planner\n"
             "  --genre <name>          pop|lofi|house|trap|rnb|cinematic (default pop)\n"
             "  --part <name>           all|chords|bass|synth|piano|drums (default all)\n"
             "  --key <C..B>            root note (default C)\n"
@@ -72,7 +74,12 @@ namespace
             "  --quant <1/16|1/8|1/4|1/2>  finest melodic grid (default: genre's)\n"
             "  --tempo <bpm>           host tempo (default: genre's)\n"
             "  --seed <n>              generator seed, 0 = random (default 1)\n"
-            "  --style <text>          style prompt passed to the generator\n"
+            "  --style <text>          style prompt (LLM planner / keyword fallback)\n"
+            "  --plan <file.json>      arrangement plan JSON (realised by the arranger)\n"
+            "  --plan-json <json>      arrangement plan as a JSON string\n"
+            "  --api-key <key>         OpenAI-compatible key (else OPENAI_API_KEY)\n"
+            "  --api-url <url>         chat completions endpoint\n"
+            "  --api-model <name>      model id (default gpt-4o-mini)\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
@@ -103,7 +110,9 @@ int main(int argc, char* argv[])
 
     const int genreIndex = genreNames.indexOf(option("--genre", "pop"), true);
     const int partIndex = partNames.indexOf(option("--part", "all"), true);
-    const bool useMarkov = option("--generator", "genre").equalsIgnoreCase("markov");
+    const auto generatorName = option("--generator", "genre").toLowerCase();
+    const bool useMarkov = generatorName == "markov";
+    const bool useLlm = generatorName == "llm";
 
     if (genreIndex < 0 || partIndex < 0)
     {
@@ -153,6 +162,20 @@ int main(int argc, char* argv[])
     params.scale = static_cast<ScaleType>(scaleIndex);
     params.quantization = static_cast<Quantization>(quantIndex);
 
+    juce::String planJson = option("--plan-json", {});
+    const auto planPath = option("--plan", {});
+    if (planPath.isNotEmpty())
+    {
+        const juce::File planFile = juce::File::getCurrentWorkingDirectory().getChildFile(planPath);
+        if (!planFile.existsAsFile())
+        {
+            std::cerr << "Plan file not found: " << planFile.getFullPathName() << "\n";
+            return 1;
+        }
+        planJson = planFile.loadFileAsString();
+    }
+    params.planJson = planJson.toStdString();
+
     const double sampleRate = option("--sample-rate", "48000").getDoubleValue();
     const int blockSize = juce::jmax(16, option("--block", "512").getIntValue());
 
@@ -160,7 +183,22 @@ int main(int argc, char* argv[])
     auto* synthesia = dynamic_cast<SynthesiaAIProcessor*>(plugin.get());
     jassert(synthesia != nullptr);
 
-    synthesia->setGeneratorType(useMarkov ? GeneratorType::Markov : GeneratorType::Genre);
+    const auto apiKey = option("--api-key", juce::SystemStats::getEnvironmentVariable("OPENAI_API_KEY", {}));
+    synthesia->setApiKey(apiKey);
+    const auto apiUrl = option("--api-url", {});
+    if (apiUrl.isNotEmpty())
+        synthesia->setApiEndpoint(apiUrl);
+    const auto apiModel = option("--api-model", {});
+    if (apiModel.isNotEmpty())
+        synthesia->setApiModel(apiModel);
+
+    if (useMarkov)
+        synthesia->setGeneratorType(GeneratorType::Markov);
+    else if (useLlm)
+        synthesia->setGeneratorType(GeneratorType::LLM);
+    else
+        synthesia->setGeneratorType(GeneratorType::Genre);
+
     synthesia->generateMidiBlocking(params);
 
     const auto& clip = synthesia->getGeneratedMidi();
@@ -198,7 +236,7 @@ int main(int argc, char* argv[])
         formChart << section.label << " (" << juce::String(section.lengthBeats / 4.0, 0) << ") ";
 
     OfflinePlayHead playHead;
-    playHead.bpm = params.tempo;
+    playHead.bpm = synthesia->getClipTempo();
     playHead.sampleRate = sampleRate;
 
     plugin->setPlayHead(&playHead);
@@ -206,7 +244,7 @@ int main(int argc, char* argv[])
     plugin->setNonRealtime(true);
     plugin->prepareToPlay(sampleRate, blockSize);
 
-    const double clipSeconds = synthesia->getClipLengthInBeats() * 60.0 / params.tempo;
+    const double clipSeconds = synthesia->getClipLengthInBeats() * 60.0 / playHead.bpm;
     const auto clipSamples = static_cast<juce::int64>(clipSeconds * sampleRate);
     const auto tailSamples = static_cast<juce::int64>((plugin->getTailLengthSeconds() + 0.2) * sampleRate);
     const auto totalSamples = clipSamples + tailSamples;
@@ -263,14 +301,29 @@ int main(int argc, char* argv[])
     const float peak = render.getMagnitude(0, render.getNumSamples());
     const float rms = render.getRMSLevel(0, 0, render.getNumSamples());
 
+    const auto& realisedGenre = synthesia->getLastPlan().sections.empty()
+        ? params.genre : synthesia->getLastPlan().genre;
+    const auto realisedKey = synthesia->getLastPlan().sections.empty()
+        ? option("--key", "C")
+        : juce::String(theory::pitchClassName(synthesia->getLastPlan().rootNote,
+                                              theory::keyPrefersFlats(synthesia->getLastPlan().rootNote,
+                                                                      synthesia->getLastPlan().scale)));
     std::cout << "Rendered " << wavFile.getFullPathName() << "\n"
-              << "  " << genreName(params.genre) << ", " << partName(params.part) << ", key "
-              << option("--key", "C") << " " << option("--scale", "major") << "\n";
+              << "  " << genreName(realisedGenre) << ", " << partName(params.part) << ", key "
+              << realisedKey << "\n";
     if (chordChart.isNotEmpty())
         std::cout << "  chords: " << chordChart << "\n";
     if (formChart.isNotEmpty())
         std::cout << "  form: " << formChart << "\n";
-    std::cout << "  " << params.lengthInBars << " bars @ " << params.tempo << " bpm, "
+    const auto& plan = synthesia->getLastPlan();
+    if (!plan.sections.empty())
+    {
+        std::cout << "  plan (" << plan.source << "): " << plan.summary();
+        if (plan.usage.totalTokens > 0)
+            std::cout << "  tokens: " << plan.usage.promptTokens << " prompt / "
+                      << plan.usage.completionTokens << " completion\n";
+    }
+    std::cout << "  " << synthesia->getClipLengthInBeats() / 4.0 << " bars @ " << playHead.bpm << " bpm, "
               << juce::String(totalSamples / sampleRate, 2) << " s, "
               << notesOut << "/" << notesInClip << " note-ons played\n"
               << "  peak " << juce::String(juce::Decibels::gainToDecibels(peak), 1) << " dBFS, "
