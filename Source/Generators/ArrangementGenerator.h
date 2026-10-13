@@ -30,6 +30,7 @@ public:
         double length;
         int velocity;
         bool glideToNext{false};
+        int pitchBend{8192};    // 14-bit, 8192 = centre; used for hat pitch ramps
     };
     using PartNotes = std::vector<PartNote>;
 
@@ -49,6 +50,7 @@ private:
     PartNotes generateBass(const Context& ctx, std::mt19937& rng);
     PartNotes generateSynth(const Context& ctx, std::mt19937& rng);
     PartNotes generatePiano(const Context& ctx, std::mt19937& rng);
+    PartNotes generateDrums(const Context& ctx, const PartNotes& bassNotes, std::mt19937& rng);
 
     PartNotes generatePatternBass(const Context& ctx, std::mt19937& rng);
     PartNotes generateWalkingBass(const Context& ctx, std::mt19937& rng);

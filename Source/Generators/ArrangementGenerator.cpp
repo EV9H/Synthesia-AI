@@ -252,9 +252,12 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
     const Context ctx{ params, profile, result.progression, params.lengthInBars * 4.0,
                        gridSteps(params.quantization) };
 
+    PartNotes bassNotes;
+
     for (const auto part : allParts)
     {
-        if (params.part != Part::All && params.part != part)
+        const bool drumsNeedBass = part == Part::Bass && params.part == Part::Drums;
+        if (params.part != Part::All && params.part != part && !drumsNeedBass)
             continue;
 
         // Independent random stream per part: regenerating one part never changes the others.
@@ -267,11 +270,20 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
             case Part::Bass:   notes = generateBass(ctx, rng); break;
             case Part::Synth:  notes = generateSynth(ctx, rng); break;
             case Part::Piano:  notes = generatePiano(ctx, rng); break;
+            case Part::Drums:  notes = generateDrums(ctx, bassNotes, rng); break;
             case Part::All:    break;
         }
 
-        applySwing(notes, profile.swing, profile.swingSixteenths);
+        if (part != Part::Drums)
+            applySwing(notes, profile.swing, profile.swingSixteenths);
         finalise(notes, ctx.totalBeats);
+
+        if (part == Part::Bass)
+            bassNotes = notes;
+
+        if (params.part != Part::All && params.part != part)
+            continue;
+
         appendToBuffer(notes, partChannel(part), part == Part::Bass ? 12 : 2, result.midi);
     }
 
@@ -543,6 +555,296 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePiano(const Contex
     }
 
     return {};
+}
+
+namespace gm
+{
+    constexpr int kick = 36;
+    constexpr int rim = 37;
+    constexpr int snare = 38;
+    constexpr int clap = 39;
+    constexpr int eSnare = 40;
+    constexpr int floorTom = 41;
+    constexpr int closedHat = 42;
+    constexpr int pedalHat = 44;
+    constexpr int lowTom = 45;
+    constexpr int openHat = 46;
+    constexpr int midTom = 47;
+    constexpr int crash = 49;
+    constexpr int hiTom = 50;
+    constexpr int ride = 51;
+    constexpr int tamb = 54;
+    constexpr int maracas = 70;
+}
+
+double drumLength(int pitch)
+{
+    switch (pitch)
+    {
+        case gm::kick:      return 0.45;
+        case gm::snare:
+        case gm::eSnare:
+        case gm::clap:      return 0.22;
+        case gm::closedHat:
+        case gm::pedalHat:  return 0.10;
+        case gm::openHat:   return 0.70;
+        case gm::crash:     return 2.2;
+        case gm::ride:      return 0.85;
+        case gm::rim:       return 0.12;
+        case gm::maracas:
+        case gm::tamb:      return 0.14;
+        default:            return 0.32;
+    }
+}
+
+ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Context& ctx,
+                                                                    const PartNotes& bassNotes,
+                                                                    std::mt19937& rng)
+{
+    const auto& drums = ctx.profile.drums;
+    const double tempo = ctx.params.tempo;
+    const auto msToBeats = [tempo](double ms) { return ms * tempo / 60000.0; };
+
+    auto swingWarp = [](double beat, double unit, double swing)
+    {
+        if (swing <= 0.5 + 1.0e-6)
+            return beat;
+        const double base = std::floor(beat / unit + 1.0e-9) * unit;
+        const double fraction = (beat - base) / unit;
+        const double warped = fraction < 0.5 ? fraction * (swing / 0.5)
+                                             : swing + (fraction - 0.5) * ((1.0 - swing) / 0.5);
+        return base + warped * unit;
+    };
+
+    PartNotes notes;
+
+    auto chokeOpen = [&](double start)
+    {
+        for (auto& note : notes)
+            if (note.pitch == gm::openHat && note.start < start
+                && note.start + note.length > start)
+                note.length = juce::jmax(0.03, start - note.start);
+    };
+
+    auto addHit = [&](int pitch, double beat, int velocity, bool isHat, int bend = 8192,
+                      double length = -1.0)
+    {
+        double t = beat;
+        if (isHat && drums.hatSwing > 0.5)
+            t = swingWarp(t, 0.5, drums.hatSwing);
+
+        t += msToBeats(drums.laidBackMs);
+        if (isHat)
+            t += msToBeats(drums.hatLagMs);
+        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(drums.humanizeMs);
+        t = juce::jmax(0.0, t);
+
+        if (pitch == gm::closedHat || pitch == gm::pedalHat)
+            chokeOpen(t);
+
+        notes.push_back({ pitch, t, length > 0.0 ? length : drumLength(pitch),
+                          humanise(velocity, rng, 7), false, bend });
+    };
+
+    auto patternAt = [](const std::vector<std::string>& patterns, int bar, std::mt19937& r) -> const std::string*
+    {
+        if (patterns.empty())
+            return nullptr;
+        return &patterns[static_cast<size_t>(bar / 2 + static_cast<int>(r() % 64)) % patterns.size()];
+    };
+
+    auto emitPattern = [&](const std::vector<std::string>& patterns, int pitch, int accentVel,
+                           int hitVel, int ghostVel, bool isHat, int bar)
+    {
+        const auto* pattern = patternAt(patterns, bar, rng);
+        if (pattern == nullptr)
+            return;
+
+        for (int step = 0; step < 16; ++step)
+        {
+            const char c = (*pattern)[static_cast<size_t>(step % static_cast<int>(pattern->size()))];
+            if (c == '.' || c == '-')
+                continue;
+            const int vel = c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel;
+            addHit(pitch, bar * 4.0 + step * stepBeats, vel, isHat);
+        }
+    };
+
+    const int bars = ctx.params.lengthInBars;
+
+    for (int bar = 0; bar < bars; ++bar)
+    {
+        const bool fillBar = (bar % 4 == 3) && uniform(rng) < drums.fillChance;
+        const int grooveBars = fillBar ? bars : bar; // unused; keep fill from replacing the whole bar
+        juce::ignoreUnused(grooveBars);
+
+        emitPattern(drums.kick, gm::kick, drums.kickVelocity, drums.kickVelocity - 10,
+                    drums.kickVelocity - 28, false, bar);
+        emitPattern(drums.snare, gm::snare, drums.snareVelocity, drums.snareVelocity - 8,
+                    juce::jmax(28, drums.snareVelocity - 50), false, bar);
+        emitPattern(drums.clap, gm::clap, drums.snareVelocity - 4, drums.snareVelocity - 14,
+                    drums.snareVelocity - 40, false, bar);
+
+        const int hatPitch = drums.rideHats ? gm::ride : gm::closedHat;
+        emitPattern(drums.closedHat, hatPitch, drums.hatVelocity + 10, drums.hatVelocity,
+                    drums.hatVelocity - 22, true, bar);
+        emitPattern(drums.openHat, gm::openHat, drums.hatVelocity + 6, drums.hatVelocity,
+                    drums.hatVelocity - 18, true, bar);
+
+        if (!drums.perc.empty())
+        {
+            const int percPitch = ctx.profile.genre == Genre::House ? gm::maracas
+                               : ctx.profile.genre == Genre::Pop    ? gm::tamb
+                                                                     : gm::rim;
+            emitPattern(drums.perc, percPitch, 62, 52, 38, percPitch != gm::rim, bar);
+        }
+
+        // Ghost snares on weak 16ths
+        if (drums.ghostSnareChance > 0.0)
+        {
+            for (int step : { 1, 3, 5, 7, 9, 11, 13, 15 })
+            {
+                if (uniform(rng) < drums.ghostSnareChance * (step % 4 == 3 ? 1.2 : 0.7))
+                    addHit(gm::snare, bar * 4.0 + step * stepBeats,
+                           humanise(36, rng, 8), false);
+            }
+        }
+
+        // House: keep four-on-the-floor even if the pattern variant skipped a beat
+        if (ctx.profile.genre == Genre::House)
+        {
+            for (int beat = 0; beat < 4; ++beat)
+            {
+                const double t = bar * 4.0 + beat;
+                bool hasKick = false;
+                for (const auto& n : notes)
+                    if (n.pitch == gm::kick && std::abs(n.start - t) < 0.08)
+                        hasKick = true;
+                if (!hasKick)
+                    addHit(gm::kick, t, drums.kickVelocity - 6, false);
+            }
+        }
+
+        // Trap hat rolls: 32nds or 16th-triplets with velocity + pitch ramps
+        if (drums.hatRollChance > 0.0 && uniform(rng) < drums.hatRollChance)
+        {
+            const bool triplets = uniform(rng) < 0.4;
+            const int count = triplets ? 6 : (uniform(rng) < 0.5 ? 8 : 12);
+            const double start = bar * 4.0 + (uniform(rng) < 0.55 ? 3.0 : 3.5);
+            const double span = juce::jmin(1.0, ctx.totalBeats - start);
+            const double dt = span / count;
+            const bool downRamp = uniform(rng) < 0.25;
+
+            for (int i = 0; i < count; ++i)
+            {
+                const double frac = count == 1 ? 1.0 : i / static_cast<double>(count - 1);
+                const double shape = downRamp ? 1.0 - frac : frac;
+                const int vel = 42 + static_cast<int>(shape * 70.0);
+                const int bend = 8192 + static_cast<int>(shape * 4200.0);
+                const int pitch = (i % 5 == 4) ? gm::pedalHat : gm::closedHat;
+                addHit(pitch, start + i * dt, vel, false, bend, dt * 0.85);
+            }
+        }
+
+        if (!fillBar)
+            continue;
+
+        // Phrase-end fill occupying the last 1–2 beats of the bar
+        const double fillStart = bar * 4.0 + (uniform(rng) < 0.4 ? 2.0 : 3.0);
+        const double fillEnd = (bar + 1) * 4.0;
+
+        switch (ctx.profile.genre)
+        {
+            case Genre::House:
+            {
+                for (double t = fillStart; t < fillEnd - 0.05; t += 0.25)
+                    addHit(gm::clap, t, 70 + static_cast<int>((t - fillStart) * 18.0), false);
+                addHit(gm::kick, fillEnd - 0.25, 120, false);
+                break;
+            }
+            case Genre::Trap:
+            {
+                const int n = 8;
+                const double dt = (fillEnd - fillStart) / n;
+                for (int i = 0; i < n; ++i)
+                    addHit(gm::snare, fillStart + i * dt, 50 + i * 8, false);
+                addHit(gm::kick, fillEnd - 0.12, 122, false);
+                break;
+            }
+            case Genre::LoFiJazz:
+            {
+                const int toms[] = { gm::floorTom, gm::lowTom, gm::midTom, gm::hiTom };
+                int i = 0;
+                for (double t = fillStart; t < fillEnd - 0.05; t += 0.333, ++i)
+                    addHit(toms[i % 4], t, 78 + (i % 4) * 6, false);
+                addHit(gm::snare, fillEnd - 0.15, 100, false);
+                break;
+            }
+            case Genre::Pop:
+            {
+                for (double t = fillStart; t < fillEnd - 0.05; t += 0.25)
+                    addHit(gm::snare, t, 80 + static_cast<int>((t - fillStart) * 12.0), false);
+                break;
+            }
+            case Genre::RnB:
+            {
+                for (double t = fillStart; t < fillEnd - 0.05; t += 0.125)
+                    addHit(gm::snare, t, 40 + static_cast<int>((t - fillStart) * 30.0), false);
+                break;
+            }
+            case Genre::Cinematic:
+            {
+                const int toms[] = { gm::floorTom, gm::lowTom, gm::midTom, gm::hiTom };
+                int i = 0;
+                for (double t = fillStart; t < fillEnd - 0.05; t += 0.5, ++i)
+                    addHit(toms[juce::jmin(3, i)], t, 100 + i * 4, false);
+                break;
+            }
+        }
+
+        // Crash on the downbeat after the fill, when there is a next bar
+        if (bar + 1 < bars)
+            addHit(gm::crash, (bar + 1) * 4.0, 100, false);
+    }
+
+    // Cinematic: big hits on chord changes in addition to the sparse kick pattern
+    if (ctx.profile.genre == Genre::Cinematic)
+    {
+        for (size_t i = 0; i < ctx.progression.size(); ++i)
+        {
+            const auto& chord = ctx.progression[i];
+            if (i == 0 || uniform(rng) < 0.7)
+                addHit(gm::kick, chord.startBeat, 118, false);
+            if (i + 1 == ctx.progression.size() || i % 2 == 0)
+                addHit(gm::crash, chord.startBeat, i == 0 ? 108 : 88, false);
+            if (i > 0 && uniform(rng) < 0.45)
+                addHit(gm::lowTom, chord.startBeat, 96, false);
+        }
+    }
+
+    // Kick / bass lock: land a kick on strong bass onsets that don't already have one
+    if (drums.lockKickToBass)
+    {
+        for (const auto& bass : bassNotes)
+        {
+            if (bass.velocity < 80)
+                continue;
+            const double grid = std::round(bass.start / stepBeats) * stepBeats;
+            bool nearby = false;
+            for (const auto& n : notes)
+            {
+                if (n.pitch == gm::kick && std::abs(n.start - bass.start) < 0.09)
+                {
+                    nearby = true;
+                    break;
+                }
+            }
+            if (!nearby)
+                addHit(gm::kick, grid, juce::jmin(120, bass.velocity + 8), false);
+        }
+    }
+
+    return notes;
 }
 
 ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const Context& ctx, std::mt19937& rng)
@@ -976,8 +1278,14 @@ void ArrangementGenerator::appendToBuffer(const PartNotes& notes, int channel, i
         const int offTick = juce::jmax(onTick + 1, toTick(note.start + note.length));
         const auto velocity = static_cast<juce::uint8>(juce::jlimit(1, 127, note.velocity));
 
+        if (note.pitchBend != 8192)
+            events.push_back({ onTick, 1, juce::MidiMessage::pitchWheel(channel, note.pitchBend) });
+
         events.push_back({ onTick, 2, juce::MidiMessage::noteOn(channel, note.pitch, velocity) });
         events.push_back({ offTick, 0, juce::MidiMessage::noteOff(channel, note.pitch) });
+
+        if (note.pitchBend != 8192)
+            events.push_back({ offTick, 1, juce::MidiMessage::pitchWheel(channel, 8192) });
 
         if (note.glideToNext && i + 1 < notes.size())
         {

@@ -39,6 +39,29 @@ struct ArpProfile
     int velocity{88};
 };
 
+// Drum pattern strings are 16 steps (one bar of 16ths): 'X' accent, 'x' hit, 'g' ghost, '.' rest.
+struct DrumProfile
+{
+    std::vector<std::string> kick;
+    std::vector<std::string> snare;
+    std::vector<std::string> clap;
+    std::vector<std::string> closedHat;
+    std::vector<std::string> openHat;
+    std::vector<std::string> perc;          // rim, shaker, tambourine
+    bool rideHats{false};                   // lo-fi/jazz: ride instead of busy closed hats
+    double hatSwing{0.5};                   // 0.5 = straight; 16th shuffle when > 0.5
+    double laidBackMs{0.0};                 // delay the whole kit (Dilla / laid-back)
+    double hatLagMs{0.0};                   // extra delay on hats only
+    double humanizeMs{5.0};
+    double ghostSnareChance{0.15};
+    double fillChance{0.8};
+    double hatRollChance{0.0};
+    bool lockKickToBass{false};
+    int kickVelocity{110};
+    int snareVelocity{108};
+    int hatVelocity{88};
+};
+
 // Pattern strings are 16 steps (one bar of 16ths):
 //   chords/piano: 'X' accent, 'x' hit, 'g' ghost, '-' hold, '.' rest
 //   bass:         'R' root, 'F' fifth, 'O' octave, 'T' third, 'A' approach to next root,
@@ -77,6 +100,8 @@ struct GenreProfile
     double swing;           // 0.5 = straight, e.g. 0.62 = swung
     bool swingSixteenths;
     double anticipation;    // chance a hit just before a chord change plays the next chord
+
+    DrumProfile drums;
 };
 
 const GenreProfile& getGenreProfile(Genre genre);
