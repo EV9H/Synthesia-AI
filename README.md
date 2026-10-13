@@ -120,6 +120,23 @@ cd build && ctest --output-on-failure
 
 Note: Linux builds produce only the Standalone version (no VST3/AU for DAW use on Linux).
 
+### Offline render host (headless "DAW")
+
+`SynthesiaRender` loads the plugin processor, generates a clip with the Markov
+generator, plays it through the built-in synth with a running host transport and
+bounces it to WAV (and optionally `.mid`). It exits non-zero if the render is
+silent, clips, or plays a different number of notes than the clip contains.
+
+```bash
+cmake --build build --target SynthesiaRender
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --key A --scale minor --bars 8 --quant 1/16 --tempo 128 --seed 7 \
+    --out demo.wav --midi demo.mid
+
+# Render the demo set to MP3 + MIDI with level checks (needs ffmpeg)
+Tools/render_demos.sh build/demos
+```
+
 ## Installation
 
 ### Windows
