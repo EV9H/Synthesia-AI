@@ -114,6 +114,28 @@ enum class ArrangementForm
     Song
 };
 
+enum class ImportMode
+{
+    None = 0,
+    Accompany,
+    Extend,
+    Rewrite,
+    Restyle
+};
+
+inline const char* importModeName(ImportMode mode)
+{
+    switch (mode)
+    {
+        case ImportMode::Accompany: return "Accompany";
+        case ImportMode::Extend:    return "Extend";
+        case ImportMode::Rewrite:   return "Rewrite";
+        case ImportMode::Restyle:   return "Restyle";
+        case ImportMode::None:      return "Off";
+    }
+    return "Off";
+}
+
 enum class SectionKind
 {
     Intro,
@@ -197,6 +219,7 @@ struct MidiGenerationParams
     int enabledParts{0};
     std::vector<SectionInfo> plannedSections;
     std::string planJson;
+    ImportMode importMode{ImportMode::None};
 };
 
 struct Note

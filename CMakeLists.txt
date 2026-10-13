@@ -51,6 +51,7 @@ set(SYNTHESIA_SOURCES
     Source/SimpleSynth.cpp
     Source/DrumLibrary.cpp
     Source/MidiExporter.cpp
+    Source/MidiImporter.cpp
 )
 target_sources(SynthesiaAI PRIVATE ${SYNTHESIA_SOURCES})
 
