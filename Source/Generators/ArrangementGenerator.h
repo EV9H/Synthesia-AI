@@ -63,10 +63,11 @@ private:
     PartNotes generateWalkingBass(const Context& ctx, std::mt19937& rng);
     PartNotes generateMelody(const Context& ctx, const MelodyProfile& role, std::mt19937& rng,
                              Part part = Part::Synth);
-    PartNotes generateArp(const Context& ctx, const ArpProfile& role, int rateSteps, std::mt19937& rng);
+    PartNotes generateArp(const Context& ctx, const ArpProfile& role, int rateSteps, std::mt19937& rng,
+                         Part part = Part::Synth);
     PartNotes generatePatternChords(const Context& ctx, const std::vector<std::string>& patterns,
                                     const theory::VoicingOptions& voicing, int baseVelocity,
-                                    std::mt19937& rng);
+                                    std::mt19937& rng, Part part = Part::Chords);
     PartNotes generateBrokenPiano(const Context& ctx, std::mt19937& rng);
 
     static void addSlides(PartNotes& notes, double chance, std::mt19937& rng);

@@ -359,12 +359,62 @@ namespace
     }
 }
 
+namespace
+{
+    float densityFor(SectionKind kind, Part part)
+    {
+        const float energy = energyForKind(kind);
+        switch (part)
+        {
+            case Part::Drums:  return kind == SectionKind::Break ? 0.18f
+                                 : kind == SectionKind::Intro ? 0.42f : energy;
+            case Part::Synth:  return kind == SectionKind::Intro ? 0.18f
+                                 : kind == SectionKind::Verse ? 0.38f
+                                 : kind == SectionKind::Break ? 0.22f : energy;
+            case Part::Piano:  return kind == SectionKind::Drop ? 0.28f
+                                 : kind == SectionKind::Chorus ? 0.40f
+                                 : kind == SectionKind::Intro ? 0.55f
+                                 : juce::jmin(1.0f, energy + 0.05f);
+            case Part::Bass:   return kind == SectionKind::Intro ? 0.35f
+                                 : kind == SectionKind::Break ? 0.30f
+                                 : juce::jmax(0.45f, energy);
+            case Part::Chords: return kind == SectionKind::Break ? 0.35f
+                                 : kind == SectionKind::Intro ? 0.55f : energy;
+            case Part::All:    return energy;
+        }
+        return energy;
+    }
+
+    SectionInfo makeSection(SectionKind kind, double startBeat, int bars, int occurrence)
+    {
+        std::string label = sectionName(kind);
+        if (occurrence > 1)
+            label += " " + std::to_string(occurrence);
+        float energy = energyForKind(kind);
+        if (occurrence > 1)
+            energy = juce::jmin(1.0f, energy + 0.06f);
+        return { kind, startBeat, bars * 4.0, energy, occurrence, label,
+                 densityFor(kind, Part::Chords), densityFor(kind, Part::Bass),
+                 densityFor(kind, Part::Synth), densityFor(kind, Part::Piano),
+                 densityFor(kind, Part::Drums) };
+    }
+}
+
 std::vector<SectionInfo> ArrangementGenerator::buildForm(Genre genre, ArrangementForm form, int bars)
 {
     const int safeBars = juce::jmax(1, bars);
     if (form != ArrangementForm::Song || safeBars < 8)
     {
-        return { { SectionKind::Verse, 0.0, safeBars * 4.0, 0.7f, 1, "Loop" } };
+        if (safeBars >= 8)
+        {
+            const int first = safeBars / 2;
+            const int second = safeBars - first;
+            return {
+                makeSection(SectionKind::Verse, 0.0, first, 1),
+                makeSection(SectionKind::Chorus, first * 4.0, second, 1)
+            };
+        }
+        return { makeSection(SectionKind::Verse, 0.0, safeBars, 1) };
     }
 
     auto spec = formTemplate(genre, safeBars);
@@ -378,13 +428,7 @@ std::vector<SectionInfo> ArrangementGenerator::buildForm(Genre genre, Arrangemen
             break;
         const int length = juce::jmin(item.second, safeBars - used);
         const int occurrence = ++counts[item.first];
-        std::string label = sectionName(item.first);
-        if (occurrence > 1)
-            label += " " + std::to_string(occurrence);
-        float energy = energyForKind(item.first);
-        if (occurrence > 1)
-            energy = juce::jmin(1.0f, energy + 0.06f);
-        sections.push_back({ item.first, used * 4.0, length * 4.0, energy, occurrence, label });
+        sections.push_back(makeSection(item.first, used * 4.0, length, occurrence));
         used += length;
     }
 
@@ -527,20 +571,22 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateChords(const Conte
         }
 
         case ChordStyle::Arpeggiated:
-            return generateArp(ctx, profile.chordArp, juce::jmax(1, ctx.finestSteps), rng);
+            return generateArp(ctx, profile.chordArp, juce::jmax(1, ctx.finestSteps), rng, Part::Chords);
 
         case ChordStyle::Pulse:
         case ChordStyle::Stabs:
         case ChordStyle::Comping:
         default:
             return generatePatternChords(ctx, profile.chordPatterns, profile.chordVoicing,
-                                         profile.chordStyle == ChordStyle::Stabs ? 88 : 80, rng);
+                                         profile.chordStyle == ChordStyle::Stabs ? 88 : 80, rng,
+                                         Part::Chords);
     }
 }
 
 ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
     const Context& ctx, const std::vector<std::string>& patterns,
-    const theory::VoicingOptions& voicingOptions, int baseVelocity, std::mt19937& rng)
+    const theory::VoicingOptions& voicingOptions, int baseVelocity, std::mt19937& rng,
+    Part part)
 {
     const auto& progression = ctx.progression;
 
@@ -581,10 +627,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             if (!anticipated)
                 length = juce::jmin(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
 
-            const float density = ctx.densityAt(Part::Chords, start);
+            const float density = ctx.densityAt(part, start);
             if (hit.symbol == 'g' && density < 0.4f)
                 continue;
             if (hit.symbol != 'X' && uniform(rng) > 0.3 + 0.7 * density)
+                continue;
+            if (hit.step >= 12 && bar % 4 == 3 && uniform(rng) < 0.65)
+                continue;
+            if (ctx.energyAt(start) < 0.4f && hit.step % 4 != 0 && hit.symbol != 'X')
                 continue;
 
             const int velocity = hit.symbol == 'X' ? baseVelocity + 10
@@ -760,7 +810,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
 ArrangementGenerator::PartNotes ArrangementGenerator::generateSynth(const Context& ctx, std::mt19937& rng)
 {
     if (ctx.profile.leadStyle == LeadStyle::Arp)
-        return generateArp(ctx, ctx.profile.leadArp, ctx.finestSteps, rng);
+        return generateArp(ctx, ctx.profile.leadArp, ctx.finestSteps, rng, Part::Synth);
 
     return generateMelody(ctx, ctx.profile.leadMelody, rng, Part::Synth);
 }
@@ -772,9 +822,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePiano(const Contex
     switch (profile.pianoStyle)
     {
         case PianoStyle::Broken:   return generateBrokenPiano(ctx, rng);
-        case PianoStyle::Comp:     return generatePatternChords(ctx, profile.pianoPatterns, profile.pianoVoicing, 82, rng);
+        case PianoStyle::Comp:     return generatePatternChords(ctx, profile.pianoPatterns, profile.pianoVoicing, 82, rng, Part::Piano);
         case PianoStyle::Melodic:  return generateMelody(ctx, profile.pianoMelody, rng, Part::Piano);
-        case PianoStyle::Arpeggio: return generateArp(ctx, profile.pianoArp, ctx.finestSteps, rng);
+        case PianoStyle::Arpeggio: return generateArp(ctx, profile.pianoArp, ctx.finestSteps, rng, Part::Piano);
     }
 
     return {};
@@ -854,19 +904,20 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
     {
         double t = beat;
         if (isHat && drums.hatSwing > 0.5)
-            t = swingWarp(t, 0.5, drums.hatSwing);
+            t = swingWarp(t, 0.25, drums.hatSwing);
 
         t += msToBeats(drums.laidBackMs);
         if (isHat)
             t += msToBeats(drums.hatLagMs);
-        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(drums.humanizeMs);
+        const double human = isHat ? drums.humanizeMs * 1.25 : drums.humanizeMs;
+        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(human);
         t = juce::jmax(0.0, t);
 
         if (pitch == gm::closedHat || pitch == gm::pedalHat)
             chokeOpen(t);
 
         notes.push_back({ pitch, t, length > 0.0 ? length : drumLength(pitch),
-                          humanise(velocity, rng, 7), false, bend });
+                          humanise(velocity, rng, isHat ? 11 : 7), false, bend });
     };
 
     auto patternAt = [](const std::vector<std::string>& patterns, int bar, int variation, std::mt19937& r) -> const std::string*
@@ -895,7 +946,15 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                 continue;
             const int vel = juce::roundToInt((c == 'X' ? accentVel : c == 'g' ? ghostVel : hitVel)
                                              * (0.5f + 0.5f * energy));
-            addHit(pitch, bar * 4.0 + step * stepBeats, vel, isHat);
+            int usePitch = pitch;
+            if (isHat && pitch == gm::closedHat)
+            {
+                if (c == 'g' || c == 'p' || step % 8 == 3)
+                    usePitch = gm::pedalHat;
+                else if (step % 2 == 1 && uniform(rng) < 0.28)
+                    usePitch = gm::pedalHat;
+            }
+            addHit(usePitch, bar * 4.0 + step * stepBeats, vel, isHat);
         }
     };
 
@@ -926,6 +985,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                     drums.hatVelocity - 22, true, bar, variation, energy);
         emitPattern(drums.openHat, gm::openHat, drums.hatVelocity + 6, drums.hatVelocity,
                     drums.hatVelocity - 18, true, bar, variation, energy);
+
+        if (ctx.profile.genre == Genre::LoFiJazz && !drums.rideHats && bar % 2 == 0)
+            emitPattern({ "x---x---x---x---", "x---x.x.x---x---" }, gm::ride,
+                        drums.hatVelocity - 4, drums.hatVelocity - 12,
+                        drums.hatVelocity - 24, true, bar, variation, energy * 0.85f);
 
         if (!drums.perc.empty())
         {
@@ -962,24 +1026,38 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         }
 
         // Trap hat rolls: 32nds or 16th-triplets with velocity + pitch ramps
-        if (energy > 0.65f && drums.hatRollChance > 0.0 && uniform(rng) < drums.hatRollChance)
+        if (energy > 0.55f && drums.hatRollChance > 0.0 && uniform(rng) < drums.hatRollChance)
         {
-            const bool triplets = uniform(rng) < 0.4;
-            const int count = triplets ? 6 : (uniform(rng) < 0.5 ? 8 : 12);
-            const double start = bar * 4.0 + (uniform(rng) < 0.55 ? 3.0 : 3.5);
-            const double span = juce::jmin(1.0, ctx.totalBeats - start);
+            const bool triplets = uniform(rng) < 0.42;
+            const bool thirtySecond = !triplets && uniform(rng) < 0.55;
+            const int count = triplets ? 6 : (thirtySecond ? (uniform(rng) < 0.5 ? 8 : 16) : 8);
+            const double slot = uniform(rng) < 0.4 ? 2.0 : (uniform(rng) < 0.5 ? 3.0 : 3.5);
+            const double start = bar * 4.0 + slot;
+            const double span = juce::jmin(thirtySecond ? 1.0 : 0.75, ctx.totalBeats - start);
             const double dt = span / count;
-            const bool downRamp = uniform(rng) < 0.25;
+            const bool downRamp = uniform(rng) < 0.22;
 
             for (int i = 0; i < count; ++i)
             {
                 const double frac = count == 1 ? 1.0 : i / static_cast<double>(count - 1);
                 const double shape = downRamp ? 1.0 - frac : frac;
-                const int vel = 42 + static_cast<int>(shape * 70.0);
-                const int bend = 8192 + static_cast<int>(shape * 4200.0);
+                const int vel = 38 + static_cast<int>(shape * 74.0);
+                const int bend = 8192 + static_cast<int>((shape - 0.5) * 5200.0);
                 const int pitch = (i % 5 == 4) ? gm::pedalHat : gm::closedHat;
-                addHit(pitch, start + i * dt, vel, false, bend, dt * 0.85);
+                addHit(pitch, start + i * dt, vel, true, bend, dt * 0.82);
             }
+        }
+
+        if (liftComing)
+        {
+            const double riserStart = bar * 4.0 + 3.0;
+            for (int i = 0; i < 8; ++i)
+            {
+                const int vel = 48 + i * 8;
+                const int bend = 8192 + i * 380;
+                addHit(gm::closedHat, riserStart + i * 0.125, vel, true, bend, 0.10);
+            }
+            addHit(gm::crash, (bar + 1) * 4.0, 108, false);
         }
 
         if (!fillBar)
@@ -1039,7 +1117,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         }
 
         // Crash on the downbeat after the fill, when there is a next bar
-        if (bar + 1 < bars)
+        if (bar + 1 < bars && !liftComing)
             addHit(gm::crash, (bar + 1) * 4.0, 100, false);
     }
 
@@ -1113,7 +1191,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 }
 
 ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context& ctx, const ArpProfile& role,
-                                                                  int rateSteps, std::mt19937& rng)
+                                                                  int rateSteps, std::mt19937& rng, Part part)
 {
     PartNotes notes;
     const auto& shape = pick(role.shapes, rng);
@@ -1140,6 +1218,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
         size_t index = 0;
         for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += rate, ++index)
         {
+            const float density = ctx.densityAt(part, beat);
+            if (index % 2 == 1 && uniform(rng) > 0.35 + 0.65 * density)
+                continue;
             const int pitch = tones[static_cast<size_t>(shape[index % shape.size()]) % tones.size()];
             const double inBeat = beat - std::floor(beat);
             const int velocity = role.velocity + (inBeat < 1.0e-6 ? 10 : std::abs(inBeat - 0.5) < 1.0e-6 ? 3 : -4);

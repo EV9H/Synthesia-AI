@@ -19,33 +19,33 @@ namespace
 
         p.chordStyle = ChordStyle::Pulse;
         p.chordPatterns = { "X-------x-------", "X-----x-------x-", "X-------x---x---" };
-        p.chordVoicing = { 52, 76, 4, false, false };
+        p.chordVoicing = { 50, 72, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-R-R-R-R-R-F-A-", "R---..R-R---..A-", "R-.RR-.RR-.RF-A-" };
         p.bassLow = 33;
-        p.bassHigh = 52;
+        p.bassHigh = 50;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 64, 84, 0.55, 0.3, 0.25, 0.2, 2, false, false, 92 };
+        p.leadMelody = { 67, 86, 0.48, 0.3, 0.32, 0.22, 2, false, false, 90 };
 
         p.pianoStyle = PianoStyle::Broken;
-        p.pianoVoicing = { 55, 74, 3, false, false };
+        p.pianoVoicing = { 58, 78, 3, false, false };
 
         p.drums.kick = { "X.......X.x.....", "X.......X.......", "X.x.....X.x....." };
         p.drums.snare = { "....X.......X...", "....X......xX..." };
         p.drums.clap = { "....x.......x..." };
-        p.drums.closedHat = { "x.x.x.x.x.x.x.x.", "x.x.x.xxx.x.x.x." };
+        p.drums.closedHat = { "xXx.xXx.xXx.xXx.", "x.x.x.xxx.x.x.x.", "xgxgx.xgxgxgx.xg" };
         p.drums.openHat = { "............x...", "........x......." };
         p.drums.perc = { "..g.....g.g....." };
-        p.drums.hatSwing = 0.52;
-        p.drums.humanizeMs = 4.0;
+        p.drums.hatSwing = 0.54;
+        p.drums.humanizeMs = 5.0;
         p.drums.ghostSnareChance = 0.2;
         p.drums.fillChance = 0.85;
         p.drums.kickVelocity = 112;
         p.drums.snareVelocity = 110;
-        p.drums.hatVelocity = 86;
+        p.drums.hatVelocity = 84;
 
         p.swing = 0.5;
         p.swingSixteenths = false;
@@ -65,35 +65,35 @@ namespace
 
         p.chordStyle = ChordStyle::Comping;
         p.chordPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....",
-                            "X-----.x-----...", "X---------..x---" };
-        p.chordVoicing = { 50, 74, 4, true, false };
+                            "X-----.x-----...", "X---------..x---", "x---....X-------" };
+        p.chordVoicing = { 50, 70, 4, true, false };
 
         p.bassStyle = BassStyle::Walking;
         p.bassLow = 28;
-        p.bassHigh = 50;
+        p.bassHigh = 48;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 65, 84, 0.35, 0.45, 0.4, 0.25, 2, true, false, 84 };
+        p.leadMelody = { 67, 84, 0.28, 0.45, 0.48, 0.28, 2, true, false, 80 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 60, 82, 0.3, 0.4, 0.45, 0.2, 1, true, true, 78 };
+        p.pianoMelody = { 58, 78, 0.26, 0.4, 0.5, 0.22, 1, true, true, 76 };
 
         p.drums.kick = { "X.......x.......", "X-----------x---", "X.....x.X......." };
         p.drums.snare = { "....X.......X...", "....X..g....X.g." };
-        p.drums.closedHat = { "x...x...x...x...", "x...x.x.x...x..." };
-        p.drums.openHat = { "............x..." };
+        p.drums.closedHat = { "x...x...x...x...", "x...x.x.x...x.g.", "x.g.x...x...x...", "g...x...g...x..." };
+        p.drums.openHat = { "............x...", "........x......." };
         p.drums.perc = { ".g......g......." };   // rim clicks
-        p.drums.rideHats = true;
-        p.drums.hatSwing = 0.62;
+        p.drums.rideHats = false;
+        p.drums.hatSwing = 0.66;
         p.drums.laidBackMs = 22.0;
-        p.drums.hatLagMs = 8.0;
-        p.drums.humanizeMs = 11.0;
+        p.drums.hatLagMs = 10.0;
+        p.drums.humanizeMs = 13.0;
         p.drums.ghostSnareChance = 0.28;
         p.drums.fillChance = 0.7;
         p.drums.kickVelocity = 96;
         p.drums.snareVelocity = 92;
-        p.drums.hatVelocity = 72;
+        p.drums.hatVelocity = 70;
 
         p.swing = 0.62;
         p.swingSixteenths = false;
@@ -112,34 +112,36 @@ namespace
         p.minorProgressions = { { "1 6 3 7" }, { "1 7 6 7" }, { "1 4 1 4" }, { "1 6 7 1" } };
 
         p.chordStyle = ChordStyle::Stabs;
-        p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x.." };
-        p.chordVoicing = { 55, 79, 4, false, false };
+        p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..",
+                            "..x-..x-........", "x-..x-..x-..x-.." };
+        p.chordVoicing = { 55, 76, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-" };
+        p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-", "R-..R-..R-..R-.." };
         p.bassLow = 33;
-        p.bassHigh = 50;
+        p.bassHigh = 48;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Arp;
-        p.leadArp = { 62, 88, { arpUpDown, arpUp, arpSkip }, 0.55, 86 };
+        p.leadArp = { 67, 91, { arpUpDown, arpUp, arpSkip }, 0.50, 84 };
 
         p.pianoStyle = PianoStyle::Comp;
-        p.pianoPatterns = { "X--x--x---------", "X--x--x---x-----", "x--x--x---x--x--" };
-        p.pianoVoicing = { 58, 84, 4, false, false };
+        p.pianoPatterns = { "X--x--x---------", "X--x--x---x-----", "........x--x--x-", "x--x------------" };
+        p.pianoVoicing = { 64, 86, 3, false, false };
 
         p.drums.kick = { "X...X...X...X...", "X...X...X...X.x." };
         p.drums.clap = { "....X.......X..." };
-        p.drums.closedHat = { "xxxxxxxxxxxxxxxx", "xxx.xxxxxxxxxxxx" };
-        p.drums.openHat = { "..x...x...x...x." };
+        p.drums.closedHat = { "xXxXxXxXxXxXxXxX", "xxXxxXxxXxxXxxXx", "x.xXx.xXx.xXx.xX",
+                              "xgxgxgxgxgxgxgxg" };
+        p.drums.openHat = { "..x...x...x...x.", "..x...x...x.....", "..............x." };
         p.drums.perc = { "g...g...g...g...", "..g...g...g...g." };  // shaker offbeats
-        p.drums.hatSwing = 0.60;
-        p.drums.humanizeMs = 3.0;
+        p.drums.hatSwing = 0.58;
+        p.drums.humanizeMs = 4.0;
         p.drums.ghostSnareChance = 0.05;
         p.drums.fillChance = 0.75;
         p.drums.kickVelocity = 118;
         p.drums.snareVelocity = 112;
-        p.drums.hatVelocity = 78;
+        p.drums.hatVelocity = 80;
 
         p.swing = 0.5;
         p.swingSixteenths = false;
@@ -157,35 +159,38 @@ namespace
         p.majorProgressions = { { "6 4 1 5" }, { "1 5 6 4", 2.0 }, { "6 3 4 4" } };
         p.minorProgressions = { { "1 6", 2.0 }, { "1 6 3 7" }, { "1 4 6 5D" }, { "1 b2 1 6" } };
 
-        p.chordStyle = ChordStyle::Sustained;
-        p.chordVoicing = { 55, 79, 4, false, false };
+        p.chordStyle = ChordStyle::Comping;
+        p.chordPatterns = { "X-------x-------", "X---....----x---", "X-----x-........",
+                            "X-----------x---", "X-------........" };
+        p.chordVoicing = { 52, 71, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-------..R---R-", "R-----R-----O---", "R---------R-.R--", "R-------R---..A-" };
         p.bassLow = 26;
-        p.bassHigh = 43;
+        p.bassHigh = 41;
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 72, 91, 0.42, 0.55, 0.35, 0.15, 1, false, false, 86 };
+        p.leadMelody = { 74, 93, 0.36, 0.55, 0.42, 0.18, 1, false, false, 84 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 60, 79, 0.25, 0.3, 0.5, 0.35, 2, false, true, 76 };
+        p.pianoMelody = { 55, 70, 0.22, 0.3, 0.55, 0.38, 2, false, true, 74 };
 
         p.drums.kick = { "X-----------x---", "X-----x-----x---", "X-------..X-..x-", "X---------X-.x--" };
         p.drums.snare = { "........X.......", "........X.....x." };
         p.drums.clap = { "........x.......", "........X......." };
-        p.drums.closedHat = { "x.x.x.x.x.x.x.x.", "x.x.x.x.x.xxx.x.", "x.x.xx.xx.x.x.x." };
-        p.drums.openHat = { "..............x.", "............x..." };
-        p.drums.hatSwing = 0.53;
-        p.drums.humanizeMs = 4.0;
+        p.drums.closedHat = { "x.x.x.x.x.x.x.x.", "x.x.x.x.x.xxx.x.", "x.x.xx.xx.x.x.x.",
+                              "x...x.x.x...x.x.", "xxxxxxxxxxxxxxxx" };
+        p.drums.openHat = { "..............x.", "............x...", "........x......." };
+        p.drums.hatSwing = 0.54;
+        p.drums.humanizeMs = 5.0;
         p.drums.ghostSnareChance = 0.12;
         p.drums.fillChance = 0.65;
-        p.drums.hatRollChance = 0.55;
+        p.drums.hatRollChance = 0.72;
         p.drums.lockKickToBass = true;
         p.drums.kickVelocity = 116;
         p.drums.snareVelocity = 114;
-        p.drums.hatVelocity = 82;
+        p.drums.hatVelocity = 84;
 
         p.swing = 0.5;
         p.swingSixteenths = false;
@@ -204,36 +209,37 @@ namespace
         p.minorProgressions = { { "111 4 111 4" }, { "1 4 7 3" }, { "6 7 1 1" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X-----------..x-", "X---------..x---", "X-------..x-x---" };
-        p.chordVoicing = { 52, 76, 5, true, false };
+        p.chordPatterns = { "X-----------..x-", "X---------..x---", "X-------..x-x---",
+                            "..x-----..x-----", "X---....x-------" };
+        p.chordVoicing = { 52, 72, 5, true, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R--.....R-.F..A-", "R---..TR-...O.A.", "R-----..F-.R..A-" };
         p.bassLow = 28;
-        p.bassHigh = 50;
+        p.bassHigh = 48;
         p.slideChance = 0.15;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 62, 82, 0.45, 0.5, 0.35, 0.25, 2, true, false, 84 };
+        p.leadMelody = { 65, 84, 0.38, 0.5, 0.42, 0.28, 2, true, false, 82 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 60, 82, 0.3, 0.5, 0.45, 0.2, 1, true, true, 76 };
+        p.pianoMelody = { 57, 76, 0.26, 0.5, 0.5, 0.22, 1, true, true, 74 };
 
         p.drums.kick = { "X..x....X...x...", "X.....x.X..x....", "X.x.....X....x.." };
         p.drums.snare = { "....X..g....X.g.", "....X.....g.X..." };
-        p.drums.closedHat = { "x.x.x.xxx.x.x.x.", "x.xx.x.x.x.xx.x." };
+        p.drums.closedHat = { "x.x.x.xxx.x.x.x.", "x.xx.x.x.x.xx.x.", "xgx.xgx.xgx.xgx." };
         p.drums.openHat = { "............x...", "........x......." };
         p.drums.perc = { ".g......g.g....." };
-        p.drums.hatSwing = 0.58;
+        p.drums.hatSwing = 0.60;
         p.drums.laidBackMs = 38.0;
-        p.drums.hatLagMs = 10.0;
-        p.drums.humanizeMs = 9.0;
+        p.drums.hatLagMs = 12.0;
+        p.drums.humanizeMs = 10.0;
         p.drums.ghostSnareChance = 0.5;
         p.drums.fillChance = 0.7;
         p.drums.lockKickToBass = true;
         p.drums.kickVelocity = 104;
         p.drums.snareVelocity = 100;
-        p.drums.hatVelocity = 76;
+        p.drums.hatVelocity = 74;
 
         p.swing = 0.56;
         p.swingSixteenths = true;
@@ -252,31 +258,31 @@ namespace
         p.minorProgressions = { { "1 6 3 7" }, { "1 6 4 5D" }, { "1 3 7 4" } };
 
         p.chordStyle = ChordStyle::Sustained;
-        p.chordVoicing = { 43, 79, 4, false, true };
+        p.chordVoicing = { 43, 76, 4, false, true };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R---------------", "R-------F-------" };
         p.bassLow = 28;
-        p.bassHigh = 48;
+        p.bassHigh = 46;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 67, 88, 0.3, 0.15, 0.3, 0.45, 2, false, false, 82 };
+        p.leadMelody = { 69, 90, 0.26, 0.15, 0.38, 0.5, 2, false, false, 80 };
 
         p.pianoStyle = PianoStyle::Arpeggio;
-        p.pianoArp = { 48, 84, { arpRolling, arpSkip, arpUpDown }, 0.95, 72 };
+        p.pianoArp = { 48, 74, { arpRolling, arpSkip, arpUpDown }, 0.92, 70 };
 
         p.drums.kick = { "X...............", "X.......X......." };
         p.drums.snare = { "................" };
-        p.drums.closedHat = { "................" };
+        p.drums.closedHat = { "................", "x.......x......." };
         p.drums.openHat = { "................" };
         p.drums.perc = { "................" };
-        p.drums.humanizeMs = 6.0;
+        p.drums.humanizeMs = 7.0;
         p.drums.ghostSnareChance = 0.0;
         p.drums.fillChance = 0.9;
         p.drums.kickVelocity = 120;
         p.drums.snareVelocity = 108;
-        p.drums.hatVelocity = 70;
+        p.drums.hatVelocity = 68;
 
         p.swing = 0.5;
         p.swingSixteenths = false;
