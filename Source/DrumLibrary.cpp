@@ -131,11 +131,12 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
     switch (genre)
     {
         case Genre::House:
-            if (piece == DrumPiece::Kick) gain = 0.48f;
-            if (piece == DrumPiece::ClosedHat) gain = 0.36f;
+            if (piece == DrumPiece::Kick) gain = 0.38f;
+            if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.9f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.34f;
             break;
         case Genre::Trap:
-            if (piece == DrumPiece::Kick) gain = 0.40f;   // bass already carries the long 808
+            if (piece == DrumPiece::Kick) gain = 0.26f;   // bass already carries the long 808
             if (piece == DrumPiece::ClosedHat) gain = 0.30f;
             break;
         case Genre::LoFiJazz:
@@ -150,7 +151,7 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
             break;
     }
 
-    return gain;
+    return gain * 0.82f;
 }
 
 double DrumLibrary::kitLowpassCoeff(Genre genre) const
