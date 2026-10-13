@@ -94,6 +94,7 @@ namespace
             "  --style-profile <file.json>    blend this learned profile with the genre\n"
             "  --style-blend <0-1>     0 = genre only, 1 = full learned style (default 1)\n"
             "  --preset <id>           factory/user preset (overrides genre/key/form/etc.)\n"
+            "  --sidechain <on|off>    kick-bus ducking on pads/bass (default on)\n"
             "  --list-presets          print factory (and user) preset ids and exit\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
@@ -448,6 +449,10 @@ int main(int argc, char* argv[])
     plugin->setPlayConfigDetails(0, 2, sampleRate, blockSize);
     plugin->setNonRealtime(true);
     plugin->prepareToPlay(sampleRate, blockSize);
+
+    const auto sidechainOpt = option("--sidechain", "on").toLowerCase();
+    if (sidechainOpt == "off" || sidechainOpt == "0" || sidechainOpt == "false")
+        synthesia->previewSynth().setSidechainAmount(0.0f);
 
     const double clipSeconds = synthesia->getClipLengthInBeats() * 60.0 / playHead.bpm;
     const auto clipSamples = juce::jmax(static_cast<juce::int64>(1),

@@ -452,6 +452,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     tabs.addTab("Plan", Theme::header, &planPage, false);
     tabs.addTab("Import", Theme::header, &importPage, false);
     tabs.addTab("Style", Theme::header, &stylePage, false);
+    tabs.addTab("Sound", Theme::header, &soundPage, false);
     addAndMakeVisible(tabs);
 
     setUpLabel(keyLabel, "Key");
@@ -660,6 +661,141 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     styleHintLabel.setJustificationType(juce::Justification::topLeft);
     stylePage.addAndMakeVisible(styleHintLabel);
 
+    setUpLabel(soundPartLabel, "Part");
+    soundPage.addAndMakeVisible(soundPartLabel);
+    soundPartCombo.addItem("Chords", 1);
+    soundPartCombo.addItem("Bass", 2);
+    soundPartCombo.addItem("Synth", 3);
+    soundPartCombo.addItem("Piano", 4);
+    soundPartCombo.setSelectedId(1, juce::dontSendNotification);
+    soundPartCombo.onChange = [this]()
+    {
+        refreshSoundPatchCombo();
+        pullSoundToUI();
+    };
+    soundPage.addAndMakeVisible(soundPartCombo);
+
+    setUpLabel(soundPatchLabel, "Patch");
+    soundPage.addAndMakeVisible(soundPatchLabel);
+    soundPatchCombo.onChange = [this]()
+    {
+        if (pullingSound)
+            return;
+        const auto id = soundPatchCombo.getText();
+        auto found = PatchLibrary::find(id);
+        if (found.id.isEmpty())
+        {
+            const auto ids = PatchLibrary::idsFor(selectedSoundPart());
+            const int idx = soundPatchCombo.getSelectedId() - 1;
+            if (juce::isPositiveAndBelow(idx, ids.size()))
+                found = PatchLibrary::find(ids[idx]);
+        }
+        if (found.id.isNotEmpty())
+        {
+            found.part = selectedSoundPart();
+            audioProcessor.setPreviewPatch(selectedSoundPart(), found);
+            pullSoundToUI();
+        }
+    };
+    soundPage.addAndMakeVisible(soundPatchCombo);
+
+    auto bindSoundSlider = [this](juce::Slider& slider, double min, double max, double interval,
+                                  const juce::String& suffix)
+    {
+        slider.setRange(min, max, interval);
+        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 22);
+        if (suffix.isNotEmpty())
+            slider.setTextValueSuffix(suffix);
+        styleSlider(slider);
+        slider.onValueChange = [this]() { pushSoundFromUI(); };
+        soundPage.addAndMakeVisible(slider);
+    };
+
+    setUpLabel(attackLabel, "Attack");
+    soundPage.addAndMakeVisible(attackLabel);
+    bindSoundSlider(attackSlider, 0.001, 2.0, 0.001, " s");
+    attackSlider.setSkewFactorFromMidPoint(0.2);
+
+    setUpLabel(decayLabel, "Decay");
+    soundPage.addAndMakeVisible(decayLabel);
+    bindSoundSlider(decaySlider, 0.01, 3.0, 0.001, " s");
+    decaySlider.setSkewFactorFromMidPoint(0.4);
+
+    setUpLabel(sustainLabel, "Sustain");
+    soundPage.addAndMakeVisible(sustainLabel);
+    bindSoundSlider(sustainSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(releaseLabel, "Release");
+    soundPage.addAndMakeVisible(releaseLabel);
+    bindSoundSlider(releaseSlider, 0.01, 3.0, 0.001, " s");
+    releaseSlider.setSkewFactorFromMidPoint(0.4);
+
+    setUpLabel(cutoffLabel, "Cutoff");
+    soundPage.addAndMakeVisible(cutoffLabel);
+    bindSoundSlider(cutoffSlider, 80.0, 12000.0, 1.0, " Hz");
+    cutoffSlider.setSkewFactorFromMidPoint(1200.0);
+
+    setUpLabel(resoLabel, "Resonance");
+    soundPage.addAndMakeVisible(resoLabel);
+    bindSoundSlider(resoSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(driveLabel, "Drive");
+    soundPage.addAndMakeVisible(driveLabel);
+    bindSoundSlider(driveSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(reverbSendLabel, "Reverb");
+    soundPage.addAndMakeVisible(reverbSendLabel);
+    bindSoundSlider(reverbSendSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(delaySendLabel, "Delay");
+    soundPage.addAndMakeVisible(delaySendLabel);
+    bindSoundSlider(delaySendSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(mixSectionLabel, "Mix");
+    soundPage.addAndMakeVisible(mixSectionLabel);
+
+    setUpLabel(mixPresetLabel, "Preset");
+    soundPage.addAndMakeVisible(mixPresetLabel);
+    {
+        const auto names = MixLibrary::names();
+        for (int i = 0; i < names.size(); ++i)
+            mixPresetCombo.addItem(names[i], i + 1);
+        mixPresetCombo.setSelectedId(1, juce::dontSendNotification);
+        mixPresetCombo.onChange = [this]()
+        {
+            if (pullingSound)
+                return;
+            const auto ids = MixLibrary::ids();
+            const int idx = mixPresetCombo.getSelectedId() - 1;
+            if (juce::isPositiveAndBelow(idx, ids.size()))
+            {
+                audioProcessor.setPreviewMix(MixLibrary::find(ids[idx]));
+                pullSoundToUI();
+            }
+        };
+        soundPage.addAndMakeVisible(mixPresetCombo);
+    }
+
+    setUpLabel(sidechainLabel, "Sidechain");
+    soundPage.addAndMakeVisible(sidechainLabel);
+    bindSoundSlider(sidechainSlider, 0.0, 1.0, 0.01, {});
+
+    setUpLabel(mixCompLabel, "Comp");
+    soundPage.addAndMakeVisible(mixCompLabel);
+    bindSoundSlider(mixCompSlider, 0.0, 1.0, 0.01, {});
+
+    soundHintLabel.setText("Genre-aware preview patches (Rhodes, supersaw, 808, strings, EP) plus a Mix "
+                           "bus: kick sidechain, drum/bass/music compressors, glue and limiter. "
+                           "Drums stay on the sampled kit. Changes save with the project.",
+                           juce::dontSendNotification);
+    soundHintLabel.setFont(juce::Font(14.0f));
+    soundHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    soundHintLabel.setJustificationType(juce::Justification::topLeft);
+    soundPage.addAndMakeVisible(soundHintLabel);
+
+    refreshSoundPatchCombo();
+    pullSoundToUI();
+
     refreshStyleCombo();
     refreshPresetCombo();
     applyParamsToUI(audioProcessor.getLastUiParams());
@@ -733,7 +869,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     setResizable(true, true);
     setResizeLimits(760, 620, 1400, 1100);
-    setSize(920, 720);
+    setSize(920, 760);
     startTimerHz(30);
 }
 
@@ -763,6 +899,8 @@ void SynthesiaAIEditor::applyGenreDefaults()
 
     const auto& profile = getGenreProfile(static_cast<Genre>(id - 1));
     tempoSlider.setValue(profile.defaultTempo, juce::dontSendNotification);
+    audioProcessor.loadGenreSounds(static_cast<Genre>(id - 1));
+    pullSoundToUI();
     tempoSyncComboBox.setSelectedId(static_cast<int>(profile.defaultGrid) + 1,
                                     juce::dontSendNotification);
 }
@@ -853,6 +991,7 @@ void SynthesiaAIEditor::resized()
     layoutPlanPage();
     layoutImportPage();
     layoutStylePage();
+    layoutSoundPage();
 }
 
 void SynthesiaAIEditor::layoutGeneratePage()
@@ -946,6 +1085,127 @@ void SynthesiaAIEditor::layoutStylePage()
     learnStyleButton.setBounds(area.removeFromTop(36));
     area.removeFromTop(16);
     styleHintLabel.setBounds(area.removeFromTop(72));
+}
+
+void SynthesiaAIEditor::layoutSoundPage()
+{
+    auto area = soundPage.getLocalBounds().reduced(12, 10);
+    auto layoutCell = [](juce::Rectangle<int> cell, juce::Label& label, juce::Component& control)
+    {
+        label.setBounds(cell.removeFromLeft(labelWidth));
+        control.setBounds(cell);
+    };
+    const int columnGap = 20;
+    auto twoColumnRow = [&](juce::Label& leftLabel, juce::Component& left,
+                            juce::Label& rightLabel, juce::Component& right)
+    {
+        auto row = area.removeFromTop(28);
+        auto leftCell = row.removeFromLeft((row.getWidth() - columnGap) / 2);
+        row.removeFromLeft(columnGap);
+        layoutCell(leftCell, leftLabel, left);
+        layoutCell(row, rightLabel, right);
+        area.removeFromTop(8);
+    };
+
+    twoColumnRow(soundPartLabel, soundPartCombo, soundPatchLabel, soundPatchCombo);
+    twoColumnRow(attackLabel, attackSlider, decayLabel, decaySlider);
+    twoColumnRow(sustainLabel, sustainSlider, releaseLabel, releaseSlider);
+    twoColumnRow(cutoffLabel, cutoffSlider, resoLabel, resoSlider);
+    twoColumnRow(driveLabel, driveSlider, reverbSendLabel, reverbSendSlider);
+
+    auto row = area.removeFromTop(28);
+    layoutCell(row, delaySendLabel, delaySendSlider);
+    area.removeFromTop(10);
+    mixSectionLabel.setBounds(area.removeFromTop(20));
+    area.removeFromTop(4);
+    twoColumnRow(mixPresetLabel, mixPresetCombo, sidechainLabel, sidechainSlider);
+    row = area.removeFromTop(28);
+    layoutCell(row, mixCompLabel, mixCompSlider);
+    area.removeFromTop(10);
+    soundHintLabel.setBounds(area.removeFromTop(56));
+}
+
+Part SynthesiaAIEditor::selectedSoundPart() const
+{
+    switch (soundPartCombo.getSelectedId())
+    {
+        case 2: return Part::Bass;
+        case 3: return Part::Synth;
+        case 4: return Part::Piano;
+        default: return Part::Chords;
+    }
+}
+
+void SynthesiaAIEditor::refreshSoundPatchCombo()
+{
+    pullingSound = true;
+    const auto part = selectedSoundPart();
+    const auto names = PatchLibrary::namesFor(part);
+    const auto ids = PatchLibrary::idsFor(part);
+    const auto current = audioProcessor.getPreviewPatch(part);
+    soundPatchCombo.clear(juce::dontSendNotification);
+    int selected = 1;
+    for (int i = 0; i < names.size(); ++i)
+    {
+        soundPatchCombo.addItem(names[i], i + 1);
+        if (ids[i] == current.id || names[i] == current.name)
+            selected = i + 1;
+    }
+    if (names.size() > 0)
+        soundPatchCombo.setSelectedId(selected, juce::dontSendNotification);
+    pullingSound = false;
+}
+
+void SynthesiaAIEditor::pullSoundToUI()
+{
+    pullingSound = true;
+    const auto patch = audioProcessor.getPreviewPatch(selectedSoundPart());
+    refreshSoundPatchCombo();
+    attackSlider.setValue(patch.amp.attack, juce::dontSendNotification);
+    decaySlider.setValue(patch.amp.decay, juce::dontSendNotification);
+    sustainSlider.setValue(patch.amp.sustain, juce::dontSendNotification);
+    releaseSlider.setValue(patch.amp.release, juce::dontSendNotification);
+    cutoffSlider.setValue(patch.cutoff, juce::dontSendNotification);
+    resoSlider.setValue(patch.resonance, juce::dontSendNotification);
+    driveSlider.setValue(patch.drive, juce::dontSendNotification);
+    reverbSendSlider.setValue(patch.reverbSend, juce::dontSendNotification);
+    delaySendSlider.setValue(patch.delaySend, juce::dontSendNotification);
+
+    const auto mix = audioProcessor.getPreviewMix();
+    const auto mixIds = MixLibrary::ids();
+    int mixSelected = 1;
+    for (int i = 0; i < mixIds.size(); ++i)
+        if (mixIds[i] == mix.id || MixLibrary::names()[i] == mix.name)
+            mixSelected = i + 1;
+    mixPresetCombo.setSelectedId(mixSelected, juce::dontSendNotification);
+    sidechainSlider.setValue(mix.sidechainAmount, juce::dontSendNotification);
+    mixCompSlider.setValue(mix.compAmount, juce::dontSendNotification);
+
+    shownSoundVersion = audioProcessor.getSoundVersion();
+    pullingSound = false;
+}
+
+void SynthesiaAIEditor::pushSoundFromUI()
+{
+    if (pullingSound)
+        return;
+    auto patch = audioProcessor.getPreviewPatch(selectedSoundPart());
+    patch.amp.attack = (float) attackSlider.getValue();
+    patch.amp.decay = (float) decaySlider.getValue();
+    patch.amp.sustain = (float) sustainSlider.getValue();
+    patch.amp.release = (float) releaseSlider.getValue();
+    patch.cutoff = (float) cutoffSlider.getValue();
+    patch.resonance = (float) resoSlider.getValue();
+    patch.drive = (float) driveSlider.getValue();
+    patch.reverbSend = (float) reverbSendSlider.getValue();
+    patch.delaySend = (float) delaySendSlider.getValue();
+    audioProcessor.setPreviewPatch(selectedSoundPart(), patch);
+
+    auto mix = audioProcessor.getPreviewMix();
+    mix.sidechainAmount = (float) sidechainSlider.getValue();
+    mix.compAmount = (float) mixCompSlider.getValue();
+    audioProcessor.setPreviewMix(mix);
+    shownSoundVersion = audioProcessor.getSoundVersion();
 }
 
 void SynthesiaAIEditor::timerCallback()
@@ -1458,7 +1718,11 @@ void SynthesiaAIEditor::updateUIState()
         refreshPresetCombo();
         applyParamsToUI(audioProcessor.getLastUiParams());
         shownUiParamsVersion = audioProcessor.getUiParamsVersion();
+        pullSoundToUI();
     }
+
+    if (shownSoundVersion != audioProcessor.getSoundVersion())
+        pullSoundToUI();
 
     if (shownUiParamsVersion != audioProcessor.getUiParamsVersion() && !isGenerating)
     {

@@ -129,6 +129,15 @@ public:
     void persistLocalSettings() const;
     void loadLocalSettings();
 
+    SimpleSynth& previewSynth() { return simpleSynth; }
+    const SimpleSynth& previewSynth() const { return simpleSynth; }
+    void setPreviewPatch(Part part, const SynthPatch& patch);
+    SynthPatch getPreviewPatch(Part part) const;
+    void setPreviewMix(const MixSettings& settings);
+    MixSettings getPreviewMix() const;
+    void loadGenreSounds(Genre genre);
+    int getSoundVersion() const { return simpleSynth.getSoundVersion(); }
+
 private:
     struct ClipEvent
     {

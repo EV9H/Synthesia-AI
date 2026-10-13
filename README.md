@@ -11,7 +11,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - **LLM planner**: OpenAI-compatible endpoint (your key, configurable base URL + model) returns a compact JSON arrangement plan only — form, chords, energy/density, motif, parts, tempo/swing, genre. The genre engine realises every note, so nothing is out of key. Without a key, prompt keywords pick genre/energy offline.
   
 - **UI Controls**:
-  - Dark, resizable editor with **Generate / Plan / Import / Style** tabs, readable 15pt fonts, and a persistent piano-roll footer
+  - Dark, resizable editor with **Generate / Plan / Import / Style / Sound** tabs, readable 15pt fonts, and a persistent piano-roll footer
   - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
   - Form (loop or song: intro / verse / pre / chorus / drop / bridge / break / outro) and length (1-32 bars)
   - Chord input (symbols like `Am9 Fmaj9` or Roman numerals, `|` for bar groups) with a lock so regenerating keeps the progression
@@ -25,7 +25,8 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - Settings: OpenAI or **Groq** preset (or a custom OpenAI-compatible URL), API key, model, last/session token counts, offline license key
   
 - **Preview & Export**:
-  - Built-in synth with a distinct timbre per part, plus per-genre drum kits built from CC0 one-shot samples (synthesized fallback if a slot is missing). See `Samples/README.md`.
+  - Built-in preview synth with per-part patches: 2–3 oscillators (supersaw unison, sub, noise, FM tine), ADSR amp + filter envelopes, resonant LP/HP/BP, pitch envelope, LFO (vibrato / filter / PWM), glide, then chorus, tempo-synced stereo delay, reverb, tape saturation, EQ, glue compressor and limiter. Genre-aware defaults (lo-fi Rhodes + wow/flutter/vinyl, house stabs + pluck bass, trap 808 + bell, R&B warm EP, cinematic strings, pop piano/pluck). Mix bus: kick-triggered sidechain (strong house pump, subtle pop/lo-fi, 808 vs kick on trap), per-bus compressors (drums / bass / music) and master glue + limiter. Drums stay on the CC0 sampled kits — see `Samples/README.md`. Piano/EP are synthesized (FM tine + additive), not extra sample packs, so the binary stays under the existing drum-sample budget.
+  - **Sound** tab: pick a part and a patch, then tweak A/D/S/R, cutoff, resonance, drive, reverb and delay sends, plus Mix preset / sidechain / comp. Saved with host state and factory/user presets (genre defaults).
   - **Drag a part (or All parts) out of the plugin as `.mid`** into a DAW; also **Export MIDI** for multi-track, per-part files, or a single part
   - MIDI output routing to DAW tracks
   
@@ -139,7 +140,8 @@ API key the planner uses a keyword heuristic. `--import file.mid` analyses a cli
 (key, chords, part roles) and `--import-mode accompany|extend|rewrite|restyle`
 keeps or rewrites it through the arranger. `--style-profile file.json` and
 `--style-blend 0..1` mix a learned style with the genre. `--preset <id>` loads a factory
-(or user) preset; `--list-presets` prints ids. `--part` selects chords, bass, synth,
+(or user) preset; `--list-presets` prints ids. `--sidechain on|off` enables kick-bus
+ducking (default on; house pumps hard, trap leaves the 808). `--part` selects chords, bass, synth,
 piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
 It exits non-zero if the render is silent, clips, or plays a different number of
 notes than the clip contains.
@@ -303,7 +305,8 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 ├── Source/
 │   ├── PluginProcessor.{h,cpp}     # Main audio processor
 │   ├── PluginEditor.{h,cpp}        # UI implementation
-│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part, sample + synth drums)
+│   ├── SimpleSynth.{h,cpp}         # Preview synth (patches, FX, sample + synth drums)
+│   ├── SynthPatch.{h,cpp}          # Per-part preview patches, mix presets, genre defaults
 │   ├── DrumLibrary.{h,cpp}         # Embedded CC0 one-shots for the preview kit
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
 │   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes

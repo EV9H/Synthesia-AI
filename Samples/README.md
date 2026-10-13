@@ -4,6 +4,11 @@ One-shot drum hits embedded in the plugin via JUCE BinaryData and played by
 the preview drum voice. Processed to **44.1 kHz, 16-bit, mono**, trimmed and
 peak-normalised to about −1 dBFS. Total pack is well under 20 MB.
 
+Pitched preview parts (chords, bass, synth, piano) are **synthesized** in
+`SimpleSynth` / `SynthPatch`: FM tine Rhodes/EP, supersaw, 808 sine with pitch
+envelope, and slow-attack string pads. No extra piano/EP multisamples are
+shipped, so the plugin stays inside this sample budget.
+
 Every source below is **CC0 1.0** (public domain dedication) or was released
 as free for any use including commercial redistribution. The synthesized kit
 in `SimpleSynth` remains as a fallback if a slot is missing.

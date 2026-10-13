@@ -92,6 +92,7 @@ void SynthesiaAIProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
     simpleSynth.prepare(sampleRate, samplesPerBlock);
+    simpleSynth.setTempo(previewTempo.load());
     blockMidi.ensureSize(4096);
     previewBeat = 0.0;
     wasPlaying = false;
@@ -140,6 +141,8 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             }
         }
     }
+
+    simpleSynth.setTempo(bpm);
 
     const bool preview = previewPlaying.load();
     const bool playing = hostPlaying || preview;
@@ -287,6 +290,7 @@ void SynthesiaAIProcessor::getStateInformation(juce::MemoryBlock& destData)
 
     auto* paramsXml = xml.createNewChildElement("UiParams");
     PresetStore::writeParams(*paramsXml, lastUiParams);
+    simpleSynth.writeSoundXml(*xml.createNewChildElement("PreviewSound"));
 
     if (!currentStyle.empty())
         xml.setAttribute("styleJson", currentStyle.toJson());
@@ -328,6 +332,10 @@ void SynthesiaAIProcessor::setStateInformation(const void* data, int sizeInBytes
 
     if (auto* paramsXml = xml->getChildByName("UiParams"))
         setLastUiParams(PresetStore::readParams(*paramsXml));
+    if (auto* soundXml = xml->getChildByName("PreviewSound"))
+        simpleSynth.readSoundXml(*soundXml);
+    else
+        simpleSynth.loadGenreDefaults(lastUiParams.genre);
 
     const auto clipB64 = xml->getStringAttribute("clipMidi");
     if (clipB64.isNotEmpty())
@@ -849,6 +857,31 @@ void SynthesiaAIProcessor::setLastUiParams(const MidiGenerationParams& params)
     ++uiParamsVersion;
 }
 
+void SynthesiaAIProcessor::setPreviewPatch(Part part, const SynthPatch& patch)
+{
+    simpleSynth.setPatch(part, patch);
+}
+
+SynthPatch SynthesiaAIProcessor::getPreviewPatch(Part part) const
+{
+    return simpleSynth.getPatch(part);
+}
+
+void SynthesiaAIProcessor::setPreviewMix(const MixSettings& settings)
+{
+    simpleSynth.setMix(settings);
+}
+
+MixSettings SynthesiaAIProcessor::getPreviewMix() const
+{
+    return simpleSynth.getMix();
+}
+
+void SynthesiaAIProcessor::loadGenreSounds(Genre genre)
+{
+    simpleSynth.loadGenreDefaults(genre);
+}
+
 bool SynthesiaAIProcessor::applyPreset(const juce::String& idOrName)
 {
     auto found = PresetStore::find(idOrName);
@@ -867,6 +900,7 @@ bool SynthesiaAIProcessor::applyPreset(const juce::String& idOrName)
         setCurrentStyle(juce::String(found->params.styleProfileName));
     setStyleBlend(found->params.styleBlend);
     setLastUiParams(found->params);
+    simpleSynth.loadGenreDefaults(found->params.genre);
     ++presetVersion;
     return true;
 }

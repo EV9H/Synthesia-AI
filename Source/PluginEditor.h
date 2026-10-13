@@ -126,6 +126,11 @@ private:
     void layoutPlanPage();
     void layoutImportPage();
     void layoutStylePage();
+    void layoutSoundPage();
+    void refreshSoundPatchCombo();
+    void pullSoundToUI();
+    void pushSoundFromUI();
+    Part selectedSoundPart() const;
     void styleControl(juce::Component& c);
     void styleSlider(juce::Slider& slider);
 
@@ -145,6 +150,7 @@ private:
     juce::Component planPage;
     juce::Component importPage;
     juce::Component stylePage;
+    juce::Component soundPage;
 
     juce::Label keyLabel;
     juce::ComboBox keyComboBox;
@@ -191,6 +197,37 @@ private:
     juce::TextButton learnStyleButton;
     juce::Label styleHintLabel;
 
+    juce::Label soundPartLabel;
+    juce::ComboBox soundPartCombo;
+    juce::Label soundPatchLabel;
+    juce::ComboBox soundPatchCombo;
+    juce::Label attackLabel;
+    juce::Slider attackSlider;
+    juce::Label decayLabel;
+    juce::Slider decaySlider;
+    juce::Label sustainLabel;
+    juce::Slider sustainSlider;
+    juce::Label releaseLabel;
+    juce::Slider releaseSlider;
+    juce::Label cutoffLabel;
+    juce::Slider cutoffSlider;
+    juce::Label resoLabel;
+    juce::Slider resoSlider;
+    juce::Label driveLabel;
+    juce::Slider driveSlider;
+    juce::Label reverbSendLabel;
+    juce::Slider reverbSendSlider;
+    juce::Label delaySendLabel;
+    juce::Slider delaySendSlider;
+    juce::Label mixSectionLabel;
+    juce::Label mixPresetLabel;
+    juce::ComboBox mixPresetCombo;
+    juce::Label sidechainLabel;
+    juce::Slider sidechainSlider;
+    juce::Label mixCompLabel;
+    juce::Slider mixCompSlider;
+    juce::Label soundHintLabel;
+
     ClipView clipView;
     juce::Label mixLabel;
     juce::OwnedArray<juce::TextButton> muteButtons;
@@ -207,7 +244,9 @@ private:
     int shownStyleVersion{0};
     int shownPresetVersion{0};
     int shownUiParamsVersion{0};
+    int shownSoundVersion{-1};
     bool draggingFiles{false};
+    bool pullingSound{false};
     bool applyingPreset{false};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIEditor)
