@@ -84,7 +84,7 @@ void PartVoice::startNote(int midiNoteNumber, float velocity,
             envelope.setParameters({ 0.02f, 0.35f, 0.7f, 0.35f });
             filter.setCutoffFrequency(static_cast<float>(juce::jmin(2400.0, 900.0 + frequency * 3.0)));
             filter.setResonance(0.6f);
-            level = 0.075f * velocityCurve;
+            level = 0.11f * velocityCurve;
             break;
         case Timbre::Bass:
             envelope.setParameters({ 0.004f, 0.5f, 0.85f, 0.09f });
@@ -94,7 +94,7 @@ void PartVoice::startNote(int midiNoteNumber, float velocity,
             envelope.setParameters({ 0.005f, 0.25f, 0.6f, 0.16f });
             filter.setCutoffFrequency(3400.0f);
             filter.setResonance(0.9f);
-            level = 0.085f * velocityCurve;
+            level = 0.16f * velocityCurve;
             break;
         case Timbre::Piano:
             envelope.setParameters({ 0.002f, 1.8f, 0.0f, 0.25f });

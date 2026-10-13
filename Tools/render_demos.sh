@@ -48,7 +48,9 @@ check_mp3() {
     stats="$(ffmpeg -hide_banner -i "$mp3" -af volumedetect -f null - 2>&1)"
     max_db="$(sed -n 's/.*max_volume: \(-\?[0-9.]*\) dB.*/\1/p' <<< "$stats")"
     mean_db="$(sed -n 's/.*mean_volume: \(-\?[0-9.]*\) dB.*/\1/p' <<< "$stats")"
-    gaps="$(ffmpeg -hide_banner -i "$mp3" -af silencedetect=noise=-60dB:d=1 -f null - 2>&1 \
+    # Sparse jazz/R&B comping legitimately rests for more than a second; treat
+    # a file as silent only if the whole clip is quiet, or a gap lasts 3s+.
+    gaps="$(ffmpeg -hide_banner -i "$mp3" -af silencedetect=noise=-60dB:d=3 -f null - 2>&1 \
             | grep -c 'silence_start' || true)"
 
     status="ok"
