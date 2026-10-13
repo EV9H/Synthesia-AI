@@ -145,7 +145,8 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
             if (piece == DrumPiece::Kick) gain = 0.50f;
             if (piece == DrumPiece::Crash) gain = 0.30f;
             break;
-        default:
+        case Genre::Pop:
+        case Genre::RnB:
             break;
     }
 
@@ -171,8 +172,9 @@ void DrumLibrary::loadOne(const char* key, const char* data, int size)
     juce::AudioFormatManager formats;
     formats.registerBasicFormats();
 
-    auto* stream = new juce::MemoryInputStream(data, static_cast<size_t>(size), false);
-    std::unique_ptr<juce::AudioFormatReader> reader(formats.createReaderFor(stream));
+    std::unique_ptr<juce::InputStream> stream(
+        new juce::MemoryInputStream(data, static_cast<size_t>(size), false));
+    std::unique_ptr<juce::AudioFormatReader> reader(formats.createReaderFor(std::move(stream)));
     if (reader == nullptr)
         return;
 

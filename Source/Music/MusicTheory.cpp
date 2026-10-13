@@ -423,7 +423,7 @@ namespace theory
         {
             quality = toLowerCopy(quality);
             quality.erase(std::remove_if(quality.begin(), quality.end(),
-                                         [](char c) { return c == '(' || c == ')' || c == '^' || c == 'Δ'; }),
+                                         [](char c) { return c == '(' || c == ')' || c == '^'; }),
                           quality.end());
 
             if (quality == "m9" || quality == "min9" || quality == "-9")         return { 0, 3, 7, 10, 14 };
