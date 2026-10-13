@@ -57,6 +57,9 @@ private:
     void onExportMidi();
     void onImportClicked();
     void onCaptureClicked();
+    void onLearnStyleClicked();
+    void refreshStyleCombo();
+    void learnFromFiles(const juce::Array<juce::File>& files, const juce::String& suggestedName);
     void applyGenreDefaults();
     void applyPlanToUI(const ArrangementPlan& plan);
     void applyImportToUI(const MidiAnalysis& analysis);
@@ -111,6 +114,12 @@ private:
     juce::ComboBox importModeComboBox;
     juce::TextButton importButton;
     juce::TextButton captureButton;
+
+    juce::Label styleProfileLabel;
+    juce::ComboBox styleProfileComboBox;
+    juce::Label blendLabel;
+    juce::Slider blendSlider;
+    juce::TextButton learnStyleButton;
     
     juce::TextButton planButton;
     juce::TextButton generateButton;
@@ -124,6 +133,7 @@ private:
     int shownClipVersion{0};
     int shownPlanVersion{0};
     int shownImportVersion{0};
+    int shownStyleVersion{0};
     bool draggingFiles{false};
     
     juce::Label statusLabel;

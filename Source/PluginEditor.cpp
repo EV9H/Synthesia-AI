@@ -271,7 +271,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Import MIDI, plan a form, then generate around it", juce::dontSendNotification);
+    subtitleLabel.setText("Import MIDI, learn a style, then generate around it", juce::dontSendNotification);
     subtitleLabel.setFont(juce::Font(13.0f));
     subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(subtitleLabel);
@@ -428,6 +428,41 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     captureButton.onClick = [this]() { onCaptureClicked(); };
     addAndMakeVisible(captureButton);
 
+    setUpLabel(styleProfileLabel, "Style");
+    addAndMakeVisible(styleProfileLabel);
+    styleProfileComboBox.onChange = [this]()
+    {
+        if (styleProfileComboBox.getSelectedId() <= 1)
+            audioProcessor.setCurrentStyle({});
+        else
+            audioProcessor.setCurrentStyle(styleProfileComboBox.getText());
+        shownStyleVersion = audioProcessor.getStyleVersion();
+        if (!audioProcessor.getCurrentStyle().empty())
+            planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
+        if (styleProfileComboBox.getSelectedId() > 1 && blendSlider.getValue() < 25.0)
+            blendSlider.setValue(100.0, juce::sendNotification);
+    };
+    addAndMakeVisible(styleProfileComboBox);
+
+    setUpLabel(blendLabel, "Blend");
+    addAndMakeVisible(blendLabel);
+    blendSlider.setRange(0, 100, 1);
+    blendSlider.setValue(0, juce::dontSendNotification);
+    blendSlider.setTextValueSuffix("%");
+    blendSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 24);
+    blendSlider.setColour(juce::Slider::thumbColourId, Theme::accent);
+    blendSlider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
+    blendSlider.onValueChange = [this]()
+    {
+        audioProcessor.setStyleBlend(blendSlider.getValue() / 100.0);
+    };
+    addAndMakeVisible(blendSlider);
+
+    learnStyleButton.setButtonText("Learn style...");
+    learnStyleButton.onClick = [this]() { onLearnStyleClicked(); };
+    addAndMakeVisible(learnStyleButton);
+    refreshStyleCombo();
+
     applyGenreDefaults();
     
     setUpLabel(planLabel, "Plan");
@@ -485,7 +520,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     addAndMakeVisible(settingsButton);
 
-    setSize(700, 1020);
+    setSize(700, 1090);
     startTimerHz(30);
 }
 
@@ -523,7 +558,8 @@ void SynthesiaAIEditor::paint(juce::Graphics& g)
         g.drawRect(getLocalBounds().reduced(6), 2);
         g.setFont(18.0f);
         g.setColour(juce::Colours::white);
-        g.drawText("Drop a .mid file to import", getLocalBounds(), juce::Justification::centred);
+        g.drawText("Drop .mid files or a folder to import / learn a style",
+                   getLocalBounds(), juce::Justification::centred);
     }
 }
 
@@ -579,6 +615,14 @@ void SynthesiaAIEditor::resized()
         area.removeFromTop(10);
     }
 
+    twoColumnRow(styleProfileLabel, styleProfileComboBox, blendLabel, blendSlider);
+
+    {
+        auto row = area.removeFromTop(28);
+        learnStyleButton.setBounds(row);
+        area.removeFromTop(10);
+    }
+
     {
         auto row = area.removeFromTop(28);
         layoutCell(row.removeFromLeft((row.getWidth() - columnGap) / 2), chordsLabel, chordsEditor);
@@ -612,7 +656,7 @@ void SynthesiaAIEditor::resized()
         area.removeFromTop(14);
     }
 
-    clipView.setBounds(area.removeFromTop(230));
+    clipView.setBounds(area.removeFromTop(210));
     area.removeFromTop(12);
 
     auto row = area.removeFromTop(34);
@@ -654,6 +698,12 @@ MidiGenerationParams SynthesiaAIEditor::collectParams() const
         case 4: params.importMode = ImportMode::Rewrite; break;
         case 5: params.importMode = ImportMode::Restyle; break;
         default: params.importMode = ImportMode::None; break;
+    }
+    params.styleBlend = blendSlider.getValue() / 100.0;
+    if (styleProfileComboBox.getSelectedId() > 1)
+    {
+        params.styleProfileName = styleProfileComboBox.getText().toStdString();
+        params.styleProfileJson = audioProcessor.getCurrentStyleJson().toStdString();
     }
     return params;
 }
@@ -777,8 +827,11 @@ void SynthesiaAIEditor::onCaptureClicked()
 bool SynthesiaAIEditor::isInterestedInFileDrag(const juce::StringArray& files)
 {
     for (const auto& path : files)
-        if (juce::File(path).hasFileExtension("mid") || juce::File(path).hasFileExtension("midi"))
+    {
+        const juce::File file(path);
+        if (file.hasFileExtension("mid") || file.hasFileExtension("midi") || file.isDirectory())
             return true;
+    }
     return false;
 }
 
@@ -798,15 +851,104 @@ void SynthesiaAIEditor::filesDropped(const juce::StringArray& files, int, int)
 {
     draggingFiles = false;
     repaint();
+
+    juce::Array<juce::File> mids;
+    juce::File folder;
     for (const auto& path : files)
     {
         const juce::File file(path);
-        if (file.hasFileExtension("mid") || file.hasFileExtension("midi"))
-        {
-            importPath(file);
-            return;
-        }
+        if (file.isDirectory())
+            folder = file;
+        else if (file.hasFileExtension("mid") || file.hasFileExtension("midi"))
+            mids.add(file);
     }
+
+    if (folder != juce::File{})
+    {
+        learnFromFiles({ folder }, folder.getFileName());
+        return;
+    }
+    if (mids.size() > 1)
+    {
+        learnFromFiles(mids, mids.getFirst().getParentDirectory().getFileName());
+        return;
+    }
+    if (mids.size() == 1)
+        importPath(mids.getFirst());
+}
+
+void SynthesiaAIEditor::refreshStyleCombo()
+{
+    const auto current = audioProcessor.getCurrentStyleName();
+    styleProfileComboBox.clear(juce::dontSendNotification);
+    styleProfileComboBox.addItem("None", 1);
+    const auto names = audioProcessor.listStyleProfiles();
+    int selected = 1;
+    for (int i = 0; i < names.size(); ++i)
+    {
+        styleProfileComboBox.addItem(names[i], i + 2);
+        if (names[i] == current)
+            selected = i + 2;
+    }
+    styleProfileComboBox.setSelectedId(selected, juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::learnFromFiles(const juce::Array<juce::File>& files, const juce::String& suggestedName)
+{
+    auto* window = new juce::AlertWindow(
+        "Learn style profile",
+        "Extract chord vocabulary, voicings, rhythm, bass approaches and swing from the selected MIDI.",
+        juce::AlertWindow::NoIcon);
+    window->addTextEditor("name", StyleProfile::sanitiseName(suggestedName), "Profile name");
+    window->addButton("Learn", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    window->enterModalState(true, juce::ModalCallbackFunction::create(
+        [this, files, window](int result)
+        {
+            if (result != 1)
+                return;
+            const auto name = window->getTextEditorContents("name");
+            if (!audioProcessor.learnStyle(files, name))
+            {
+                statusLabel.setText("Could not learn a style from those files",
+                                    juce::dontSendNotification);
+                return;
+            }
+            shownStyleVersion = audioProcessor.getStyleVersion();
+            refreshStyleCombo();
+            blendSlider.setValue(audioProcessor.getStyleBlend() * 100.0, juce::dontSendNotification);
+            planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
+            statusLabel.setText("Learned style " + audioProcessor.getCurrentStyleName(),
+                                juce::dontSendNotification);
+        }), true);
+}
+
+void SynthesiaAIEditor::onLearnStyleClicked()
+{
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Learn style from MIDI files or a folder...",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.mid;*.midi");
+    const auto chooserFlags = juce::FileBrowserComponent::openMode
+                            | juce::FileBrowserComponent::canSelectFiles
+                            | juce::FileBrowserComponent::canSelectDirectories
+                            | juce::FileBrowserComponent::canSelectMultipleItems;
+    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+    {
+        auto results = fc.getResults();
+        if (results.isEmpty())
+        {
+            const auto single = fc.getResult();
+            if (single != juce::File{})
+                results.add(single);
+        }
+        if (results.isEmpty())
+            return;
+        juce::String suggested = results.getFirst().isDirectory()
+            ? results.getFirst().getFileName()
+            : results.getFirst().getParentDirectory().getFileName();
+        learnFromFiles(results, suggested);
+    });
 }
 
 void SynthesiaAIEditor::onExportMidi()
@@ -890,6 +1032,15 @@ void SynthesiaAIEditor::updateUIState()
     previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
 
     captureButton.setButtonText(audioProcessor.isCapturingMidi() ? "Stop capture" : "Capture MIDI");
+
+    if (shownStyleVersion != audioProcessor.getStyleVersion())
+    {
+        shownStyleVersion = audioProcessor.getStyleVersion();
+        refreshStyleCombo();
+        blendSlider.setValue(audioProcessor.getStyleBlend() * 100.0, juce::dontSendNotification);
+        if (!audioProcessor.getCurrentStyle().empty())
+            planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
+    }
 
     if (shownImportVersion != audioProcessor.getImportVersion())
     {
