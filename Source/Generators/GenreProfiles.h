@@ -2,6 +2,7 @@
 
 #include "MidiGenerator.h"
 #include "../Music/MusicTheory.h"
+#include <array>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,7 @@ struct MelodyProfile
     bool useExtensions{false};  // 7ths/9ths count as chord tones on strong beats
     bool dyads{false};          // add a harmony note under strong beats
     int velocity{90};
+    std::array<double, 13> intervalWeights{}; // signed intervals -6..+6; all-zero = unused
 };
 
 struct ArpProfile

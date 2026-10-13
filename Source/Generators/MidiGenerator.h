@@ -220,6 +220,10 @@ struct MidiGenerationParams
     std::vector<SectionInfo> plannedSections;
     std::string planJson;
     ImportMode importMode{ImportMode::None};
+    // Learned style profile (JSON) blended with the genre profile. 0 = genre, 1 = style.
+    std::string styleProfileName;
+    std::string styleProfileJson;
+    double styleBlend{0.0};
 };
 
 struct Note

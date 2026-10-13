@@ -1,0 +1,198 @@
+{
+  "name": "neo-soul",
+  "sources": [
+    "neo-soul-chords-8bar.mid",
+    "neo-soul-keys-8bar.mid",
+    "neo-soul-bass-8bar.mid",
+    "neo-soul-lead-8bar.mid"
+  ],
+  "filesLearned": 4,
+  "tempo": 86.00005160003096,
+  "swing": 0.6395833333333336,
+  "swingSixteenths": true,
+  "laidBackMs": 0.0,
+  "defaultExtension": 8,
+  "rootNote": 10,
+  "scale": 3,
+  "chordVocabulary": [
+    "69",
+    "29",
+    "49",
+    "3D7"
+  ],
+  "chordTransitions": [
+    {
+      "from": "29",
+      "to": "49",
+      "w": 2.0
+    },
+    {
+      "from": "3D7",
+      "to": "69",
+      "w": 1.0
+    },
+    {
+      "from": "49",
+      "to": "3D7",
+      "w": 2.0
+    },
+    {
+      "from": "69",
+      "to": "29",
+      "w": 2.0
+    }
+  ],
+  "voicingSpread": 14.125,
+  "voicingMaxNotes": 6,
+  "rootless": false,
+  "voicingLow": 41,
+  "voicingHigh": 76,
+  "chords": {
+    "onsetGrid": [
+      252.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "density": 0.328125,
+    "velocityMean": 78.5,
+    "registerLow": 41,
+    "registerHigh": 62
+  },
+  "bass": {
+    "onsetGrid": [
+      24.0,
+      0.0,
+      0.0,
+      24.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      24.0,
+      0.0,
+      0.0,
+      24.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "density": 0.25,
+    "velocityMean": 80.625,
+    "registerLow": 36,
+    "registerHigh": 51
+  },
+  "synth": {
+    "onsetGrid": [
+      8.0,
+      0.0,
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "density": 0.25,
+    "velocityMean": 81.0,
+    "registerLow": 68,
+    "registerHigh": 80
+  },
+  "piano": {
+    "onsetGrid": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "density": 0.0,
+    "velocityMean": 80.0,
+    "registerLow": 127,
+    "registerHigh": 0
+  },
+  "drums": {
+    "onsetGrid": [
+      96.0,
+      0.0,
+      0.0,
+      48.0,
+      0.0,
+      0.0,
+      96.0,
+      0.0,
+      0.0,
+      48.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "density": 0.375,
+    "velocityMean": 77.33333333333333,
+    "registerLow": 50,
+    "registerHigh": 72
+  },
+  "melodyIntervals": [
+    9.0,
+    0.0,
+    3.0,
+    5.0,
+    9.0,
+    5.0,
+    0.0,
+    5.0,
+    8.0,
+    15.0,
+    9.0,
+    1.0,
+    3.0
+  ],
+  "motifContour": "arch",
+  "motifRhythm": "straight",
+  "chromaticApproach": 0.03125,
+  "bassPatterns": [
+    "R..T....F..T....",
+    "r..r....R..F....",
+    "R..T....F..A...."
+  ],
+  "chordPatterns": [
+    "X..............."
+  ],
+  "pianoPatterns": [],
+  "summary": "neo-soul \u00b7 4 files \u00b7 86 bpm \u00b7 swing 0.64 16ths \u00b7 ext 8\nChords: 69 29 49 3D7\nVoicing spread 14 st"
+}
