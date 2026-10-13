@@ -71,6 +71,31 @@ target_link_libraries(SynthesiaAI
         juce::juce_recommended_warning_flags
 )
 
+# Offline render host (headless "DAW" used for demos/smoke checks)
+option(SYNTHESIA_BUILD_RENDER_HOST "Build the SynthesiaRender offline host" ON)
+if(SYNTHESIA_BUILD_RENDER_HOST)
+    juce_add_console_app(SynthesiaRender PRODUCT_NAME "SynthesiaRender")
+    target_sources(SynthesiaRender PRIVATE
+        Tools/RenderHost/RenderHost.cpp
+        Source/PluginProcessor.cpp
+        Source/PluginEditor.cpp
+        Source/Generators/MidiGenerator.cpp
+        Source/Generators/MarkovGenerator.cpp
+        Source/Generators/LLMGenerator.cpp
+        Source/SimpleSynth.cpp
+        Source/MidiExporter.cpp)
+    target_include_directories(SynthesiaRender PRIVATE Source)
+    target_compile_definitions(SynthesiaRender PRIVATE
+        JucePlugin_Name="Synthesia AI"
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=1)
+    target_link_libraries(SynthesiaRender PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+        CURL::libcurl
+        juce::juce_recommended_config_flags)
+endif()
+
 # Tests
 enable_testing()
 add_subdirectory(Tests)
