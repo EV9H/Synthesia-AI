@@ -245,6 +245,9 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     }
 
     synth.renderNextBlock(outputBuffer, withChoke, startSample, numSamples);
+    // Dense song-form choruses (imported melody + full arrangement) otherwise
+    // tick a few tenths over 0 dBFS on the preview bus.
+    outputBuffer.applyGain(startSample, numSamples, 0.82f);
 }
 
 void SimpleSynth::setKit(Genre genre)

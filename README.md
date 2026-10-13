@@ -17,6 +17,8 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - Per-part locks (keep drums, regenerate bass, etc.)
   - Tempo (60-180 bpm, defaults follow the genre) and grid / quantization
   - Style/prompt text input; **Plan** fills sections/chords (editable) then **Generate MIDI** realises them
+  - **MIDI import**: file chooser, drag-drop, or host MIDI capture. Detects key/scale/tempo, per-bar chords (editable in the lock field) and part roles
+  - Import modes: **Accompany** (keep the user's part, write the rest + drums), **Extend** (continue N bars with song form), **Rewrite** (same chords, new voicings/melody/bass), **Restyle** (same harmony/melody in another genre groove)
   - Settings: API key, base URL, model, last/session token counts
   
 - **Preview & Export**:
@@ -64,6 +66,7 @@ Current implementations:
 - `MarkovGenerator`: Offline algorithmic generation using Markov chains for note selection
 - `LLMGenerator`: Asks an OpenAI-compatible chat endpoint for an `ArrangementPlan` JSON object (never notes). `ArrangementPlan` validates/repairs the schema; missing keys fall back to a keyword heuristic.
 - `ArrangementPlan`: Compact form/chords/energy/density/motif schema. The arranger realises MIDI from the plan.
+- `MidiImporter`: Loads a `.mid` (or captured host MIDI), estimates key/scale/tempo/chords/part roles, and overlays the user's part for Accompany / Extend / Restyle.
 
 **Extension Point**: New generators can be added by:
 1. Inheriting from `MidiGenerator`
@@ -132,8 +135,10 @@ arranger (`--generator genre`, default), Markov (`markov`), or the LLM planner
 (`llm`), plays it through the built-in synth and bounces WAV (and optional
 multi-track `.mid`). `--plan file.json` / `--plan-json` feed a compact arrangement
 plan through the same arranger path. `--style` is the free-text brief; without an
-API key the planner uses a keyword heuristic. `--part` selects chords, bass,
-synth, piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
+API key the planner uses a keyword heuristic. `--import file.mid` analyses a clip
+(key, chords, part roles) and `--import-mode accompany|extend|rewrite|restyle`
+keeps or rewrites it through the arranger. `--part` selects chords, bass, synth,
+piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
 It exits non-zero if the render is silent, clips, or plays a different number of
 notes than the clip contains.
 
@@ -151,6 +156,11 @@ build/SynthesiaRender_artefacts/Release/SynthesiaRender \
     --generator llm --plan Tools/plans/synthwave-explode.json \
     --style "late-night synthwave, chorus should explode" \
     --out /tmp/synthwave.wav --midi /tmp/synthwave.mid
+
+# MIDI import: accompany a piano melody in lo-fi
+build/SynthesiaRender_artefacts/Release/SynthesiaRender \
+    --import Tools/midi/piano-melody-8bar.mid --import-mode accompany \
+    --genre lofi --out /tmp/accompany.wav
 ```
 
 ## Installation
@@ -222,6 +232,15 @@ With no key, Plan still works: keywords in the prompt map to genre, energy and d
 
 **Note**: API keys are stored in plugin state and saved with your project. Never share project files containing API keys.
 
+### MIDI import
+
+Drop a `.mid` onto the plugin, use **Import MIDI...**, or **Capture MIDI** from the host. Detected chords land in the Chords field (locked, editable) and work with Plan / Generate. Then pick a mode:
+
+- **Accompany** — keep the imported melody/part, write bass, harmony and drums around the detected chords
+- **Extend** — continue the idea out to the Length slider (song form)
+- **Rewrite** — same chords, new melody, bass and voicings
+- **Restyle** — keep melody/harmony, re-render drums and groove in the selected genre
+
 ## Testing
 
 The project includes comprehensive unit tests:
@@ -254,6 +273,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part, sample + synth drums)
 │   ├── DrumLibrary.{h,cpp}         # Embedded CC0 one-shots for the preview kit
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
+│   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes
 │   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings, chord-symbol parser
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
@@ -263,6 +283,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │       ├── MarkovGenerator.{h,cpp} # Algorithmic melody generator
 │       └── LLMGenerator.{h,cpp}    # LLM planner (JSON plan only)
 ├── Tools/plans/                    # Example arrangement-plan JSON files
+├── Tools/midi/                     # Small MIDI fixtures for import demos
 ├── Samples/                        # CC0 preview drum one-shots + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration

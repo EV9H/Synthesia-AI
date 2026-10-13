@@ -6,6 +6,7 @@
 #include "MidiExporter.h"
 #include "Generators/GenreProfiles.h"
 #include "Generators/ArrangementPlan.h"
+#include "MidiImporter.h"
 #include "Music/MusicTheory.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
@@ -56,6 +57,7 @@ namespace
 
     const juce::StringArray genreNames{ "pop", "lofi", "house", "trap", "rnb", "cinematic" };
     const juce::StringArray partNames{ "all", "chords", "bass", "synth", "piano", "drums" };
+    const juce::StringArray importModeNames{ "off", "accompany", "extend", "rewrite", "restyle" };
 
     void printUsage()
     {
@@ -80,6 +82,9 @@ namespace
             "  --api-key <key>         OpenAI-compatible key (else OPENAI_API_KEY)\n"
             "  --api-url <url>         chat completions endpoint\n"
             "  --api-model <name>      model id (default gpt-4o-mini)\n"
+            "  --import <file.mid>     analyse a MIDI file (key, chords, part roles)\n"
+            "  --import-mode <name>    off|accompany|extend|rewrite|restyle (default off)\n"
+            "  --write-fixtures <dir>  write demo piano-melody and chord-loop .mid files\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
@@ -101,9 +106,27 @@ int main(int argc, char* argv[])
         return (index >= 0 && index + 1 < args.size()) ? args[index + 1] : fallback;
     };
 
+    const auto fixturesDir = option("--write-fixtures", {});
+    if (fixturesDir.isNotEmpty())
+    {
+        const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(fixturesDir);
+        dir.createDirectory();
+        const auto melody = dir.getChildFile("piano-melody-8bar.mid");
+        const auto chords = dir.getChildFile("chord-loop-8bar.mid");
+        if (!MidiImporter::writePianoMelody(melody) || !MidiImporter::writeChordLoop(chords))
+        {
+            std::cerr << "Failed to write fixture MIDI files\n";
+            return 1;
+        }
+        std::cout << "Wrote " << melody.getFullPathName() << "\n"
+                  << "Wrote " << chords.getFullPathName() << "\n";
+    }
+
     const auto outPath = option("--out", {});
     if (outPath.isEmpty() || args.contains("--help"))
     {
+        if (fixturesDir.isNotEmpty() && !args.contains("--help"))
+            return 0;
         printUsage();
         return outPath.isEmpty() ? 1 : 0;
     }
@@ -126,6 +149,11 @@ int main(int argc, char* argv[])
     params.part = static_cast<Part>(partIndex);
     const auto& profile = getGenreProfile(params.genre);
     static const char* gridNames[] = { "1/16", "1/8", "1/4", "1/2" };
+
+    const bool keyWasSet = args.contains("--key");
+    const bool scaleWasSet = args.contains("--scale");
+    const bool tempoWasSet = args.contains("--tempo");
+    const bool barsWasSet = args.contains("--bars");
 
     params.rootNote = parseKey(option("--key", "C"));
     const int scaleIndex = parseScale(option("--scale", "major"));
@@ -199,7 +227,49 @@ int main(int argc, char* argv[])
     else
         synthesia->setGeneratorType(GeneratorType::Genre);
 
-    synthesia->generateMidiBlocking(params);
+    const auto importPath = option("--import", {});
+    const int importModeIndex = importModeNames.indexOf(option("--import-mode", "off"), true);
+    if (importModeIndex < 0)
+    {
+        std::cerr << "Invalid --import-mode\n";
+        return 1;
+    }
+    params.importMode = static_cast<ImportMode>(importModeIndex);
+
+    if (importPath.isNotEmpty())
+    {
+        const juce::File importFile = juce::File::getCurrentWorkingDirectory().getChildFile(importPath);
+        if (!synthesia->importMidiFile(importFile))
+        {
+            std::cerr << "Import failed: " << synthesia->getLastImport().error << "\n";
+            return 1;
+        }
+        const auto& imported = synthesia->getLastImport();
+        std::cout << imported.summary << "\n";
+        if (!keyWasSet)
+            params.rootNote = imported.rootNote;
+        if (!scaleWasSet)
+            params.scale = imported.scale;
+        if (!tempoWasSet)
+            params.tempo = imported.tempo;
+        if (!barsWasSet && params.importMode != ImportMode::Extend)
+            params.lengthInBars = imported.lengthInBars;
+        if (params.chordText.empty())
+        {
+            params.chordText = imported.chordChart;
+            params.lockProgression = true;
+        }
+        params.motifContour = imported.motifContour;
+        params.motifRhythm = imported.motifRhythm;
+    }
+
+    const bool importOnly = importPath.isNotEmpty() && params.importMode == ImportMode::None;
+    if (!importOnly)
+        synthesia->generateMidiBlocking(params);
+
+    // Import starts preview so the editor can audition a drop-in; the offline
+    // host must not keep that looping clip running into the release tail.
+    synthesia->setPreviewPlaying(false);
 
     const auto& clip = synthesia->getGeneratedMidi();
     if (clip.isEmpty())
@@ -245,7 +315,8 @@ int main(int argc, char* argv[])
     plugin->prepareToPlay(sampleRate, blockSize);
 
     const double clipSeconds = synthesia->getClipLengthInBeats() * 60.0 / playHead.bpm;
-    const auto clipSamples = static_cast<juce::int64>(clipSeconds * sampleRate);
+    const auto clipSamples = juce::jmax(static_cast<juce::int64>(1),
+        static_cast<juce::int64>(std::floor(clipSeconds * sampleRate)));
     const auto tailSamples = static_cast<juce::int64>((plugin->getTailLengthSeconds() + 0.2) * sampleRate);
     const auto totalSamples = clipSamples + tailSamples;
 
@@ -310,7 +381,10 @@ int main(int argc, char* argv[])
                                                                       synthesia->getLastPlan().scale)));
     std::cout << "Rendered " << wavFile.getFullPathName() << "\n"
               << "  " << genreName(realisedGenre) << ", " << partName(params.part) << ", key "
-              << realisedKey << "\n";
+              << realisedKey;
+    if (params.importMode != ImportMode::None)
+        std::cout << ", " << importModeName(params.importMode);
+    std::cout << "\n";
     if (chordChart.isNotEmpty())
         std::cout << "  chords: " << chordChart << "\n";
     if (formChart.isNotEmpty())

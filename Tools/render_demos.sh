@@ -137,4 +137,47 @@ for demo in "${PLANS[@]}"; do
     encode_wav "$wav"
 done
 
+echo "== MIDI fixtures =="
+"$HOST" --write-fixtures "$ROOT/Tools/midi"
+
+echo "== original piano melody =="
+wav="$OUT/import-piano-melody.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-piano-melody.mid" \
+    --import "$ROOT/Tools/midi/piano-melody-8bar.mid" --import-mode off --seed 17
+encode_wav "$wav"
+
+echo "== original chord loop =="
+wav="$OUT/import-chord-loop.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-chord-loop.mid" \
+    --import "$ROOT/Tools/midi/chord-loop-8bar.mid" --import-mode off --seed 17
+encode_wav "$wav"
+
+echo "== accompany lofi (piano melody) =="
+wav="$OUT/import-accompany-lofi.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-accompany-lofi.mid" \
+    --import "$ROOT/Tools/midi/piano-melody-8bar.mid" --import-mode accompany \
+    --genre lofi --seed 17
+encode_wav "$wav"
+
+echo "== extend pop to 24 bars (piano melody) =="
+wav="$OUT/import-extend-pop-24bar.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-extend-pop-24bar.mid" \
+    --import "$ROOT/Tools/midi/piano-melody-8bar.mid" --import-mode extend \
+    --genre pop --form song --bars 24 --seed 17
+encode_wav "$wav"
+
+echo "== restyle house (piano melody) =="
+wav="$OUT/import-restyle-house.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-restyle-house.mid" \
+    --import "$ROOT/Tools/midi/piano-melody-8bar.mid" --import-mode restyle \
+    --genre house --seed 17
+encode_wav "$wav"
+
+echo "== restyle trap (piano melody) =="
+wav="$OUT/import-restyle-trap.wav"
+"$HOST" --out "$wav" --midi "$OUT/import-restyle-trap.mid" \
+    --import "$ROOT/Tools/midi/piano-melody-8bar.mid" --import-mode restyle \
+    --genre trap --seed 17
+encode_wav "$wav"
+
 exit "$failed"
