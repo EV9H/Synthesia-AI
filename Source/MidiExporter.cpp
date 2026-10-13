@@ -19,10 +19,11 @@ bool MidiExporter::exportToFile(const juce::MidiBuffer& midiBuffer,
     track.addEvent(juce::MidiMessage::timeSignatureMetaEvent(
         timeSignatureNumerator, timeSignatureDenominator), 0.0);
     
-    // Add all MIDI events from buffer
+    // getMessage() already carries samplePosition (ticks) as its timestamp;
+    // addEvent's second argument is an extra offset on top of that.
     for (const auto metadata : midiBuffer)
     {
-        track.addEvent(metadata.getMessage(), metadata.samplePosition);
+        track.addEvent(metadata.getMessage(), 0.0);
     }
     
     track.updateMatchedPairs();
@@ -33,11 +34,14 @@ bool MidiExporter::exportToFile(const juce::MidiBuffer& midiBuffer,
     // Set ticks per quarter note (standard MIDI resolution)
     midiFile.setTicksPerQuarterNote(960);
     
-    // Write to file
     juce::FileOutputStream stream(outputFile);
     
     if (!stream.openedOk())
         return false;
+
+    // FileOutputStream appends to existing files; overwrite instead.
+    stream.setPosition(0);
+    stream.truncate();
     
     return midiFile.writeTo(stream);
 }
