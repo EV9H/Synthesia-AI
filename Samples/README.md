@@ -1,17 +1,20 @@
-# Preview drum samples
+# Preview drum and instrument samples
 
-One-shot drum hits embedded in the plugin via JUCE BinaryData and played by
-the preview drum voice. Processed to **44.1 kHz, 16-bit, mono**, trimmed and
-peak-normalised to about −1 dBFS. Total pack is well under 20 MB.
+One-shots and velocity-layered instrument samples embedded in the plugin via
+JUCE BinaryData. Processed to **44.1 kHz, 16-bit, mono**, trimmed, and
+loudness-matched (drums peak-normalised to about −1 dBFS; pitched instruments
+loudnorm I=−18, TP=−1.2). Total pack is about **11 MB**, well under the 60 MB
+budget.
 
-Pitched preview parts (chords, bass, synth, piano) are **synthesized** in
-`SimpleSynth` / `SynthPatch`: FM tine Rhodes/EP, supersaw, 808 sine with pitch
-envelope, and slow-attack string pads. No extra piano/EP multisamples are
-shipped, so the plugin stays inside this sample budget.
+Pitched preview parts mix **CC0 multisamples** (piano, Rhodes/EP, strings,
+organ, guitar pluck) with synthesis: supersaw, house stabs, 808 sine with
+pitch envelope, and pluck/bass patches stay synthesized. `InstrumentLibrary`
+picks the nearest root note and a soft/hard velocity layer; strings and organ
+loop with a short crossfade so sustain tails hold.
 
 Every source below is **CC0 1.0** (public domain dedication) or was released
 as free for any use including commercial redistribution. The synthesized kit
-in `SimpleSynth` remains as a fallback if a slot is missing.
+and oscillator voices in `SimpleSynth` remain as a fallback if a slot is missing.
 
 ## Kits
 
@@ -129,3 +132,23 @@ Hat round-robins (all CC0):
 | `cine_ch_rr1.wav` | Sonic Pi `hat_metal` |
 | `cine_oh_rr1.wav` | Sonic Pi `hat_hier` |
 | `cine_pedal.wav` | Sonic Pi `drum_cymbal_pedal` |
+
+## Pitched instruments (FreePats, CC0-1.0)
+
+Multisampled piano, EP, strings, organ, and guitar from the FreePats project.
+Each region is a single note, nearest-neighbour pitched in `InstrumentLibrary`.
+Piano and EP ship soft/hard velocity layers; strings and organ are looped
+between ~22% and ~78% of the file for sustain.
+
+- Packs: https://freepats.zenvoid.org/
+- License: CC0-1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+
+| Files | Pack | Notes |
+| --- | --- | --- |
+| `inst_piano_{36,48,54,72,84}_{soft,hard}.wav` | upright-piano-KW | Acoustic upright; C2–C6, two velocities |
+| `inst_ep_{36,48,54,60,72}_{soft,hard}.wav` | fm-piano1 | DX-style electric piano, v60/v100 layers |
+| `inst_str_{36,48,60,66,72}.wav` | synth-strings-1 | Loopable pad / string ensemble |
+| `inst_org_{36,48,60,64,72}.wav` | synth-calliope | Loopable organ / calliope (house organ) |
+| `inst_plk_{36,48,55,60,67}.wav` | spanish-classical-guitar | Nylon pluck with natural decay |
+
+Supersaw, house stabs, 808 bass, and analog-style basses stay synthesized.

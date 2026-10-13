@@ -25,7 +25,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - Settings: OpenAI or **Groq** preset (or a custom OpenAI-compatible URL), API key, model, last/session token counts, offline license key
   
 - **Preview & Export**:
-  - Built-in preview synth with per-part patches: 2–3 oscillators (supersaw unison, sub, noise, FM tine), ADSR amp + filter envelopes, resonant LP/HP/BP, pitch envelope, LFO (vibrato / filter / PWM), glide, then chorus, tempo-synced stereo delay, reverb, tape saturation, EQ, glue compressor and limiter. Genre-aware defaults (lo-fi Rhodes + wow/flutter/vinyl, house stabs + pluck bass, trap 808 + bell, R&B warm EP, cinematic strings, pop piano/pluck). Mix bus: per-part HPF/mud/air, bass mono below 120 Hz, Haas/width on the music bus, kick-triggered sidechain with a smoothed envelope, gentler per-bus comps (about 2–4 dB GR) and master glue + oversampled-style true-peak limiter at −1 dBTP. Target loudness is about −10…−12 LUFS (lo-fi / R&B / cinematic −13…−14). Drums stay on the CC0 sampled kits with hat round-robins, pedal chicks, and open-hat choke — see `Samples/README.md`. Piano/EP remain synthesized (FM tine + additive) so the sample pack stays small. `Tools/analyze_mix.sh` prints LUFS, true peak, LRA, band RMS and side RMS.
+  - Built-in preview synth with per-part patches: 2–3 oscillators (supersaw unison, sub, noise, FM tine), ADSR amp + filter envelopes, resonant LP/HP/BP, pitch envelope, LFO (vibrato / filter / PWM), glide, then chorus, tempo-synced stereo delay, reverb, tape saturation, EQ, glue compressor and limiter. Genre-aware defaults layer **CC0 FreePats multisamples** (upright piano, DX EP/Rhodes, strings, organ, nylon pluck) with synth for supersaw / house stabs / 808 / bass. Mix bus: per-part HPF/mud/air, bass mono below 120 Hz, Haas/width on the music bus, kick-triggered sidechain with a smoothed envelope, gentler per-bus comps (about 2–4 dB GR) and master glue + oversampled-style true-peak limiter at −1 dBTP. Target loudness is about −10…−12 LUFS (lo-fi / R&B / cinematic −13…−14). Drums stay on the CC0 sampled kits with hat round-robins, pedal chicks, and open-hat choke. Sample pack ~11 MB; licenses in `Samples/README.md`. `Tools/analyze_mix.sh` prints LUFS, true peak, LRA, band RMS and side RMS.
   - **Sound** tab: pick a part and a patch, then tweak A/D/S/R, cutoff, resonance, drive, reverb and delay sends, plus Mix preset / sidechain / comp. Saved with host state and factory/user presets (genre defaults).
   - **Drag a part (or All parts) out of the plugin as `.mid`** into a DAW; also **Export MIDI** for multi-track, per-part files, or a single part
   - MIDI output routing to DAW tracks
@@ -308,6 +308,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   ├── SimpleSynth.{h,cpp}         # Preview synth (patches, FX, sample + synth drums)
 │   ├── SynthPatch.{h,cpp}          # Per-part preview patches, mix presets, genre defaults
 │   ├── DrumLibrary.{h,cpp}         # Embedded CC0 one-shots for the preview kit
+│   ├── InstrumentLibrary.{h,cpp}   # CC0 piano/EP/strings/organ/pluck multisamples
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
 │   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes
 │   ├── StyleProfile.{h,cpp}        # Learn/save style JSON and blend with genre profiles
@@ -323,7 +324,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │       └── LLMGenerator.{h,cpp}    # LLM planner (JSON plan only)
 ├── Tools/plans/                    # Example arrangement-plan JSON files
 ├── Tools/midi/                     # Small MIDI fixtures for import / style-learning demos
-├── Samples/                        # CC0 preview drum one-shots + licenses
+├── Samples/                        # CC0 preview drums + pitched instruments + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration
 ├── .github/workflows/build.yml     # CI configuration
