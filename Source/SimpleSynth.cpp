@@ -415,7 +415,7 @@ void PartVoice::nextStereo(float& left, float& right)
 
     if (sampleMix > 0.005f)
     {
-        const double sampled = (double) readInstSample(hz) * 1.15;
+        const double sampled = (double) readInstSample(hz) * 1.40;
         value = value * (1.0 - sampleMix) + sampled * sampleMix;
     }
 
@@ -777,7 +777,7 @@ void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMi
     compressStereo(mL, mR, num, musicEnv, mix.music, macro, sr);
 
     const float width = juce::jlimit(1.0f, 2.0f, mix.musicWidth);
-    const int haasDelay = currentKit == Genre::LoFiJazz ? 9 : 22;
+    const int haasDelay = currentKit == Genre::LoFiJazz ? 12 : 32;
     const int haasSize = (int) (sizeof(musicHaas) / sizeof(musicHaas[0]));
     for (int i = 0; i < num; ++i)
     {

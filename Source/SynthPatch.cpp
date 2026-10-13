@@ -679,8 +679,8 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.16f;
         m.sidechainBass = 0.78f;
         m.compAmount = 0.42f;
-        m.outputGain = 2.45f;
-        m.musicWidth = 1.72f;
+        m.outputGain = 3.32f;
+        m.musicWidth = 1.82f;
         m.drum = bus(0.24f, 0.020f, 0.12f, 2.2f, 0.34f);
         m.bass = bus(0.22f, 0.024f, 0.16f, 2.0f, 0.36f);
         m.music = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.38f);
@@ -696,8 +696,8 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.22f;
         m.sidechainBass = 0.10f;
         m.compAmount = 0.40f;
-        m.outputGain = 2.20f;
-        m.musicWidth = 1.62f;
+        m.outputGain = 2.28f;
+        m.musicWidth = 1.75f;
         m.drum = bus(0.22f, 0.022f, 0.13f, 2.1f, 0.36f);
         m.bass = bus(0.16f, 0.032f, 0.22f, 1.6f, 0.42f);
         m.music = bus(0.18f, 0.030f, 0.20f, 1.8f, 0.38f);
@@ -713,8 +713,8 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.28f;
         m.sidechainBass = 0.28f;
         m.compAmount = 0.32f;
-        m.outputGain = 1.58f;
-        m.musicWidth = 1.28f;
+        m.outputGain = 2.12f;
+        m.musicWidth = 1.42f;
         m.drum = bus(0.16f, 0.028f, 0.20f, 1.7f, 0.40f);
         m.bass = bus(0.16f, 0.030f, 0.20f, 1.7f, 0.40f);
         m.music = bus(0.14f, 0.036f, 0.26f, 1.5f, 0.42f);
@@ -730,8 +730,8 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.24f;
         m.sidechainBass = 0.42f;
         m.compAmount = 0.36f;
-        m.outputGain = 2.12f;
-        m.musicWidth = 1.55f;
+        m.outputGain = 2.58f;
+        m.musicWidth = 1.90f;
         m.drum = bus(0.18f, 0.024f, 0.16f, 1.9f, 0.38f);
         m.bass = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.40f);
         m.music = bus(0.16f, 0.034f, 0.22f, 1.6f, 0.42f);
@@ -747,8 +747,8 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.36f;
         m.sidechainBass = 0.16f;
         m.compAmount = 0.28f;
-        m.outputGain = 2.70f;
-        m.musicWidth = 1.85f;
+        m.outputGain = 3.35f;
+        m.musicWidth = 2.00f;
         m.drum = bus(0.12f, 0.032f, 0.24f, 1.6f, 0.42f);
         m.bass = bus(0.12f, 0.036f, 0.28f, 1.5f, 0.42f);
         m.music = bus(0.12f, 0.040f, 0.32f, 1.4f, 0.44f);
