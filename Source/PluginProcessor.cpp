@@ -161,6 +161,10 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             if (playing)
                 collectClipEvents(startBeat, endBeat, samplesPerBeat, numSamples, blockMidi);
 
+            playbackBeat.store(playing && clipEventsLength > 0.0
+                                   ? std::fmod(juce::jmax(0.0, startBeat), clipEventsLength)
+                                   : -1.0);
+
             if (preview && !hostPlaying && clipEventsLength > 0.0)
                 previewBeat = std::fmod(endBeat, clipEventsLength);
         }
@@ -287,6 +291,7 @@ void SynthesiaAIProcessor::setGeneratedClip(juce::MidiBuffer newMidi, double len
 
     generatedMidi = std::move(newMidi);
     clipLengthBeats = lengthInBeats;
+    ++clipVersion;
 
     const juce::SpinLock::ScopedLockType lock(clipLock);
     clipEvents = std::move(events);

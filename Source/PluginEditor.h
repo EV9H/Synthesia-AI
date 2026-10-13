@@ -4,6 +4,31 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 
+// Read-only piano-roll view of the generated clip with a playback cursor
+class ClipView : public juce::Component
+{
+public:
+    void setClip(const juce::MidiBuffer& midi, double lengthInBeats);
+    void setPlaybackBeat(double beat);
+
+    void paint(juce::Graphics&) override;
+
+private:
+    struct DisplayNote
+    {
+        int pitch;
+        double start;
+        double length;
+        int velocity;
+    };
+
+    std::vector<DisplayNote> notes;
+    double clipLength{0.0};
+    double playbackBeat{-1.0};
+    int lowestPitch{60};
+    int highestPitch{72};
+};
+
 class SynthesiaAIEditor : public juce::AudioProcessorEditor,
                           public juce::Timer
 {
@@ -24,6 +49,7 @@ private:
     
     // UI Components
     juce::Label titleLabel;
+    juce::Label subtitleLabel;
     
     juce::Label keyLabel;
     juce::ComboBox keyComboBox;
@@ -46,6 +72,9 @@ private:
     juce::TextButton generateButton;
     juce::TextButton previewButton;
     juce::TextButton exportButton;
+
+    ClipView clipView;
+    int shownClipVersion{0};
     
     juce::Label statusLabel;
     
@@ -70,6 +99,7 @@ private:
     
     juce::Label apiKeyLabel;
     juce::TextEditor apiKeyEditor;
+    juce::Label hintLabel;
     juce::TextButton saveButton;
     juce::TextButton cancelButton;
     

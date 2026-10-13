@@ -42,6 +42,9 @@ public:
     void generateMidiBlocking(const MidiGenerationParams& params);
     const juce::MidiBuffer& getGeneratedMidi() const { return generatedMidi; }
     double getClipLengthInBeats() const { return clipLengthBeats; }
+    int getClipVersion() const { return clipVersion; }
+    // Position within the clip in beats, or a negative value when not playing
+    double getPlaybackBeat() const { return playbackBeat.load(); }
     bool isGenerating() const;
 
     // Preview playback, used when the host transport is not running (e.g. Standalone)
@@ -75,6 +78,8 @@ private:
     
     juce::MidiBuffer generatedMidi;
     double clipLengthBeats{0.0};
+    int clipVersion{0};
+    std::atomic<double> playbackBeat{-1.0};
 
     // Audio-thread copy of the clip, guarded by clipLock
     juce::SpinLock clipLock;
