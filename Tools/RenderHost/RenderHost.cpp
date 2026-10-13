@@ -4,6 +4,7 @@
 
 #include "PluginProcessor.h"
 #include "MidiExporter.h"
+#include "Generators/GenreProfiles.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
 
@@ -51,18 +52,25 @@ namespace
         return names.indexOf(name);
     }
 
+    const juce::StringArray genreNames{ "pop", "lofi", "house", "trap", "rnb", "cinematic" };
+    const juce::StringArray partNames{ "all", "chords", "bass", "synth", "piano" };
+
     void printUsage()
     {
         std::cout <<
             "Usage: SynthesiaRender --out clip.wav [options]\n"
+            "  --generator <genre|markov>  arranger (default) or the classic Markov melody\n"
+            "  --genre <name>          pop|lofi|house|trap|rnb|cinematic (default pop)\n"
+            "  --part <name>           all|chords|bass|synth|piano (default all)\n"
             "  --key <C..B>            root note (default C)\n"
             "  --scale <name>          major|minor|dorian|mixolydian|pentatonic (default major)\n"
             "  --bars <1-16>           clip length in bars (default 8)\n"
-            "  --quant <1/16|1/8|1/4|1/2>  note grid (default 1/8)\n"
-            "  --tempo <bpm>           host tempo (default 120)\n"
+            "  --quant <1/16|1/8|1/4|1/2>  finest melodic grid (default: genre's)\n"
+            "  --tempo <bpm>           host tempo (default: genre's)\n"
             "  --seed <n>              generator seed, 0 = random (default 1)\n"
             "  --style <text>          style prompt passed to the generator\n"
-            "  --midi <file.mid>       also export the generated clip\n"
+            "  --midi <file.mid>       also export the clip (one track per part)\n"
+            "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
             "  --block <samples>       host block size (default 512)\n";
     }
@@ -89,12 +97,28 @@ int main(int argc, char* argv[])
         return outPath.isEmpty() ? 1 : 0;
     }
 
+    const int genreIndex = genreNames.indexOf(option("--genre", "pop"), true);
+    const int partIndex = partNames.indexOf(option("--part", "all"), true);
+    const bool useMarkov = option("--generator", "genre").equalsIgnoreCase("markov");
+
+    if (genreIndex < 0 || partIndex < 0)
+    {
+        std::cerr << "Invalid --genre or --part\n";
+        printUsage();
+        return 1;
+    }
+
     MidiGenerationParams params;
+    params.genre = static_cast<Genre>(genreIndex);
+    params.part = static_cast<Part>(partIndex);
+    const auto& profile = getGenreProfile(params.genre);
+    static const char* gridNames[] = { "1/16", "1/8", "1/4", "1/2" };
+
     params.rootNote = parseKey(option("--key", "C"));
     const int scaleIndex = parseScale(option("--scale", "major"));
-    const int quantIndex = parseQuantization(option("--quant", "1/8"));
+    const int quantIndex = parseQuantization(option("--quant", gridNames[static_cast<int>(profile.defaultGrid)]));
     params.lengthInBars = juce::jlimit(1, 16, option("--bars", "8").getIntValue());
-    params.tempo = juce::jlimit(20.0, 300.0, option("--tempo", "120").getDoubleValue());
+    params.tempo = juce::jlimit(20.0, 300.0, option("--tempo", juce::String(profile.defaultTempo)).getDoubleValue());
     params.seed = static_cast<unsigned int>(option("--seed", "1").getLargeIntValue());
     params.stylePrompt = option("--style", "").toStdString();
 
@@ -115,7 +139,7 @@ int main(int argc, char* argv[])
     auto* synthesia = dynamic_cast<SynthesiaAIProcessor*>(plugin.get());
     jassert(synthesia != nullptr);
 
-    synthesia->setGeneratorType(GeneratorType::Markov);
+    synthesia->setGeneratorType(useMarkov ? GeneratorType::Markov : GeneratorType::Genre);
     synthesia->generateMidiBlocking(params);
 
     const auto& clip = synthesia->getGeneratedMidi();
@@ -140,7 +164,13 @@ int main(int argc, char* argv[])
             std::cerr << "Failed to write " << midiFile.getFullPathName() << "\n";
             return 3;
         }
+        if (args.contains("--split-midi"))
+            MidiExporter::exportSeparateParts(clip, midiFile, params.tempo);
     }
+
+    juce::String chordChart;
+    for (const auto& chord : synthesia->getProgression())
+        chordChart << chord.symbol << " ";
 
     OfflinePlayHead playHead;
     playHead.bpm = params.tempo;
@@ -209,7 +239,11 @@ int main(int argc, char* argv[])
     const float rms = render.getRMSLevel(0, 0, render.getNumSamples());
 
     std::cout << "Rendered " << wavFile.getFullPathName() << "\n"
-              << "  " << params.lengthInBars << " bars @ " << params.tempo << " bpm, "
+              << "  " << genreName(params.genre) << ", " << partName(params.part) << ", key "
+              << option("--key", "C") << " " << option("--scale", "major") << "\n";
+    if (chordChart.isNotEmpty())
+        std::cout << "  chords: " << chordChart << "\n";
+    std::cout << "  " << params.lengthInBars << " bars @ " << params.tempo << " bpm, "
               << juce::String(totalSamples / sampleRate, 2) << " s, "
               << notesOut << "/" << notesInClip << " note-ons played\n"
               << "  peak " << juce::String(juce::Decibels::gainToDecibels(peak), 1) << " dBFS, "
