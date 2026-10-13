@@ -43,6 +43,7 @@ public:
     void generateMidiBlocking(const MidiGenerationParams& params);
     const juce::MidiBuffer& getGeneratedMidi() const { return generatedMidi; }
     const std::vector<ChordInfo>& getProgression() const { return progression; }
+    const std::vector<SectionInfo>& getSections() const { return sections; }
     double getClipTempo() const { return previewTempo.load(); }
     double getClipLengthInBeats() const { return clipLengthBeats; }
     int getClipVersion() const { return clipVersion; }
@@ -73,6 +74,7 @@ private:
     {
         juce::MidiBuffer midi;
         std::vector<ChordInfo> progression;
+        std::vector<SectionInfo> sections;
     };
 
     MidiGenerationParams prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const;
@@ -90,6 +92,7 @@ private:
     
     juce::MidiBuffer generatedMidi;
     std::vector<ChordInfo> progression;
+    std::vector<SectionInfo> sections;
     MidiGenerationParams clipParams;
     std::atomic<double> previewTempo{120.0};
     double clipLengthBeats{0.0};

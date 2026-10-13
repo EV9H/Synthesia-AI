@@ -21,13 +21,20 @@ fi
 mkdir -p "$OUT"
 
 # Mix (now including drums) plus a drums-solo for the main genres. Same seed
-# so the solo matches the drums track inside the mix.
+# so the solo matches the drums track inside the mix. These 8-bar loops use
+# the embedded one-shot kits (909 / 808 / dusty acoustic).
 #
 # name | genre | key | scale | bpm | seed
 DEMOS=(
     "lofi-am-84bpm|lofi|A|minor|84|7"
     "house-am-124bpm|house|A|minor|124|7"
     "trap-am-140bpm|trap|A|minor|140|7"
+)
+
+SONGS=(
+    "lofi-song-24bar|lofi|A|minor|84|11|24"
+    "house-song-32bar|house|A|minor|124|11|32"
+    "trap-song-32bar|trap|A|minor|140|11|32"
 )
 
 # Extra full-arrangement mixes (with drums) so every genre has a listen-check.
@@ -72,10 +79,14 @@ render() {
     local name="$1" genre="$2" key="$3" scale="$4" bpm="$5" seed="$6" part="$7"
     local extra=("${@:8}")
     local wav="$OUT/${name}.wav"
+    local bars_args=(--bars 8)
+    for arg in "${extra[@]}"; do
+        if [[ "$arg" == "--bars" ]]; then bars_args=(); break; fi
+    done
 
     "$HOST" --out "$wav" --midi "$OUT/${name}.mid" \
         --generator genre --genre "$genre" --part "$part" \
-        --key "$key" --scale "$scale" --bars 8 \
+        --key "$key" --scale "$scale" "${bars_args[@]}" \
         --tempo "$bpm" --seed "$seed" "${extra[@]}"
 
     encode_wav "$wav"
@@ -98,5 +109,16 @@ for demo in "${MIXES[@]}"; do
     echo "== $name mix (bonus) =="
     render "${name}-mix" "$genre" "$key" "$scale" "$bpm" "$seed" all
 done
+
+for demo in "${SONGS[@]}"; do
+    IFS='|' read -r name genre key scale bpm seed bars <<< "$demo"
+    echo "== $name song-form mix =="
+    extra=(--form song --bars "$bars")
+    render "${name}-mix" "$genre" "$key" "$scale" "$bpm" "$seed" all "${extra[@]}"
+done
+
+echo "== locked custom progression (lofi, 16 bars) =="
+render "lofi-locked-am9-mix" lofi A minor 84 13 all \
+    --form song --bars 16 --chords "Am9 Fmaj9 Dm7 E7b9" --lock-chords
 
 exit "$failed"

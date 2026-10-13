@@ -108,6 +108,65 @@ struct ChordInfo
     std::string symbol;
 };
 
+enum class ArrangementForm
+{
+    Loop = 0,
+    Song
+};
+
+enum class SectionKind
+{
+    Intro,
+    Verse,
+    PreChorus,
+    Chorus,
+    Bridge,
+    Drop,
+    Break,
+    Outro
+};
+
+struct SectionInfo
+{
+    SectionKind kind{SectionKind::Verse};
+    double startBeat{0.0};
+    double lengthBeats{4.0};
+    float energy{0.7f};
+    int occurrence{1};
+    std::string label;
+};
+
+inline const char* sectionName(SectionKind kind)
+{
+    switch (kind)
+    {
+        case SectionKind::Intro:     return "Intro";
+        case SectionKind::Verse:     return "Verse";
+        case SectionKind::PreChorus: return "Pre";
+        case SectionKind::Chorus:    return "Chorus";
+        case SectionKind::Bridge:    return "Bridge";
+        case SectionKind::Drop:      return "Drop";
+        case SectionKind::Break:     return "Break";
+        case SectionKind::Outro:     return "Outro";
+    }
+    return "Verse";
+}
+
+inline const char* formName(ArrangementForm form)
+{
+    return form == ArrangementForm::Song ? "Song form" : "Loop";
+}
+
+inline int partLockBit(Part part)
+{
+    return 1 << static_cast<int>(part);
+}
+
+inline bool isPartLocked(int mask, Part part)
+{
+    return (mask & partLockBit(part)) != 0;
+}
+
 struct MidiGenerationParams
 {
     int rootNote{0};  // 0 = C, 1 = C#, etc.
@@ -121,6 +180,10 @@ struct MidiGenerationParams
     Part part{Part::All};
     // Harmonic context to write over; empty = the generator chooses a progression
     std::vector<ChordInfo> progression;
+    ArrangementForm form{ArrangementForm::Loop};
+    std::string chordText;
+    bool lockProgression{false};
+    int lockedParts{0};
 };
 
 struct Note

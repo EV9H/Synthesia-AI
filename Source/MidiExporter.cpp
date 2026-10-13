@@ -76,6 +76,14 @@ bool MidiExporter::exportToFile(const juce::MidiBuffer& midiBuffer,
     conductor.addEvent(juce::MidiMessage::tempoMetaEvent(static_cast<int>(60000000.0 / tempo)), 0.0);
     conductor.addEvent(juce::MidiMessage::timeSignatureMetaEvent(
         timeSignatureNumerator, timeSignatureDenominator), 0.0);
+
+    for (const auto metadata : midiBuffer)
+    {
+        const auto message = metadata.getMessage();
+        if (message.isMetaEvent() && message.getMetaEventType() == 6)
+            conductor.addEvent(message, 0.0);
+    }
+
     midiFile.addTrack(conductor);
 
     for (const auto part : partsIn(midiBuffer))

@@ -12,12 +12,14 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   
 - **UI Controls**:
   - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
-  - Length (1-16 bars) and tempo (60-180 bpm, defaults follow the genre)
-  - Grid / quantization (1/16, 1/8, 1/4, 1/2 notes)
+  - Form (loop or song: intro / verse / pre / chorus / drop / bridge / break / outro) and length (1-32 bars)
+  - Chord input (symbols like `Am9 Fmaj9` or Roman numerals, `|` for bar groups) with a lock so regenerating keeps the progression
+  - Per-part locks (keep drums, regenerate bass, etc.)
+  - Tempo (60-180 bpm, defaults follow the genre) and grid / quantization
   - Style/prompt text input for AI generation
   
 - **Preview & Export**:
-  - Built-in synth with a distinct timbre per part, including a synthesized drum kit per genre
+  - Built-in synth with a distinct timbre per part, plus per-genre drum kits built from CC0 one-shot samples (synthesized fallback if a slot is missing). See `Samples/README.md`.
   - Export multi-track `.mid`, separate files per part, or a single part
   - MIDI output routing to DAW tracks
   
@@ -236,15 +238,17 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 ├── Source/
 │   ├── PluginProcessor.{h,cpp}     # Main audio processor
 │   ├── PluginEditor.{h,cpp}        # UI implementation
-│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part, drum kits)
+│   ├── SimpleSynth.{h,cpp}         # Preview synth (timbre per part, sample + synth drums)
+│   ├── DrumLibrary.{h,cpp}         # Embedded CC0 one-shots for the preview kit
 │   ├── MidiExporter.{h,cpp}        # Multi-track / per-part MIDI export
-│   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings
+│   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings, chord-symbol parser
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
 │       ├── ArrangementGenerator.*  # Genre-aware multi-part arranger
 │       ├── GenreProfiles.{h,cpp}   # Per-genre progressions and patterns
 │       ├── MarkovGenerator.{h,cpp} # Algorithmic melody generator
 │       └── LLMGenerator.{h,cpp}    # AI/LLM generator
+├── Samples/                        # CC0 preview drum one-shots + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration
 ├── .github/workflows/build.yml     # CI configuration

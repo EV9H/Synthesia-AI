@@ -9,6 +9,7 @@ struct GenerationResult
 {
     juce::MidiBuffer midi;                  // ticks at 960 PPQ, one MIDI channel per part
     std::vector<ChordInfo> progression;
+    std::vector<SectionInfo> sections;
 };
 
 // Genre-aware arranger: builds a chord progression, then chords, bass, synth, piano
@@ -22,6 +23,7 @@ public:
     GenerationResult generateArrangement(const MidiGenerationParams& params);
 
     static std::vector<ChordInfo> buildProgression(const MidiGenerationParams& params);
+    static std::vector<SectionInfo> buildForm(Genre genre, ArrangementForm form, int bars);
 
     struct PartNote
     {
@@ -40,8 +42,12 @@ private:
         const MidiGenerationParams& params;
         const GenreProfile& profile;
         const std::vector<ChordInfo>& progression;
+        const std::vector<SectionInfo>& sections;
         double totalBeats;
         int finestSteps;    // smallest melodic subdivision in 16th steps
+
+        const SectionInfo* sectionAt(double beat) const;
+        float energyAt(double beat) const;
     };
 
     static std::vector<ChordInfo> buildProgression(const MidiGenerationParams& params, std::mt19937& rng);
