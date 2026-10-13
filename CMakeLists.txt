@@ -49,6 +49,7 @@ set(SYNTHESIA_SOURCES
     Source/Generators/ArrangementPlan.cpp
     Source/Music/MusicTheory.cpp
     Source/SimpleSynth.cpp
+    Source/SynthPatch.cpp
     Source/DrumLibrary.cpp
     Source/MidiExporter.cpp
     Source/MidiImporter.cpp

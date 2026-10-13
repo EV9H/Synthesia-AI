@@ -1,49 +1,137 @@
 #include "SimpleSynth.h"
 #include "DrumLibrary.h"
 #include <cmath>
+#include <vector>
 
 namespace
 {
     constexpr double twoPi = juce::MathConstants<double>::twoPi;
-
-    // PolyBLEP residual for band-limited saw/square edges
-    double polyBlep(double t, double dt)
-    {
-        if (t < dt)
-        {
-            t /= dt;
-            return t + t - t * t - 1.0;
-        }
-        if (t > 1.0 - dt)
-        {
-            t = (t - 1.0) / dt;
-            return t * t + t + t + 1.0;
-        }
-        return 0.0;
-    }
-
-    double saw(double phase, double dt)
-    {
-        return 2.0 * phase - 1.0 - polyBlep(phase, dt);
-    }
-
-    double square(double phase, double dt)
-    {
-        double value = phase < 0.5 ? 1.0 : -1.0;
-        value += polyBlep(phase, dt);
-        value -= polyBlep(std::fmod(phase + 0.5, 1.0), dt);
-        return value;
-    }
+    constexpr Part pitchedParts[] = { Part::Chords, Part::Bass, Part::Synth, Part::Piano };
 
     double wrap(double phase)
     {
         return phase - std::floor(phase);
     }
 
-    int bendRangeFor(Timbre timbre)
+    float noiseSample(juce::uint32& state)
     {
-        return timbre == Timbre::Bass ? 12 : 2;
+        state = state * 1664525u + 1013904223u;
+        return static_cast<float>(static_cast<int>(state >> 16) - 32768) / 32768.0f;
     }
+
+    void splitMidi(const juce::MidiBuffer& in, juce::MidiBuffer* pitched, juce::MidiBuffer& drums)
+    {
+        for (int i = 0; i < 4; ++i)
+            pitched[i].clear();
+        drums.clear();
+
+        for (const auto metadata : in)
+        {
+            const auto message = metadata.getMessage();
+            const int ch = message.getChannel();
+            if (ch == 10)
+                drums.addEvent(message, metadata.samplePosition);
+            else
+            {
+                const int idx = juce::jlimit(0, 3, ch <= 0 ? 2 : ch - 1);
+                pitched[idx].addEvent(message, metadata.samplePosition);
+            }
+        }
+    }
+
+    void sanitize(juce::AudioBuffer<float>& buffer, int start, int num)
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer(ch, start);
+            for (int i = 0; i < num; ++i)
+                if (!std::isfinite(data[i]))
+                    data[i] = 0.0f;
+        }
+    }
+
+    float coeffFor(double seconds, double sr)
+    {
+        return (float) (1.0 - std::exp(-1.0 / (juce::jmax(0.0005, seconds) * sr)));
+    }
+
+    void compressStereo(float* left, float* right, int num, float& env,
+                        float amount, float thresh, float atk, float rel)
+    {
+        if (amount < 0.02f)
+            return;
+        const float makeup = 1.0f + 0.22f * amount;
+        for (int i = 0; i < num; ++i)
+        {
+            const float s = 0.5f * (std::abs(left[i]) + std::abs(right[i]));
+            env += (s > env ? atk : rel) * (s - env);
+            float gain = 1.0f;
+            if (env > thresh)
+                gain = std::pow(thresh / (env + 1.0e-8f), amount * 0.85f);
+            left[i] *= gain * makeup;
+            right[i] *= gain * makeup;
+        }
+    }
+}
+
+double PartVoice::polyBlep(double t, double dt)
+{
+    if (t < dt)
+    {
+        t /= dt;
+        return t + t - t * t - 1.0;
+    }
+    if (t > 1.0 - dt)
+    {
+        t = (t - 1.0) / dt;
+        return t * t + t + t + 1.0;
+    }
+    return 0.0;
+}
+
+double PartVoice::wrap(double phase)
+{
+    return phase - std::floor(phase);
+}
+
+double PartVoice::waveAt(OscWave wave, double phase, double dt, double pw,
+                         double fmRatio, double fmIndex)
+{
+    switch (wave)
+    {
+        case OscWave::Sine:
+            return std::sin(phase * twoPi);
+        case OscWave::Triangle:
+        {
+            const double t = phase < 0.5 ? 4.0 * phase - 1.0 : 3.0 - 4.0 * phase;
+            return t;
+        }
+        case OscWave::Saw:
+            return 2.0 * phase - 1.0 - polyBlep(phase, dt);
+        case OscWave::Square:
+        {
+            double value = phase < 0.5 ? 1.0 : -1.0;
+            value += polyBlep(phase, dt);
+            value -= polyBlep(std::fmod(phase + 0.5, 1.0), dt);
+            return value;
+        }
+        case OscWave::Pulse:
+        {
+            const double width = juce::jlimit(0.05, 0.95, pw);
+            double value = phase < width ? 1.0 : -1.0;
+            value += polyBlep(phase, dt);
+            value -= polyBlep(std::fmod(phase + (1.0 - width), 1.0), dt);
+            return value;
+        }
+        case OscWave::Noise:
+            return 0.0; // filled by caller
+        case OscWave::Tine:
+        {
+            const double mod = std::sin(phase * twoPi * fmRatio) * fmIndex;
+            return std::sin(phase * twoPi + mod);
+        }
+    }
+    return 0.0;
 }
 
 PartVoice::PartVoice()
@@ -56,10 +144,13 @@ bool PartVoice::canPlaySound(juce::SynthesiserSound* sound)
     return dynamic_cast<PartSound*>(sound) != nullptr;
 }
 
-void PartVoice::startNote(int midiNoteNumber, float velocity,
+void PartVoice::startNote(int midiNoteNumber, float vel,
                           juce::SynthesiserSound* sound, int pitchWheel)
 {
-    timbre = static_cast<PartSound*>(sound)->timbre;
+    auto* partSound = static_cast<PartSound*>(sound);
+    patch = &partSound->patch;
+    midiNote = midiNoteNumber;
+    velocity = vel;
 
     const double sampleRate = getSampleRate();
     if (sampleRate != preparedSampleRate)
@@ -68,120 +159,177 @@ void PartVoice::startNote(int midiNoteNumber, float velocity,
         preparedSampleRate = sampleRate;
     }
     filter.reset();
-    envelope.setSampleRate(sampleRate);
+    ampEnvelope.setSampleRate(sampleRate);
+    filtEnvelope.setSampleRate(sampleRate);
+    ampEnvelope.setParameters(patch->amp);
+    filtEnvelope.setParameters(patch->filterEnv);
 
-    frequency = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
-    phase = 0.0;
-    detunedPhase = 0.37;
-    vibratoPhase = 0.0;
-    noteTime = 0.0;
-    updateBend(pitchWheel);
-
-    const float velocityCurve = 0.35f + 0.65f * velocity;
-
-    switch (timbre)
+    switch (patch->filterMode)
     {
-        case Timbre::Keys:
-            envelope.setParameters({ 0.02f, 0.35f, 0.7f, 0.35f });
-            filter.setCutoffFrequency(static_cast<float>(juce::jmin(2400.0, 900.0 + frequency * 3.0)));
-            filter.setResonance(0.6f);
-            level = 0.11f * velocityCurve;
+        case FilterMode::HighPass:
+            filter.setType(juce::dsp::StateVariableTPTFilterType::highpass);
             break;
-        case Timbre::Bass:
-            envelope.setParameters({ 0.004f, 0.5f, 0.85f, 0.09f });
-            level = 0.28f * velocityCurve;
+        case FilterMode::BandPass:
+            filter.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
             break;
-        case Timbre::Lead:
-            envelope.setParameters({ 0.005f, 0.25f, 0.6f, 0.16f });
-            filter.setCutoffFrequency(3400.0f);
-            filter.setResonance(0.9f);
-            level = 0.16f * velocityCurve;
-            break;
-        case Timbre::Piano:
-            envelope.setParameters({ 0.002f, 1.8f, 0.0f, 0.25f });
-            level = 0.12f * velocityCurve;
+        default:
+            filter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
             break;
     }
+    filter.setResonance(juce::jlimit(0.05f, 0.95f, 0.12f + patch->resonance * 0.75f));
 
-    envelope.reset();
-    envelope.noteOn();
+    noteHz = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+    targetHz = noteHz;
+    if (patch->glideSeconds < 0.001 || currentHz < 1.0)
+        currentHz = noteHz;
+    updateBend(pitchWheel);
+
+    noteTime = 0.0;
+    lfoPhase = 0.0;
+    wowPhase = 0.13;
+    noiseState = 1u + static_cast<juce::uint32>(midiNoteNumber * 997 + static_cast<int>(vel * 8000));
+    subPhase = 0.0;
+    fmPhase = 0.17;
+    for (int i = 0; i < kMaxUnison; ++i)
+    {
+        osc1Phase[i] = wrap(0.11 * (i + 1));
+        osc2Phase[i] = wrap(0.27 * (i + 3));
+    }
+
+    ampEnvelope.reset();
+    filtEnvelope.reset();
+    ampEnvelope.noteOn();
+    filtEnvelope.noteOn();
 }
 
 void PartVoice::stopNote(float, bool allowTailOff)
 {
     if (allowTailOff)
     {
-        envelope.noteOff();
+        ampEnvelope.noteOff();
+        filtEnvelope.noteOff();
     }
     else
     {
-        envelope.reset();
+        ampEnvelope.reset();
+        filtEnvelope.reset();
         clearCurrentNote();
     }
 }
 
 void PartVoice::pitchWheelMoved(int newValue)
 {
-    // Ignore bends during release so a slide's reset doesn't jump the tail.
     if (isKeyDown())
         updateBend(newValue);
 }
 
 void PartVoice::updateBend(int wheelValue)
 {
-    const double semitones = (wheelValue - 8192) / 8192.0 * bendRangeFor(timbre);
+    const double range = (patch != nullptr && patch->part == Part::Bass) ? 12.0 : 2.0;
+    const double semitones = (wheelValue - 8192) / 8192.0 * range;
     bendRatio = std::pow(2.0, semitones / 12.0);
 }
 
-float PartVoice::nextSample()
+double PartVoice::oscSample(const OscSettings& osc, double* phases, double hz, double dtBase, double pw) const
 {
-    const double sampleRate = getSampleRate();
-    const double dt = frequency * bendRatio / sampleRate;
-    double increment = dt;
-    double value = 0.0;
-
-    switch (timbre)
+    juce::ignoreUnused(dtBase);
+    const int n = juce::jlimit(1, kMaxUnison, osc.unison);
+    const double octaveMul = std::pow(2.0, osc.octave);
+    double sum = 0.0;
+    const double spread = n > 1 ? osc.unisonDetune : 0.0;
+    for (int i = 0; i < n; ++i)
     {
-        case Timbre::Keys:
-        {
-            const double detunedDt = dt * 1.0045;
-            value = 0.5 * (saw(phase, dt) + saw(detunedPhase, detunedDt)) + 0.4 * std::sin(phase * twoPi);
-            value = filter.processSample(0, static_cast<float>(value));
-            detunedPhase = wrap(detunedPhase + detunedDt);
-            break;
-        }
-        case Timbre::Bass:
-        {
-            const double x = std::sin(phase * twoPi) + 0.2 * std::sin(2.0 * phase * twoPi);
-            value = std::tanh(1.8 * x) / std::tanh(1.8);
-            break;
-        }
-        case Timbre::Lead:
-        {
-            const double vibratoDepth = noteTime > 0.25 ? 0.004 : 0.0;
-            const double vibrato = 1.0 + vibratoDepth * std::sin(vibratoPhase * twoPi);
-            increment = dt * vibrato;
-            value = 0.6 * saw(phase, increment) + 0.4 * square(phase, increment);
-            value = filter.processSample(0, static_cast<float>(value));
-            vibratoPhase = wrap(vibratoPhase + 5.5 / sampleRate);
-            break;
-        }
-        case Timbre::Piano:
-        {
-            const double angle = phase * twoPi;
-            value = std::sin(angle)
-                  + 0.45 * std::exp(-noteTime / 0.6) * std::sin(2.0 * angle)
-                  + 0.22 * std::exp(-noteTime / 0.35) * std::sin(3.0 * angle)
-                  + 0.10 * std::exp(-noteTime / 0.2) * std::sin(4.0 * angle)
-                  + 0.05 * std::exp(-noteTime / 0.1) * std::sin(5.0 * angle);
-            break;
-        }
+        const double offset = n == 1 ? osc.detuneCents
+                                     : osc.detuneCents + (i - (n - 1) * 0.5) * (spread / std::max(1, n / 2));
+        const double voiceHz = hz * octaveMul * std::pow(2.0, offset / 1200.0);
+        const double dt = voiceHz / getSampleRate();
+        if (osc.wave == OscWave::Noise)
+            sum += 0.0;
+        else
+            sum += waveAt(osc.wave, phases[i], dt, pw, osc.fmRatio, osc.fmIndex);
+        phases[i] = wrap(phases[i] + dt);
+    }
+    return (sum / static_cast<double>(n)) * osc.mix;
+}
+
+void PartVoice::nextStereo(float& left, float& right)
+{
+    left = right = 0.0f;
+    if (patch == nullptr)
+        return;
+
+    const double sr = getSampleRate();
+    const double glide = patch->glideSeconds;
+    if (glide > 0.001)
+    {
+        const double coeff = 1.0 - std::exp(-1.0 / (glide * sr));
+        currentHz += (targetHz - currentHz) * coeff;
+    }
+    else
+    {
+        currentHz = targetHz;
     }
 
-    phase = wrap(phase + increment);
-    noteTime += 1.0 / sampleRate;
+    const double pitchEnv = std::exp(-noteTime / std::max(0.008, (double) patch->pitchEnvDecay));
+    const double lfoAmp = noteTime < patch->lfoDelay ? 0.0
+                          : std::min(1.0, (noteTime - patch->lfoDelay) / 0.25);
+    const double lfo = std::sin(lfoPhase * twoPi) * lfoAmp;
+    const double wow = patch->wowFlutter * 0.0035 * std::sin(wowPhase * twoPi);
 
-    return static_cast<float>(value) * level * envelope.getNextSample();
+    double hz = currentHz * bendRatio
+              * std::pow(2.0, patch->pitchEnvAmount * pitchEnv / 12.0)
+              * std::pow(2.0, (patch->lfoToPitch * lfo) / 1200.0)
+              * (1.0 + wow);
+
+    const double pw = juce::jlimit(0.05, 0.95, patch->osc1.pulseWidth + patch->lfoToPwm * 0.35 * lfo);
+    const double dt = hz / sr;
+
+    double value = oscSample(patch->osc1, osc1Phase, hz, dt, pw);
+    value += oscSample(patch->osc2, osc2Phase, hz, dt, pw);
+
+    if (patch->subMix > 0.001f)
+    {
+        const double subHz = hz * std::pow(2.0, patch->subOctave);
+        const double subDt = subHz / sr;
+        value += std::sin(subPhase * twoPi) * patch->subMix;
+        subPhase = wrap(subPhase + subDt);
+    }
+
+    if (patch->noiseMix > 0.001f || patch->tineClick > 0.001f)
+    {
+        const float n = noiseSample(noiseState);
+        value += n * patch->noiseMix;
+        value += n * patch->tineClick * std::exp(-noteTime * 90.0);
+    }
+
+    const float amp = ampEnvelope.getNextSample();
+    const float fenv = filtEnvelope.getNextSample();
+    if (patch->filterMode != FilterMode::Off)
+    {
+        const double keyMul = std::pow(2.0, ((midiNote - 60) / 12.0) * patch->keyTrack);
+        const double velMul = std::pow(2.0, (velocity - 0.5) * patch->velToCutoff * 2.0);
+        const double envMul = std::pow(2.0, fenv * patch->filterEnvAmount + lfo * patch->lfoToFilter);
+        const float cutoff = (float) juce::jlimit(40.0, sr * 0.42,
+            patch->cutoff * keyMul * velMul * envMul);
+        filter.setCutoffFrequency(cutoff);
+            value = filter.processSample(0, static_cast<float>(value));
+            if (!std::isfinite(value))
+                value = 0.0;
+    }
+
+    const float drive = 1.0f + 3.5f * patch->drive;
+    value = std::tanh(value * drive) / std::tanh(drive);
+
+    const float level = patch->gain * (0.35f + 0.65f * velocity) * 0.62f * amp;
+    const float pan = juce::jlimit(-1.0f, 1.0f, patch->pan);
+    const float gainL = std::sqrt(0.5f * (1.0f - pan));
+    const float gainR = std::sqrt(0.5f * (1.0f + pan));
+    left = static_cast<float>(value) * level * gainL;
+    right = static_cast<float>(value) * level * gainR;
+
+    lfoPhase = wrap(lfoPhase + patch->lfoRate / sr);
+    wowPhase = wrap(wowPhase + 0.65 / sr);
+    noteTime += 1.0 / sr;
 }
 
 void PartVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
@@ -190,16 +338,22 @@ void PartVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
     if (!isVoiceActive())
         return;
 
+    const int chans = outputBuffer.getNumChannels();
     while (--numSamples >= 0)
     {
-        const float sample = nextSample();
-
-        for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-            outputBuffer.addSample(i, startSample, sample);
-
+        float l, r;
+        nextStereo(l, r);
+        if (chans >= 2)
+        {
+            outputBuffer.addSample(0, startSample, l);
+            outputBuffer.addSample(1, startSample, r);
+        }
+        else
+        {
+            outputBuffer.addSample(0, startSample, 0.5f * (l + r));
+        }
         ++startSample;
-
-        if (!envelope.isActive())
+        if (!ampEnvelope.isActive())
         {
             clearCurrentNote();
             break;
@@ -209,20 +363,391 @@ void PartVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
 
 SimpleSynth::SimpleSynth()
 {
+    loadGenreDefaults(Genre::Pop);
     setupVoices();
+}
+
+void SimpleSynth::setupVoices()
+{
+    for (int i = 0; i < 4; ++i)
+    {
+        pitched[i].clearVoices();
+        pitched[i].clearSounds();
+        const int voices = (i == 1) ? 8 : 12; // bass fewer
+        for (int v = 0; v < voices; ++v)
+            pitched[i].addVoice(new PartVoice());
+        pitched[i].addSound(new PartSound(pitchedParts[i], patches[i]));
+    }
+
+    drums.clearVoices();
+    drums.clearSounds();
+    for (int i = 0; i < 16; ++i)
+        drums.addVoice(new DrumVoice());
+    drums.addSound(new DrumSound(currentKit));
 }
 
 void SimpleSynth::prepare(double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused(samplesPerBlock);
     DrumLibrary::get().ensureLoaded();
     currentSampleRate = sampleRate;
-    synth.setCurrentPlaybackSampleRate(sampleRate);
+    currentBlockSize = samplesPerBlock;
+    for (auto& s : pitched)
+        s.setCurrentPlaybackSampleRate(sampleRate);
+    drums.setCurrentPlaybackSampleRate(sampleRate);
+    prepareFx(sampleRate, samplesPerBlock);
+}
+
+void SimpleSynth::prepareFx(double sampleRate, int samplesPerBlock)
+{
+    juce::dsp::ProcessSpec spec{ sampleRate, (juce::uint32) juce::jmax(16, samplesPerBlock), 2 };
+    const int n = juce::jmax(samplesPerBlock, 512);
+    partBuffer.setSize(2, n);
+    musicBus.setSize(2, n);
+    bassBus.setSize(2, n);
+    drumBus.setSize(2, n);
+    delaySend.setSize(2, n);
+    reverbSend.setSize(2, n);
+    dryBackup.setSize(2, n);
+
+    for (auto& c : chorus)
+    {
+        c.prepare(spec);
+        c.setRate(0.75f);
+        c.setDepth(0.35f);
+        c.setCentreDelay(7.2f);
+        c.setFeedback(0.08f);
+        c.setMix(0.35f);
+    }
+
+    const int delaySamples = juce::jmax(4, (int) (sampleRate * 2.0) + 8);
+    delayBufL.assign((size_t) delaySamples, 0.0f);
+    delayBufR.assign((size_t) delaySamples, 0.0f);
+    delayWrite = 0;
+
+    reverb.prepare(spec);
+    juce::Reverb::Parameters rp;
+    rp.roomSize = 0.45f;
+    rp.damping = 0.38f;
+    rp.wetLevel = 1.0f;
+    rp.dryLevel = 0.0f;
+    rp.width = 1.0f;
+    reverb.setParameters(rp);
+
+    hpStateL = hpStateR = 0.0f;
+    shelfStateL = shelfStateR = 0.0f;
+    kickLp = scEnv = drumEnv = bassEnv = musicEnv = masterEnv = limitEnv = 0.0f;
 }
 
 void SimpleSynth::releaseResources()
 {
-    synth.allNotesOff(0, false);
+    for (auto& s : pitched)
+        s.allNotesOff(0, false);
+    drums.allNotesOff(0, false);
+}
+
+void SimpleSynth::setTempo(double bpm)
+{
+    tempoBpm = juce::jlimit(40.0, 240.0, bpm);
+}
+
+void SimpleSynth::setKit(Genre genre)
+{
+    if (genre == currentKit)
+        return;
+    currentKit = genre;
+    loadGenreDefaults(genre);
+}
+
+void SimpleSynth::loadGenreDefaults(Genre genre)
+{
+    currentKit = genre;
+    patches[0] = PatchLibrary::defaultFor(genre, Part::Chords);
+    patches[1] = PatchLibrary::defaultFor(genre, Part::Bass);
+    patches[2] = PatchLibrary::defaultFor(genre, Part::Synth);
+    patches[3] = PatchLibrary::defaultFor(genre, Part::Piano);
+    mix = MixLibrary::defaultFor(genre);
+    ++soundVersion;
+}
+
+SynthPatch SimpleSynth::getPatch(Part part) const
+{
+    return patches[PatchLibrary::pitchedIndex(part)];
+}
+
+void SimpleSynth::setPatch(Part part, const SynthPatch& patch)
+{
+    const int i = PatchLibrary::pitchedIndex(part);
+    patches[i] = patch;
+    patches[i].part = part;
+    ++soundVersion;
+}
+
+void SimpleSynth::setMix(const MixSettings& settings)
+{
+    mix = settings;
+    ++soundVersion;
+}
+
+void SimpleSynth::setSidechainAmount(float amount)
+{
+    mix.sidechainAmount = juce::jlimit(0.0f, 1.0f, amount);
+    ++soundVersion;
+}
+
+void SimpleSynth::writeSoundXml(juce::XmlElement& xml) const
+{
+    xml.setAttribute("kit", static_cast<int>(currentKit));
+    for (int i = 0; i < 4; ++i)
+    {
+        auto* child = xml.createNewChildElement("Patch");
+        patches[i].writeXml(*child);
+    }
+    mix.writeXml(*xml.createNewChildElement("Mix"));
+}
+
+void SimpleSynth::readSoundXml(const juce::XmlElement& xml)
+{
+    currentKit = static_cast<Genre>(juce::jlimit(0, numGenres - 1, xml.getIntAttribute("kit", 0)));
+    int i = 0;
+    for (auto* child : xml.getChildWithTagNameIterator("Patch"))
+    {
+        if (i >= 4)
+            break;
+        patches[i] = SynthPatch::fromXml(*child);
+        patches[i].part = pitchedParts[i];
+        ++i;
+    }
+    if (auto* mixXml = xml.getChildByName("Mix"))
+        mix = MixSettings::fromXml(*mixXml);
+    else
+        mix = MixLibrary::defaultFor(currentKit);
+    ++soundVersion;
+}
+
+void SimpleSynth::ensureAuxSize(int start, int num)
+{
+    const int needed = start + num;
+    auto grow = [needed](juce::AudioBuffer<float>& buf)
+    {
+        if (buf.getNumChannels() < 2 || buf.getNumSamples() < needed)
+            buf.setSize(2, needed, false, false, true);
+    };
+    grow(partBuffer);
+    grow(musicBus);
+    grow(bassBus);
+    grow(drumBus);
+    grow(delaySend);
+    grow(reverbSend);
+    grow(dryBackup);
+}
+
+void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buffer, int start, int num)
+{
+    const auto& patch = patches[partIndex];
+    if (patch.tapeSat > 0.01f || patch.drive > 0.2f)
+    {
+        const float amount = 1.0f + 1.8f * juce::jmax(patch.tapeSat, patch.drive * 0.4f);
+        const float inv = 1.0f / std::tanh(amount);
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer(ch, start);
+            for (int i = 0; i < num; ++i)
+                data[i] = std::tanh(data[i] * amount) * inv;
+        }
+    }
+
+    if (patch.chorusSend > 0.02f)
+    {
+        chorus[partIndex].setMix(juce::jlimit(0.0f, 0.65f, patch.chorusSend));
+        juce::dsp::AudioBlock<float> block(buffer);
+        auto sub = block.getSubBlock((size_t) start, (size_t) num);
+        chorus[partIndex].process(juce::dsp::ProcessContextReplacing<float>(sub));
+    }
+
+    sanitize(buffer, start, num);
+
+    const float delayAmt = patch.delaySend;
+    const float revAmt = patch.reverbSend;
+    if (delayAmt > 0.001f || revAmt > 0.001f)
+    {
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            const float* src = buffer.getReadPointer(ch, start);
+            if (delayAmt > 0.001f)
+            {
+                float* dst = delaySend.getWritePointer(ch, start);
+                for (int i = 0; i < num; ++i)
+                    dst[i] += src[i] * delayAmt;
+            }
+            if (revAmt > 0.001f)
+            {
+                float* dst = reverbSend.getWritePointer(ch, start);
+                for (int i = 0; i < num; ++i)
+                    dst[i] += src[i] * revAmt;
+            }
+        }
+    }
+}
+
+void SimpleSynth::applyBusMix(int start, int num)
+{
+    const double sr = juce::jmax(1.0, currentSampleRate);
+    const float macro = juce::jlimit(0.0f, 1.0f, mix.compAmount);
+    auto* mL = musicBus.getWritePointer(0, start);
+    auto* mR = musicBus.getWritePointer(1, start);
+    auto* bL = bassBus.getWritePointer(0, start);
+    auto* bR = bassBus.getWritePointer(1, start);
+    auto* dL = drumBus.getWritePointer(0, start);
+    auto* dR = drumBus.getWritePointer(1, start);
+
+    compressStereo(dL, dR, num, drumEnv, mix.drumComp * macro, 0.22f,
+                   coeffFor(0.004, sr), coeffFor(0.09, sr));
+    compressStereo(bL, bR, num, bassEnv, mix.bassComp * macro, 0.28f,
+                   coeffFor(0.012, sr), coeffFor(0.14, sr));
+    compressStereo(mL, mR, num, musicEnv, mix.musicComp * macro, 0.32f,
+                   coeffFor(0.018, sr), coeffFor(0.16, sr));
+
+    const float scAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainAmount);
+    if (scAmt > 0.01f)
+    {
+        const float atk = coeffFor(mix.sidechainAttack, sr);
+        const float rel = coeffFor(mix.sidechainRelease, sr);
+        const float lpCoeff = (float) (1.0 - std::exp(-twoPi * 140.0 / sr));
+        const float bassAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainBass);
+        for (int i = 0; i < num; ++i)
+        {
+            const float mid = 0.5f * (dL[i] + dR[i]);
+            kickLp += lpCoeff * (mid - kickLp);
+            const float s = std::abs(kickLp) * 3.4f;
+            scEnv += (s > scEnv ? atk : rel) * (s - scEnv);
+            const float duck = juce::jlimit(0.0f, 0.92f, scEnv * scAmt * 1.65f);
+            const float musicG = 1.0f - duck;
+            const float bassG = 1.0f - duck * bassAmt;
+            mL[i] *= musicG;
+            mR[i] *= musicG;
+            bL[i] *= bassG;
+            bR[i] *= bassG;
+        }
+    }
+}
+
+void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int num)
+{
+    const double sr = juce::jmax(1.0, currentSampleRate);
+    auto* oL = buffer.getWritePointer(0, start);
+    auto* oR = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1, start) : oL;
+    auto* sL = delaySend.getWritePointer(0, start);
+    auto* sR = delaySend.getWritePointer(1, start);
+
+    if (!delayBufL.empty() && delayBufL.size() == delayBufR.size())
+    {
+        const int size = (int) delayBufL.size();
+        const float delaySec = (float) ((60.0 / juce::jmax(40.0, tempoBpm)) * 0.375);
+        int delaySamp = juce::jlimit(1, size - 2, (int) std::round(delaySec * sr));
+        int delaySampR = juce::jlimit(1, size - 2, (int) std::round(delaySec * 1.5f * sr));
+        const float fb = 0.28f;
+        const float wet = 0.2f;
+        for (int i = 0; i < num; ++i)
+        {
+            int rL = delayWrite - delaySamp;
+            int rR = delayWrite - delaySampR;
+            if (rL < 0) rL += size;
+            if (rR < 0) rR += size;
+            const float outL = delayBufL[(size_t) rL];
+            const float outR = delayBufR[(size_t) rR];
+            delayBufL[(size_t) delayWrite] = sL[i] + outR * fb;
+            delayBufR[(size_t) delayWrite] = sR[i] + outL * fb;
+            oL[i] += outL * wet;
+            oR[i] += outR * wet;
+            if (++delayWrite >= size)
+                delayWrite = 0;
+        }
+    }
+
+    juce::Reverb::Parameters rp;
+    rp.roomSize = currentKit == Genre::Cinematic ? 0.62f
+                : currentKit == Genre::LoFiJazz ? 0.38f : 0.44f;
+    rp.damping = currentKit == Genre::LoFiJazz ? 0.55f : 0.36f;
+    rp.wetLevel = 1.0f;
+    rp.dryLevel = 0.0f;
+    rp.width = 1.0f;
+    reverb.setParameters(rp);
+
+    juce::dsp::AudioBlock<float> revBlock(reverbSend);
+    auto revSub = revBlock.getSubBlock((size_t) start, (size_t) num);
+    reverb.process(juce::dsp::ProcessContextReplacing<float>(revSub));
+    sanitize(reverbSend, start, num);
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        buffer.addFrom(ch, start, reverbSend, juce::jmin(ch, 1), start, num, 0.72f);
+
+    const float hpCoeff = (float) (1.0 - std::exp(-twoPi * 28.0 / sr));
+    const float shelfCoeff = (float) (1.0 - std::exp(-twoPi * 8500.0 / sr));
+    const float shelfGain = 1.22f;
+    for (int i = 0; i < num; ++i)
+    {
+        hpStateL += hpCoeff * (oL[i] - hpStateL);
+        hpStateR += hpCoeff * (oR[i] - hpStateR);
+        const float hpL = oL[i] - hpStateL;
+        const float hpR = oR[i] - hpStateR;
+        shelfStateL += shelfCoeff * (hpL - shelfStateL);
+        shelfStateR += shelfCoeff * (hpR - shelfStateR);
+        oL[i] = hpL + (hpL - shelfStateL) * (shelfGain - 1.0f);
+        oR[i] = hpR + (hpR - shelfStateR) * (shelfGain - 1.0f);
+    }
+
+    const float glueAmt = mix.masterComp * juce::jlimit(0.0f, 1.0f, mix.compAmount);
+    compressStereo(oL, oR, num, masterEnv, glueAmt, 0.38f,
+                   coeffFor(0.02, sr), coeffFor(0.16, sr));
+
+    float vinyl = 0.0f;
+    float tape = 0.12f;
+    for (const auto& p : patches)
+    {
+        vinyl = juce::jmax(vinyl, p.vinylAmount);
+        tape = juce::jmax(tape, p.tapeSat);
+    }
+    if (currentKit == Genre::LoFiJazz)
+        vinyl = juce::jmax(vinyl, 0.22f);
+
+    if (vinyl > 0.01f)
+    {
+        for (int i = 0; i < num; ++i)
+        {
+            const float n = noiseSample(vinylState);
+            vinylPhase = wrap(vinylPhase + 0.55 / sr);
+            const float rumble = 0.015f * std::sin((float) vinylPhase * (float) twoPi);
+            const float hiss = n * 0.012f;
+            const float crackle = (std::abs(n) > 0.992f) ? n * 0.08f : 0.0f;
+            const float v = vinyl * (rumble + hiss + crackle);
+            oL[i] += v;
+            oR[i] += v * 0.85f;
+        }
+    }
+
+    if (tape > 0.02f)
+    {
+        const float amount = 1.0f + 1.4f * tape;
+        const float inv = 1.0f / std::tanh(amount);
+        for (int i = 0; i < num; ++i)
+        {
+            oL[i] = std::tanh(oL[i] * amount) * inv;
+            oR[i] = std::tanh(oR[i] * amount) * inv;
+        }
+    }
+
+    const float limAtk = coeffFor(0.001, sr);
+    const float limRel = coeffFor(0.05, sr);
+    for (int i = 0; i < num; ++i)
+    {
+        const float s = juce::jmax(std::abs(oL[i]), std::abs(oR[i]));
+        limitEnv += (s > limitEnv ? limAtk : limRel) * (s - limitEnv);
+        float g = 1.0f;
+        if (limitEnv > 0.95f)
+            g = 0.95f / (limitEnv + 1.0e-8f);
+        oL[i] = juce::jlimit(-0.99f, 0.99f, oL[i] * g);
+        oR[i] = juce::jlimit(-0.99f, 0.99f, oR[i] * g);
+    }
+    sanitize(buffer, start, num);
 }
 
 void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
@@ -230,7 +755,6 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                                   int startSample,
                                   int numSamples)
 {
-    // Closed/pedal hats choke the open hat; retriggering an open hat does too.
     juce::MidiBuffer withChoke;
     for (const auto metadata : midiMessages)
     {
@@ -244,35 +768,57 @@ void SimpleSynth::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
         withChoke.addEvent(message, metadata.samplePosition);
     }
 
-    synth.renderNextBlock(outputBuffer, withChoke, startSample, numSamples);
-    // Dense song-form choruses (imported melody + full arrangement) otherwise
-    // tick a few tenths over 0 dBFS on the preview bus.
-    outputBuffer.applyGain(startSample, numSamples, 0.82f);
-}
+    ensureAuxSize(startSample, numSamples);
+    delaySend.clear(startSample, numSamples);
+    reverbSend.clear(startSample, numSamples);
+    musicBus.clear(startSample, numSamples);
+    bassBus.clear(startSample, numSamples);
+    drumBus.clear(startSample, numSamples);
 
-void SimpleSynth::setKit(Genre genre)
-{
-    currentKit = genre;
-}
+    juce::MidiBuffer partMidi[4];
+    juce::MidiBuffer drumMidi;
+    splitMidi(withChoke, partMidi, drumMidi);
 
-void SimpleSynth::setupVoices()
-{
-    synth.clearVoices();
-    synth.clearSounds();
-    
-    for (int i = 0; i < 32; ++i)
-        synth.addVoice(new PartVoice());
-    for (int i = 0; i < 16; ++i)
-        synth.addVoice(new DrumVoice());
+    for (int i = 0; i < 4; ++i)
+    {
+        partBuffer.clear(startSample, numSamples);
+        pitched[i].renderNextBlock(partBuffer, partMidi[i], startSample, numSamples);
+        applyPartInserts(i, partBuffer, startSample, numSamples);
+        auto& dest = (i == 1) ? bassBus : musicBus;
+        for (int ch = 0; ch < 2; ++ch)
+            dest.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples);
+    }
 
-    // Channels 1-4: pitched parts. Channel 10: GM drums. Remaining channels: lead.
-    synth.addSound(new PartSound(Timbre::Keys, 1, 1));
-    synth.addSound(new PartSound(Timbre::Bass, 2, 2));
-    synth.addSound(new PartSound(Timbre::Lead, 3, 3));
-    synth.addSound(new PartSound(Timbre::Piano, 4, 4));
-    synth.addSound(new PartSound(Timbre::Lead, 5, 9));
-    synth.addSound(new DrumSound(currentKit));
-    synth.addSound(new PartSound(Timbre::Lead, 11, 16));
+    partBuffer.clear(startSample, numSamples);
+    drums.renderNextBlock(partBuffer, drumMidi, startSample, numSamples);
+    for (int ch = 0; ch < 2; ++ch)
+        drumBus.addFrom(ch, startSample, partBuffer, juce::jmin(ch, 1), startSample, numSamples, 1.05f);
+
+    applyBusMix(startSample, numSamples);
+
+    for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+    {
+        const int src = juce::jmin(ch, 1);
+        outputBuffer.addFrom(ch, startSample, musicBus, src, startSample, numSamples);
+        outputBuffer.addFrom(ch, startSample, bassBus, src, startSample, numSamples);
+        outputBuffer.addFrom(ch, startSample, drumBus, src, startSample, numSamples);
+    }
+
+    dryBackup.copyFrom(0, startSample, outputBuffer, 0, startSample, numSamples);
+    if (outputBuffer.getNumChannels() > 1)
+        dryBackup.copyFrom(1, startSample, outputBuffer, 1, startSample, numSamples);
+    else
+        dryBackup.copyFrom(1, startSample, outputBuffer, 0, startSample, numSamples);
+
+    const float dryPeak = outputBuffer.getMagnitude(startSample, numSamples);
+    applyMaster(outputBuffer, startSample, numSamples);
+    const float wetPeak = outputBuffer.getMagnitude(startSample, numSamples);
+    if (dryPeak > 0.02f && (!std::isfinite(wetPeak) || wetPeak < dryPeak * 0.002f))
+    {
+        outputBuffer.copyFrom(0, startSample, dryBackup, 0, startSample, numSamples);
+        if (outputBuffer.getNumChannels() > 1)
+            outputBuffer.copyFrom(1, startSample, dryBackup, 1, startSample, numSamples);
+    }
 }
 
 bool DrumVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -328,7 +874,6 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
         decayMul = std::exp(-1.0 / std::max(0.01, seconds) / sr);
     };
 
-    // Default dusty lowpass off (coeff 1 = no filtering of the output)
     kitLpCoeff = 1.0;
 
     switch (midiNoteNumber)
@@ -372,7 +917,6 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
             kitLpCoeff = 0.90;
             break;
         case Genre::Trap:
-            // Punchy click + short body: the bass part already carries the long 808.
             kickStartHz = 110; kickEndHz = 48; kickPitchRate = 22; kickAmpRate = 10;
             kickClick = 0.42; kickDrive = 1.8; level = 0.15f * vel;
             toneHz = 190; toneMix = 0.3; noiseAmp = 0.85; noiseDecay = 42; bodyDecay = 14;
@@ -540,7 +1084,6 @@ float DrumVoice::nextSynthSample()
         }
         case Piece::Clap:
         {
-            // Three delayed noise bursts, band-passed
             auto burst = [&](double delay, double amp)
             {
                 const double t = noteTime - delay;

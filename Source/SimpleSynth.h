@@ -3,63 +3,66 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "Generators/MidiGenerator.h"
-
-// One timbre per generated part; parts are routed by MIDI channel.
-enum class Timbre
-{
-    Keys,   // chords: warm detuned saws through a low-pass
-    Bass,   // saturated sine, 808-style, +/-12 semitone pitch bend for slides
-    Lead,   // synth: saw/square blend with vibrato
-    Piano   // decaying additive partials
-};
+#include "SynthPatch.h"
+#include <vector>
 
 class PartSound : public juce::SynthesiserSound
 {
 public:
-    PartSound(Timbre t, int firstChannel, int lastChannel)
-        : timbre(t), lowChannel(firstChannel), highChannel(lastChannel) {}
+    PartSound(Part p, SynthPatch& patchToFollow)
+        : part(p), patch(patchToFollow) {}
 
     bool appliesToNote(int) override { return true; }
-    bool appliesToChannel(int channel) override { return channel >= lowChannel && channel <= highChannel; }
+    bool appliesToChannel(int channel) override { return channel == partChannel(part); }
 
-    const Timbre timbre;
-
-private:
-    const int lowChannel;
-    const int highChannel;
+    const Part part;
+    SynthPatch& patch;
 };
 
 class PartVoice : public juce::SynthesiserVoice
 {
 public:
     PartVoice();
-    
+
     bool canPlaySound(juce::SynthesiserSound* sound) override;
     void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int pitchWheel) override;
     void stopNote(float, bool allowTailOff) override;
     void pitchWheelMoved(int newValue) override;
     void controllerMoved(int, int) override {}
     void renderNextBlock(juce::AudioBuffer<float>&, int startSample, int numSamples) override;
-    
-private:
-    float nextSample();
-    void updateBend(int wheelValue);
 
-    Timbre timbre{Timbre::Keys};
-    juce::ADSR envelope;
+private:
+    void nextStereo(float& left, float& right);
+    double oscSample(const OscSettings& osc, double* phases, double hz, double dtBase, double pw) const;
+    void updateBend(int wheelValue);
+    static double polyBlep(double t, double dt);
+    static double wrap(double phase);
+    static double waveAt(OscWave wave, double phase, double dt, double pw, double fmRatio, double fmIndex);
+
+    SynthPatch* patch{nullptr};
+    juce::ADSR ampEnvelope;
+    juce::ADSR filtEnvelope;
     juce::dsp::StateVariableTPTFilter<float> filter;
     double preparedSampleRate{0.0};
 
-    double frequency{440.0};
+    double targetHz{440.0};
+    double currentHz{440.0};
     double bendRatio{1.0};
-    double phase{0.0};
-    double detunedPhase{0.0};
-    double vibratoPhase{0.0};
+    double noteHz{440.0};
+    int midiNote{60};
+    float velocity{0.8f};
     double noteTime{0.0};
-    float level{0.0f};
+    double lfoPhase{0.0};
+    double wowPhase{0.0};
+    juce::uint32 noiseState{1};
+
+    static constexpr int kMaxUnison = 7;
+    double osc1Phase[kMaxUnison]{};
+    double osc2Phase[kMaxUnison]{};
+    double subPhase{0.0};
+    double fmPhase{0.0};
 };
 
-// GM channel-10 percussion. Kit parameters follow the clip's genre.
 class DrumSound : public juce::SynthesiserSound
 {
 public:
@@ -128,24 +131,72 @@ private:
 class SimpleSynth
 {
 public:
-    static constexpr double releaseSeconds = 0.4;
+    static constexpr double releaseSeconds = 2.4;
 
     SimpleSynth();
     ~SimpleSynth() = default;
-    
+
     void prepare(double sampleRate, int samplesPerBlock);
     void releaseResources();
     void setKit(Genre genre);
-    
+    void setTempo(double bpm);
+    Genre getKit() const { return currentKit; }
+
+    SynthPatch getPatch(Part part) const;
+    void setPatch(Part part, const SynthPatch& patch);
+    MixSettings getMix() const { return mix; }
+    void setMix(const MixSettings& settings);
+    void setSidechainAmount(float amount);
+    void loadGenreDefaults(Genre genre);
+    int getSoundVersion() const { return soundVersion; }
+
+    void writeSoundXml(juce::XmlElement& xml) const;
+    void readSoundXml(const juce::XmlElement& xml);
+
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                         const juce::MidiBuffer& midiMessages,
                         int startSample,
                         int numSamples);
 
 private:
-    juce::Synthesiser synth;
+    void setupVoices();
+    void prepareFx(double sampleRate, int samplesPerBlock);
+    void applyPartInserts(int partIndex, juce::AudioBuffer<float>& buffer, int start, int num);
+    void applyBusMix(int start, int num);
+    void applyMaster(juce::AudioBuffer<float>& buffer, int start, int num);
+    void ensureAuxSize(int start, int num);
+
+    juce::Synthesiser pitched[4];
+    juce::Synthesiser drums;
+    SynthPatch patches[4];
+    MixSettings mix;
     Genre currentKit{Genre::Pop};
     double currentSampleRate{44100.0};
-    
-    void setupVoices();
+    double tempoBpm{120.0};
+    int currentBlockSize{512};
+    int soundVersion{0};
+
+    juce::AudioBuffer<float> partBuffer;
+    juce::AudioBuffer<float> musicBus;
+    juce::AudioBuffer<float> bassBus;
+    juce::AudioBuffer<float> drumBus;
+    juce::AudioBuffer<float> delaySend;
+    juce::AudioBuffer<float> reverbSend;
+    juce::AudioBuffer<float> dryBackup;
+
+    juce::dsp::Chorus<float> chorus[4];
+    juce::dsp::Reverb reverb;
+    std::vector<float> delayBufL, delayBufR;
+    int delayWrite{0};
+    float hpStateL{0.0f}, hpStateR{0.0f};
+    float shelfStateL{0.0f}, shelfStateR{0.0f};
+    float kickLp{0.0f};
+    float scEnv{0.0f};
+    float drumEnv{0.0f};
+    float bassEnv{0.0f};
+    float musicEnv{0.0f};
+    float masterEnv{0.0f};
+    float limitEnv{0.0f};
+    juce::uint32 vinylState{1234567};
+    double vinylPhase{0.0};
 };
