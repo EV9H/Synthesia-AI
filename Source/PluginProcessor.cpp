@@ -339,6 +339,7 @@ void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams
     clipParams = params;
     clipParams.progression.clear();
     previewTempo.store(params.tempo);
+    simpleSynth.setKit(params.genre);
     setGeneratedClip(std::move(clip), params.lengthInBars * 4.0);
 }
 

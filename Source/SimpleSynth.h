@@ -2,6 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
+#include "Generators/MidiGenerator.h"
 
 // One timbre per generated part; parts are routed by MIDI channel.
 enum class Timbre
@@ -58,6 +59,63 @@ private:
     float level{0.0f};
 };
 
+// GM channel-10 percussion. Kit parameters follow the clip's genre.
+class DrumSound : public juce::SynthesiserSound
+{
+public:
+    explicit DrumSound(Genre& kitToFollow) : kit(kitToFollow) {}
+
+    bool appliesToNote(int) override { return true; }
+    bool appliesToChannel(int channel) override { return channel == 10; }
+
+    Genre& kit;
+};
+
+class DrumVoice : public juce::SynthesiserVoice
+{
+public:
+    bool canPlaySound(juce::SynthesiserSound* sound) override;
+    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int pitchWheel) override;
+    void stopNote(float, bool allowTailOff) override;
+    void pitchWheelMoved(int newValue) override;
+    void controllerMoved(int, int) override {}
+    void renderNextBlock(juce::AudioBuffer<float>&, int startSample, int numSamples) override;
+
+private:
+    float nextSample();
+    float noise();
+
+    enum class Piece { Kick, Snare, Clap, ClosedHat, OpenHat, Tom, Crash, Ride, Perc };
+
+    Piece piece{Piece::Kick};
+    Genre kit{Genre::Pop};
+    double noteTime{0.0};
+    double bodyPhase{0.0};
+    double clickPhase{0.0};
+    double bendRatio{1.0};
+    double kickStartHz{150.0};
+    double kickEndHz{50.0};
+    double kickPitchRate{20.0};
+    double kickAmpRate{8.0};
+    double kickClick{0.35};
+    double kickDrive{1.6};
+    double toneHz{180.0};
+    double toneMix{0.45};
+    double noiseAmp{0.5};
+    double noiseDecay{25.0};
+    double bodyDecay{12.0};
+    double hpState{0.0};
+    double lpState{0.0};
+    double bpState{0.0};
+    double kitLpState{0.0};
+    double kitLpCoeff{1.0};
+    double env{1.0};
+    double decayMul{0.999};
+    float level{0.0f};
+    juce::uint32 noiseState{1};
+    bool honourNoteOff{false};
+};
+
 class SimpleSynth
 {
 public:
@@ -68,6 +126,7 @@ public:
     
     void prepare(double sampleRate, int samplesPerBlock);
     void releaseResources();
+    void setKit(Genre genre);
     
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                         const juce::MidiBuffer& midiMessages,
@@ -76,6 +135,7 @@ public:
 
 private:
     juce::Synthesiser synth;
+    Genre currentKit{Genre::Pop};
     double currentSampleRate{44100.0};
     
     void setupVoices();
