@@ -1,5 +1,6 @@
 #include "SimpleSynth.h"
 #include "DrumLibrary.h"
+#include "InstrumentLibrary.h"
 #include <cmath>
 #include <vector>
 
@@ -238,6 +239,14 @@ void PartVoice::startNote(int midiNoteNumber, float vel,
         osc2Phase[i] = wrap(0.27 * (i + 3));
     }
 
+    instSample = nullptr;
+    instPos = 0.0;
+    if (patch->sampleKind != SampleKind::Off)
+    {
+        InstrumentLibrary::get().ensureLoaded();
+        instSample = InstrumentLibrary::get().find(patch->sampleKind, midiNoteNumber, vel);
+    }
+
     ampEnvelope.reset();
     filtEnvelope.reset();
     ampEnvelope.noteOn();
@@ -294,6 +303,60 @@ double PartVoice::oscSample(const OscSettings& osc, double* phases, double hz, d
     return (sum / static_cast<double>(n)) * osc.mix;
 }
 
+float PartVoice::readInstSample(double hz)
+{
+    if (instSample == nullptr)
+        return 0.0f;
+
+    const auto& buf = instSample->data;
+    const int n = buf.getNumSamples();
+    if (n < 2)
+        return 0.0f;
+
+    const float* d = buf.getReadPointer(0);
+    const double sr = getSampleRate();
+    const double transpose = std::pow(2.0, (midiNote - instSample->rootNote) / 12.0);
+    const double inc = (instSample->sourceRate / juce::jmax(1.0, sr)) * transpose
+                     * (hz / juce::jmax(1.0, noteHz));
+
+    auto lerp = [&](double pos) -> float
+    {
+        if (pos < 0.0 || pos >= n - 1)
+            return 0.0f;
+        const int i0 = (int) pos;
+        const float frac = (float) (pos - i0);
+        return d[i0] + frac * (d[i0 + 1] - d[i0]);
+    };
+
+    double pos = instPos;
+    float s = 0.0f;
+    if (instSample->loopable && isKeyDown())
+    {
+        const int ls = instSample->loopStart;
+        const int le = juce::jmax(ls + 8, instSample->loopEnd);
+        const int loopLen = le - ls;
+        if (loopLen > 8 && pos >= le)
+            pos = ls + std::fmod(pos - ls, (double) loopLen);
+        const int xfade = juce::jmin(64, loopLen / 4);
+        if (xfade > 4 && pos >= le - xfade)
+        {
+            const float fade = (float) (le - pos) / (float) xfade;
+            s = fade * lerp(pos) + (1.0f - fade) * lerp(ls + (pos - (le - xfade)));
+        }
+        else
+        {
+            s = lerp(pos);
+        }
+    }
+    else
+    {
+        s = lerp(pos);
+    }
+
+    instPos = pos + inc;
+    return s;
+}
+
 void PartVoice::nextStereo(float& left, float& right)
 {
     left = right = 0.0f;
@@ -325,23 +388,35 @@ void PartVoice::nextStereo(float& left, float& right)
 
     const double pw = juce::jlimit(0.05, 0.95, patch->osc1.pulseWidth + patch->lfoToPwm * 0.35 * lfo);
     const double dt = hz / sr;
+    const float sampleMix = (patch->sampleKind == SampleKind::Off || instSample == nullptr)
+                            ? 0.0f : juce::jlimit(0.0f, 1.0f, patch->sampleMix);
 
-    double value = oscSample(patch->osc1, osc1Phase, hz, dt, pw);
-    value += oscSample(patch->osc2, osc2Phase, hz, dt, pw);
-
-    if (patch->subMix > 0.001f)
+    double value = 0.0;
+    if (sampleMix < 0.90f)
     {
-        const double subHz = hz * std::pow(2.0, patch->subOctave);
-        const double subDt = subHz / sr;
-        value += std::sin(subPhase * twoPi) * patch->subMix;
-        subPhase = wrap(subPhase + subDt);
+        value = oscSample(patch->osc1, osc1Phase, hz, dt, pw);
+        value += oscSample(patch->osc2, osc2Phase, hz, dt, pw);
+
+        if (patch->subMix > 0.001f)
+        {
+            const double subHz = hz * std::pow(2.0, patch->subOctave);
+            const double subDt = subHz / sr;
+            value += std::sin(subPhase * twoPi) * patch->subMix;
+            subPhase = wrap(subPhase + subDt);
+        }
+
+        if (patch->noiseMix > 0.001f || patch->tineClick > 0.001f)
+        {
+            const float n = noiseSample(noiseState);
+            value += n * patch->noiseMix;
+            value += n * patch->tineClick * std::exp(-noteTime * 90.0);
+        }
     }
 
-    if (patch->noiseMix > 0.001f || patch->tineClick > 0.001f)
+    if (sampleMix > 0.005f)
     {
-        const float n = noiseSample(noiseState);
-        value += n * patch->noiseMix;
-        value += n * patch->tineClick * std::exp(-noteTime * 90.0);
+        const double sampled = (double) readInstSample(hz) * 1.15;
+        value = value * (1.0 - sampleMix) + sampled * sampleMix;
     }
 
     const float amp = ampEnvelope.getNextSample();
@@ -431,6 +506,7 @@ void SimpleSynth::setupVoices()
 void SimpleSynth::prepare(double sampleRate, int samplesPerBlock)
 {
     DrumLibrary::get().ensureLoaded();
+    InstrumentLibrary::get().ensureLoaded();
     currentSampleRate = sampleRate;
     currentBlockSize = samplesPerBlock;
     for (auto& s : pitched)

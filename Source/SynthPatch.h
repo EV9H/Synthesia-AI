@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Generators/MidiGenerator.h"
+#include "InstrumentLibrary.h"
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_core/juce_core.h>
 
@@ -78,6 +79,9 @@ struct SynthPatch
     float wowFlutter{0.0f};
     float tapeSat{0.0f};
     float vinylAmount{0.0f};
+
+    SampleKind sampleKind{SampleKind::Off};
+    float sampleMix{0.0f};   // 0 = synth only, 1 = sampled instrument
 
     void writeXml(juce::XmlElement& xml) const;
     static SynthPatch fromXml(const juce::XmlElement& xml);

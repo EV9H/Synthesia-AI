@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "Generators/MidiGenerator.h"
+#include "InstrumentLibrary.h"
 #include "SynthPatch.h"
 #include <vector>
 
@@ -34,6 +35,7 @@ public:
 private:
     void nextStereo(float& left, float& right);
     double oscSample(const OscSettings& osc, double* phases, double hz, double dtBase, double pw) const;
+    float readInstSample(double hz);
     void updateBend(int wheelValue);
     static double polyBlep(double t, double dt);
     static double wrap(double phase);
@@ -61,6 +63,9 @@ private:
     double osc2Phase[kMaxUnison]{};
     double subPhase{0.0};
     double fmPhase{0.0};
+
+    const InstrumentLibrary::Sample* instSample{nullptr};
+    double instPos{0.0};
 };
 
 class DrumSound : public juce::SynthesiserSound
