@@ -11,9 +11,9 @@ struct GenerationResult
     std::vector<ChordInfo> progression;
 };
 
-// Genre-aware arranger: builds a chord progression, then chords, bass, synth and piano
-// parts that follow it. Every part is always generated (each from its own random stream)
-// and then filtered, so a solo part matches the same part inside the full arrangement.
+// Genre-aware arranger: builds a chord progression, then chords, bass, synth, piano
+// and drums parts that follow it. Every part is always generated (each from its own
+// random stream) and then filtered, so a solo part matches the same part inside the mix.
 class ArrangementGenerator : public MidiGenerator
 {
 public:
