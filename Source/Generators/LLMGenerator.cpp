@@ -23,8 +23,37 @@ juce::MidiBuffer LLMGenerator::generate(const MidiGenerationParams& params)
         return juce::MidiBuffer();
     }
     
-    auto notes = parseNotesFromJSON(*response, params);
-    return notesToMidiBuffer(notes, params.tempo);
+    std::vector<int> channels;
+    auto notes = parseNotesFromJSON(*response, params, &channels);
+
+    juce::MidiBuffer buffer;
+    for (int channel = 1; channel <= 4; ++channel)
+    {
+        std::vector<Note> partNotes;
+        for (size_t i = 0; i < notes.size(); ++i)
+            if (channels[i] == channel)
+                partNotes.push_back(notes[i]);
+
+        if (!partNotes.empty())
+            buffer.addEvents(notesToMidiBuffer(partNotes, params.tempo, 960.0, channel), 0, -1, 0);
+    }
+    return buffer;
+}
+
+namespace
+{
+    const char* partGuidance(Part part)
+    {
+        switch (part)
+        {
+            case Part::Chords: return "chords: 3-5 note voicings (MIDI 48-79) with smooth voice leading, rhythm suited to the genre";
+            case Part::Bass:   return "bass: monophonic, MIDI 28-52, roots/fifths on strong beats with approach notes into chord changes";
+            case Part::Synth:  return "synth: lead melody or arpeggio, MIDI 62-91, chord tones on strong beats, a repeated motif with variation";
+            case Part::Piano:  return "piano: melodic line or comping, MIDI 48-84, complementing the synth";
+            case Part::All:    break;
+        }
+        return "";
+    }
 }
 
 juce::String LLMGenerator::buildPrompt(const MidiGenerationParams& params)
@@ -33,13 +62,31 @@ juce::String LLMGenerator::buildPrompt(const MidiGenerationParams& params)
     juce::String noteNames[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     
     juce::String prompt;
-    prompt << "Generate a MIDI melody with the following specifications:\n"
+    prompt << "Generate MIDI with the following specifications:\n"
            << "- Key: " << noteNames[params.rootNote] << " " << scaleNames[static_cast<int>(params.scale)] << "\n"
+           << "- Genre: " << genreName(params.genre) << "\n"
+           << "- Tempo: " << params.tempo << " BPM\n"
            << "- Length: " << params.lengthInBars << " bars (4/4 time)\n"
-           << "- Style: " << juce::String(params.stylePrompt) << "\n\n"
-           << "Return ONLY a JSON array of note objects with this exact format:\n"
-           << "[{\"pitch\": 60, \"start\": 0.0, \"duration\": 1.0, \"velocity\": 80}, ...]\n"
+           << "- Style: " << juce::String(params.stylePrompt) << "\n";
+
+    if (!params.progression.empty())
+    {
+        prompt << "- Chord progression (write over these chords):";
+        for (const auto& chord : params.progression)
+            prompt << " " << juce::String(chord.symbol) << " @" << chord.startBeat
+                   << "-" << (chord.startBeat + chord.lengthBeats);
+        prompt << " (beats)\n";
+    }
+
+    prompt << "- Parts to write:\n";
+    for (const auto part : allParts)
+        if (params.part == Part::All || params.part == part)
+            prompt << "  - " << partGuidance(part) << "\n";
+
+    prompt << "\nReturn ONLY a JSON array of note objects with this exact format:\n"
+           << "[{\"part\": \"synth\", \"pitch\": 60, \"start\": 0.0, \"duration\": 1.0, \"velocity\": 80}, ...]\n"
            << "where:\n"
+           << "- part: one of \"chords\", \"bass\", \"synth\", \"piano\"\n"
            << "- pitch: MIDI note number (0-127)\n"
            << "- start: start time in quarter notes from beginning\n"
            << "- duration: note duration in quarter notes\n"
@@ -120,8 +167,10 @@ std::optional<juce::String> LLMGenerator::callLLMAPI(const juce::String& prompt)
 }
 
 std::vector<Note> LLMGenerator::parseNotesFromJSON(const juce::String& jsonResponse,
-                                                   const MidiGenerationParams& params)
+                                                   const MidiGenerationParams& params,
+                                                   std::vector<int>* channels)
 {
+    const int defaultChannel = params.part == Part::All ? partChannel(Part::Synth) : partChannel(params.part);
     std::vector<Note> notes;
     
     // Extract JSON array from response (may have markdown code blocks)
@@ -184,6 +233,19 @@ std::vector<Note> LLMGenerator::parseNotesFromJSON(const juce::String& jsonRespo
             }
             
             notes.push_back(note);
+
+            if (channels != nullptr)
+            {
+                int channel = defaultChannel;
+                const auto partText = noteObj->getProperty("part").toString().toLowerCase();
+                for (const auto part : allParts)
+                    if (partText == juce::String(partName(part)).toLowerCase())
+                        channel = partChannel(part);
+
+                if (params.part != Part::All)
+                    channel = defaultChannel;
+                channels->push_back(channel);
+            }
         }
     }
     
