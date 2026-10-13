@@ -22,10 +22,83 @@ enum class Quantization
     Half
 };
 
+// Values are persisted in plugin state; append new types at the end.
 enum class GeneratorType
 {
     Markov,
-    LLM
+    LLM,
+    Genre
+};
+
+enum class Genre
+{
+    Pop = 0,
+    LoFiJazz,
+    House,
+    Trap,
+    RnB,
+    Cinematic
+};
+
+constexpr int numGenres = 6;
+
+inline const char* genreName(Genre genre)
+{
+    switch (genre)
+    {
+        case Genre::Pop:       return "Pop";
+        case Genre::LoFiJazz:  return "Lo-fi / Jazz";
+        case Genre::House:     return "EDM / House";
+        case Genre::Trap:      return "Trap / Hip-hop";
+        case Genre::RnB:       return "R&B / Neo-soul";
+        case Genre::Cinematic: return "Cinematic";
+    }
+    return "Pop";
+}
+
+// Each part is generated on its own MIDI channel so it can be split into tracks.
+enum class Part
+{
+    All = 0,
+    Chords,
+    Bass,
+    Synth,
+    Piano
+};
+
+constexpr Part allParts[] = { Part::Chords, Part::Bass, Part::Synth, Part::Piano };
+
+inline const char* partName(Part part)
+{
+    switch (part)
+    {
+        case Part::All:    return "All parts";
+        case Part::Chords: return "Chords";
+        case Part::Bass:   return "Bass";
+        case Part::Synth:  return "Synth";
+        case Part::Piano:  return "Piano";
+    }
+    return "All parts";
+}
+
+inline int partChannel(Part part)
+{
+    return part == Part::All ? 0 : static_cast<int>(part);
+}
+
+inline Part partFromChannel(int channel)
+{
+    return (channel >= 1 && channel <= 4) ? static_cast<Part>(channel) : Part::Synth;
+}
+
+// A chord placed on the timeline. Intervals are semitones above the root.
+struct ChordInfo
+{
+    double startBeat{0.0};
+    double lengthBeats{4.0};
+    int rootPitchClass{0};
+    std::vector<int> intervals;
+    std::string symbol;
 };
 
 struct MidiGenerationParams
@@ -37,6 +110,10 @@ struct MidiGenerationParams
     double tempo{120.0};
     std::string stylePrompt;
     unsigned int seed{0};  // 0 = non-deterministic
+    Genre genre{Genre::Pop};
+    Part part{Part::All};
+    // Harmonic context to write over; empty = the generator chooses a progression
+    std::vector<ChordInfo> progression;
 };
 
 struct Note
@@ -58,6 +135,7 @@ protected:
     std::vector<int> getScaleNotes(int rootNote, ScaleType scale);
     juce::MidiBuffer notesToMidiBuffer(const std::vector<Note>& notes, 
                                        double tempo, 
-                                       double ppq = 960.0);
+                                       double ppq = 960.0,
+                                       int channel = 1);
     double quantizationToQuarterNotes(Quantization quant);
 };

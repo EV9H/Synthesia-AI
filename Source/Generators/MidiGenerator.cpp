@@ -39,8 +39,10 @@ std::vector<int> MidiGenerator::getScaleNotes(int rootNote, ScaleType scale)
 
 juce::MidiBuffer MidiGenerator::notesToMidiBuffer(const std::vector<Note>& notes,
                                                    double tempo,
-                                                   double ppq)
+                                                   double ppq,
+                                                   int channel)
 {
+    juce::ignoreUnused(tempo);
     juce::MidiBuffer buffer;
     
     // Convert quarter notes to ticks (ppq = pulses per quarter note)
@@ -49,9 +51,9 @@ juce::MidiBuffer MidiGenerator::notesToMidiBuffer(const std::vector<Note>& notes
         int startTick = static_cast<int>(note.startTime * ppq);
         int duration = static_cast<int>(note.duration * ppq);
         
-        buffer.addEvent(juce::MidiMessage::noteOn(1, note.pitch, 
+        buffer.addEvent(juce::MidiMessage::noteOn(channel, note.pitch, 
                        static_cast<juce::uint8>(note.velocity)), startTick);
-        buffer.addEvent(juce::MidiMessage::noteOff(1, note.pitch), 
+        buffer.addEvent(juce::MidiMessage::noteOff(channel, note.pitch), 
                        startTick + duration);
     }
     

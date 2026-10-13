@@ -37,17 +37,20 @@ if(APPLE)
     )
 endif()
 
-# Source files
-target_sources(SynthesiaAI
-    PRIVATE
-        Source/PluginProcessor.cpp
-        Source/PluginEditor.cpp
-        Source/Generators/MidiGenerator.cpp
-        Source/Generators/MarkovGenerator.cpp
-        Source/Generators/LLMGenerator.cpp
-        Source/SimpleSynth.cpp
-        Source/MidiExporter.cpp
+# Source files (shared with the SynthesiaRender host below)
+set(SYNTHESIA_SOURCES
+    Source/PluginProcessor.cpp
+    Source/PluginEditor.cpp
+    Source/Generators/MidiGenerator.cpp
+    Source/Generators/MarkovGenerator.cpp
+    Source/Generators/LLMGenerator.cpp
+    Source/Generators/GenreProfiles.cpp
+    Source/Generators/ArrangementGenerator.cpp
+    Source/Music/MusicTheory.cpp
+    Source/SimpleSynth.cpp
+    Source/MidiExporter.cpp
 )
+target_sources(SynthesiaAI PRIVATE ${SYNTHESIA_SOURCES})
 
 # JUCE modules
 target_compile_definitions(SynthesiaAI
@@ -77,13 +80,7 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
     juce_add_console_app(SynthesiaRender PRODUCT_NAME "SynthesiaRender")
     target_sources(SynthesiaRender PRIVATE
         Tools/RenderHost/RenderHost.cpp
-        Source/PluginProcessor.cpp
-        Source/PluginEditor.cpp
-        Source/Generators/MidiGenerator.cpp
-        Source/Generators/MarkovGenerator.cpp
-        Source/Generators/LLMGenerator.cpp
-        Source/SimpleSynth.cpp
-        Source/MidiExporter.cpp)
+        ${SYNTHESIA_SOURCES})
     target_include_directories(SynthesiaRender PRIVATE Source)
     target_compile_definitions(SynthesiaRender PRIVATE
         JucePlugin_Name="Synthesia AI"

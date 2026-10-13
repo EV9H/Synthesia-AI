@@ -11,7 +11,7 @@ juce::MidiBuffer MarkovGenerator::generate(const MidiGenerationParams& params)
         rng.seed(params.seed);
 
     auto notes = generateMarkovSequence(params);
-    return notesToMidiBuffer(notes, params.tempo);
+    return notesToMidiBuffer(notes, params.tempo, 960.0, partChannel(Part::Synth));
 }
 
 std::vector<Note> MarkovGenerator::generateMarkovSequence(const MidiGenerationParams& params)

@@ -1,0 +1,82 @@
+#pragma once
+
+#include "MidiGenerator.h"
+#include "../Music/MusicTheory.h"
+#include <string>
+#include <vector>
+
+enum class ChordStyle { Sustained, Pulse, Stabs, Arpeggiated, Comping };
+enum class BassStyle { Pattern, Walking };
+enum class LeadStyle { Melody, Arp };
+enum class PianoStyle { Broken, Comp, Melodic, Arpeggio };
+
+struct ProgressionTemplate
+{
+    std::string tokens;     // see theory::parseChordToken
+    double barsPerChord{1.0};
+};
+
+struct MelodyProfile
+{
+    int low{60};
+    int high{84};
+    double density{0.5};        // 0..1, chance of onsets on metrically strong steps
+    double syncopation{0.3};    // extra weight on off-beats
+    double restChance{0.3};     // breathing room / detached notes
+    double longNoteChance{0.2};
+    int motifBars{2};
+    bool useExtensions{false};  // 7ths/9ths count as chord tones on strong beats
+    bool dyads{false};          // add a harmony note under strong beats
+    int velocity{90};
+};
+
+struct ArpProfile
+{
+    int low{60};
+    int high{88};
+    std::vector<std::vector<int>> shapes;   // index sequences into the stacked chord tones
+    double gate{0.8};
+    int velocity{88};
+};
+
+// Pattern strings are 16 steps (one bar of 16ths):
+//   chords/piano: 'X' accent, 'x' hit, 'g' ghost, '-' hold, '.' rest
+//   bass:         'R' root, 'F' fifth, 'O' octave, 'T' third, 'A' approach to next root,
+//                 lowercase = ghost note, '-' hold, '.' rest
+struct GenreProfile
+{
+    Genre genre;
+    double defaultTempo;
+    Quantization defaultGrid;
+    int defaultExtension;   // 3 triads, 7, 9, 11
+
+    std::vector<ProgressionTemplate> majorProgressions;
+    std::vector<ProgressionTemplate> minorProgressions;
+
+    ChordStyle chordStyle;
+    std::vector<std::string> chordPatterns;
+    theory::VoicingOptions chordVoicing;
+    ArpProfile chordArp;
+
+    BassStyle bassStyle;
+    std::vector<std::string> bassPatterns;
+    int bassLow;
+    int bassHigh;
+    double slideChance;
+
+    LeadStyle leadStyle;
+    MelodyProfile leadMelody;
+    ArpProfile leadArp;
+
+    PianoStyle pianoStyle;
+    std::vector<std::string> pianoPatterns;
+    theory::VoicingOptions pianoVoicing;
+    MelodyProfile pianoMelody;
+    ArpProfile pianoArp;
+
+    double swing;           // 0.5 = straight, e.g. 0.62 = swung
+    bool swingSixteenths;
+    double anticipation;    // chance a hit just before a chord change plays the next chord
+};
+
+const GenreProfile& getGenreProfile(Genre genre);
