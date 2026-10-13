@@ -160,8 +160,8 @@ namespace
         p.minorProgressions = { { "1 6", 2.0 }, { "1 6 3 7" }, { "1 4 6 5D" }, { "1 b2 1 6" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X-------x-------", "X---....----x---", "X-----x-........",
-                            "X-----------x---", "X-------........" };
+        p.chordPatterns = { "X---x---X---x---", "X-----x---x-----", "X-..x-----x-....",
+                            "X-------x-x-----", "X---....----x---", "X-----x-........" };
         p.chordVoicing = { 52, 71, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;

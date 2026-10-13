@@ -1,6 +1,7 @@
 #include "ArrangementGenerator.h"
 #include "ArrangementPlan.h"
 #include "../StyleProfile.h"
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <map>
@@ -521,6 +522,30 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
             case Part::All:    break;
         }
 
+        if (part != Part::Drums && part != Part::Bass)
+        {
+            for (int bar = 0; bar + 1 < params.lengthInBars; ++bar)
+            {
+                const auto* section = ctx.sectionAt(bar * 4.0);
+                const auto* nextSection = ctx.sectionAt((bar + 1) * 4.0);
+                if (section == nullptr || nextSection == nullptr || section->kind == nextSection->kind)
+                    continue;
+                if (nextSection->kind != SectionKind::Chorus && nextSection->kind != SectionKind::Drop)
+                    continue;
+                const double muteFrom = bar * 4.0 + 3.0;
+                const double muteTo = (bar + 1) * 4.0;
+                notes.erase(std::remove_if(notes.begin(), notes.end(),
+                                           [&](const PartNote& n)
+                                           {
+                                               return n.start >= muteFrom && n.start < muteTo;
+                                           }),
+                            notes.end());
+                for (auto& n : notes)
+                    if (n.start < muteFrom && n.start + n.length > muteFrom)
+                        n.length = juce::jmax(0.05, muteFrom - n.start);
+            }
+        }
+
         if (part != Part::Drums)
             applySwing(notes, swing, swingSixteenths);
         finalise(notes, ctx.totalBeats);
@@ -642,8 +667,25 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                : hit.symbol == 'g' ? baseVelocity - 25
                                                    : baseVelocity) * (0.40f + 0.60f * energy));
 
-            for (int pitch : voicings[static_cast<size_t>(index)])
-                notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, 5) });
+            const auto& voicing = voicings[static_cast<size_t>(index)];
+            size_t from = 0;
+            size_t to = voicing.size();
+            if (hit.symbol == 'g' && to > 2)
+            {
+                from = to - 2;
+            }
+            else if (hit.length >= 4 && to > 3 && uniform(rng) < 0.6)
+            {
+                from = 1;
+            }
+            else if (hit.length <= 2 && to > 3 && uniform(rng) < 0.4)
+            {
+                from = 1;
+            }
+            if (bar % 8 == 7 && hit.step >= 8 && hit.symbol != 'X')
+                continue;
+            for (size_t i = from; i < to; ++i)
+                notes.push_back({ voicing[i], start, length - 0.02, humanise(velocity, rng, 5) });
         }
     }
 
@@ -1527,6 +1569,17 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const float density = ctx.densityAt(part, start);
             if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy * density)
                 continue;
+
+            // Call-and-response: piano answers the second bar of each 2-bar cell;
+            // synth/lead leaves that bar more open.
+            const double beatInTwoBars = std::fmod(start, 8.0);
+            if (!cadenceNote)
+            {
+                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.72)
+                    continue;
+                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.55)
+                    continue;
+            }
 
             int registerShift = 0;
             if (energy < 0.45f && pitch + 12 <= role.high)
