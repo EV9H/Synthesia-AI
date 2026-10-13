@@ -1,5 +1,6 @@
 #include "DrumLibrary.h"
 #include "DrumBinaryData.h"
+#include <vector>
 
 namespace
 {
@@ -73,17 +74,22 @@ bool DrumLibrary::isOpenHat(int midiNote)
     return midiNote == 46;
 }
 
+bool DrumLibrary::isPedalHat(int midiNote)
+{
+    return midiNote == 44;
+}
+
+const DrumLibrary::Sample* DrumLibrary::findKey(const std::string& key) const
+{
+    const auto it = table.find(key);
+    return it != table.end() ? &it->second : nullptr;
+}
+
 const DrumLibrary::Sample* DrumLibrary::lookup(const char* prefix, const char* piece, bool preferHard) const
 {
     const std::string hard = std::string(prefix) + "_" + piece + "_hard";
     const std::string soft = std::string(prefix) + "_" + piece + "_soft";
     const std::string single = std::string(prefix) + "_" + piece;
-
-    auto findKey = [this](const std::string& key) -> const Sample*
-    {
-        const auto it = table.find(key);
-        return it != table.end() ? &it->second : nullptr;
-    };
 
     if (preferHard)
     {
@@ -97,10 +103,54 @@ const DrumLibrary::Sample* DrumLibrary::lookup(const char* prefix, const char* p
     return findKey(hard);
 }
 
-const DrumLibrary::Sample* DrumLibrary::find(Genre genre, DrumPiece piece, float velocity) const
+const DrumLibrary::Sample* DrumLibrary::find(Genre genre, DrumPiece piece, float velocity, int midiNote) const
 {
     const char* prefix = prefixFor(genre);
     const bool hard = velocity >= 0.55f;
+
+    if (isPedalHat(midiNote) || midiNote == 44)
+    {
+        if (auto* pedal = findKey(std::string(prefix) + "_pedal"))
+            return pedal;
+    }
+
+    if (piece == DrumPiece::ClosedHat || piece == DrumPiece::OpenHat)
+    {
+        const char* name = pieceName(piece);
+        std::vector<const Sample*> variants;
+        auto add = [&](const std::string& key)
+        {
+            if (auto* s = findKey(key))
+            {
+                for (auto* existing : variants)
+                    if (existing == s)
+                        return;
+                variants.push_back(s);
+            }
+        };
+
+        const char* suffixes[] = { "", "_rr1", "_rr2", "_rr3" };
+        for (const char* suffix : suffixes)
+        {
+            const std::string stem = std::string(prefix) + "_" + name + suffix;
+            if (hard)
+            {
+                add(stem + "_hard");
+                add(stem);
+                add(stem + "_soft");
+            }
+            else
+            {
+                add(stem + "_soft");
+                add(stem);
+                add(stem + "_hard");
+            }
+        }
+
+        if (!variants.empty())
+            return variants[(roundRobin++) % variants.size()];
+    }
+
     if (auto* sample = lookup(prefix, pieceName(piece), hard))
         return sample;
 
@@ -117,52 +167,58 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
     float gain = 0.5f;
     switch (piece)
     {
-        case DrumPiece::Kick:      gain = 0.52f; break;
-        case DrumPiece::Snare:     gain = 0.48f; break;
-        case DrumPiece::Clap:      gain = 0.42f; break;
-        case DrumPiece::ClosedHat: gain = 0.32f; break;
-        case DrumPiece::OpenHat:   gain = 0.34f; break;
-        case DrumPiece::Tom:       gain = 0.40f; break;
-        case DrumPiece::Crash:     gain = 0.26f; break;
-        case DrumPiece::Ride:      gain = 0.28f; break;
-        case DrumPiece::Perc:      gain = 0.30f; break;
+        case DrumPiece::Kick:      gain = 0.50f; break;
+        case DrumPiece::Snare:     gain = 0.46f; break;
+        case DrumPiece::Clap:      gain = 0.40f; break;
+        case DrumPiece::ClosedHat: gain = 0.52f; break;
+        case DrumPiece::OpenHat:   gain = 0.50f; break;
+        case DrumPiece::Tom:       gain = 0.38f; break;
+        case DrumPiece::Crash:     gain = 0.24f; break;
+        case DrumPiece::Ride:      gain = 0.30f; break;
+        case DrumPiece::Perc:      gain = 0.32f; break;
     }
 
     switch (genre)
     {
         case Genre::House:
-            if (piece == DrumPiece::Kick) gain = 0.38f;
-            if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.9f;
-            if (piece == DrumPiece::ClosedHat) gain = 0.34f;
+            if (piece == DrumPiece::Kick) gain = 0.36f;
+            if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.88f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.54f;
+            if (piece == DrumPiece::OpenHat) gain = 0.48f;
             break;
         case Genre::Trap:
-            if (piece == DrumPiece::Kick) gain = 0.26f;   // bass already carries the long 808
-            if (piece == DrumPiece::ClosedHat) gain = 0.30f;
+            if (piece == DrumPiece::Kick) gain = 0.24f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.50f;
+            if (piece == DrumPiece::OpenHat) gain = 0.44f;
             break;
         case Genre::LoFiJazz:
-            gain *= 0.92f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.46f;
+            else if (piece == DrumPiece::Ride) gain = 0.34f;
+            else
+                gain *= 0.90f;
             break;
         case Genre::Cinematic:
-            if (piece == DrumPiece::Kick) gain = 0.50f;
-            if (piece == DrumPiece::Crash) gain = 0.30f;
+            if (piece == DrumPiece::Kick) gain = 0.48f;
+            if (piece == DrumPiece::Crash) gain = 0.28f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.40f;
             break;
         case Genre::Pop:
         case Genre::RnB:
             break;
     }
 
-    return gain * 0.82f;
+    return gain * 0.78f;
 }
 
 double DrumLibrary::kitLowpassCoeff(Genre genre) const
 {
     switch (genre)
     {
-        case Genre::LoFiJazz:  return 0.42;
-        case Genre::RnB:       return 0.55;
-        case Genre::Cinematic: return 0.62;
-        case Genre::Trap:      return 0.88;
-        case Genre::House:     return 0.94;
+        case Genre::LoFiJazz:  return 0.82;
+        case Genre::RnB:       return 0.86;
+        case Genre::Cinematic: return 0.84;
+        case Genre::Trap:      return 0.92;
+        case Genre::House:     return 0.96;
         case Genre::Pop:
         default:               return 1.0;
     }
@@ -195,17 +251,23 @@ void DrumLibrary::load()
 #define LOAD(name) loadOne(#name, DrumBinaryData::name##_wav, DrumBinaryData::name##_wavSize)
     LOAD(house_kick); LOAD(house_snare); LOAD(house_clap); LOAD(house_ch); LOAD(house_oh);
     LOAD(house_tom); LOAD(house_crash); LOAD(house_ride); LOAD(house_perc);
+    LOAD(house_ch_rr1); LOAD(house_ch_rr2); LOAD(house_oh_rr1); LOAD(house_pedal);
     LOAD(trap_kick); LOAD(trap_snare); LOAD(trap_clap); LOAD(trap_ch); LOAD(trap_oh);
     LOAD(trap_tom); LOAD(trap_crash); LOAD(trap_perc);
+    LOAD(trap_ch_rr1); LOAD(trap_ch_rr2); LOAD(trap_oh_rr1); LOAD(trap_oh_rr2); LOAD(trap_pedal);
     LOAD(lofi_kick_soft); LOAD(lofi_kick_hard); LOAD(lofi_snare_soft); LOAD(lofi_snare_hard);
     LOAD(lofi_clap); LOAD(lofi_ch); LOAD(lofi_oh); LOAD(lofi_tom); LOAD(lofi_crash);
     LOAD(lofi_ride); LOAD(lofi_perc);
+    LOAD(lofi_ch_rr1); LOAD(lofi_ch_rr2); LOAD(lofi_oh_rr1); LOAD(lofi_pedal);
     LOAD(pop_kick_soft); LOAD(pop_kick_hard); LOAD(pop_snare_soft); LOAD(pop_snare_hard);
     LOAD(pop_clap); LOAD(pop_ch); LOAD(pop_oh); LOAD(pop_tom); LOAD(pop_crash); LOAD(pop_perc);
+    LOAD(pop_ch_rr1); LOAD(pop_oh_rr1); LOAD(pop_pedal);
     LOAD(rnb_kick_soft); LOAD(rnb_kick_hard); LOAD(rnb_snare_soft); LOAD(rnb_snare_hard);
     LOAD(rnb_clap); LOAD(rnb_ch); LOAD(rnb_oh); LOAD(rnb_tom); LOAD(rnb_crash); LOAD(rnb_perc);
+    LOAD(rnb_ch_rr1); LOAD(rnb_oh_rr1); LOAD(rnb_pedal);
     LOAD(cine_kick_soft); LOAD(cine_kick_hard); LOAD(cine_snare_soft); LOAD(cine_snare_hard);
     LOAD(cine_clap); LOAD(cine_ch); LOAD(cine_oh); LOAD(cine_tom); LOAD(cine_crash);
     LOAD(cine_ride); LOAD(cine_perc);
+    LOAD(cine_ch_rr1); LOAD(cine_oh_rr1); LOAD(cine_pedal);
 #undef LOAD
 }

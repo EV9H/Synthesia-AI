@@ -39,7 +39,11 @@ Hardware recordings of a Roland TR-8, released as CC0.
 | `house_snare.wav` | `TR8/SD/005_909_Snare_Drum_1.wav` |
 | `house_clap.wav` | `TR8/PERC/019_909_Hand_Clap.wav` |
 | `house_ch.wav` | `TR8/HATS/008_909_Closed_HiHat.wav` |
+| `house_ch_rr1.wav` | `TR8/HATS/010_909_Closed_HiHat_Short.wav` |
+| `house_ch_rr2.wav` | `TR8/HATS/012_707_Closed_HiHat.wav` |
 | `house_oh.wav` | `TR8/HATS/007_909_Open_HiHat.wav` |
+| `house_oh_rr1.wav` | `TR8/HATS/009_909_Open_HiHat_Short.wav` |
+| `house_pedal.wav` | `TR8/HATS/010_909_Closed_HiHat_Short.wav` (short fade) |
 | `house_tom.wav` | `TR8/TOMS/010_909_Low_Tom.wav` |
 | `house_crash.wav` | `TR8/HATS/020_909_Crash_Cymbal.wav` |
 | `house_ride.wav` | `TR8/HATS/026_909_Ride_Cymbal.wav` |
@@ -60,7 +64,12 @@ free.” Redistributed by TidalCycles under CC0 1.0.
 | `trap_snare.wav` | `sd8/SD5050.WAV` |
 | `trap_clap.wav` | `cp8/CP.WAV` |
 | `trap_ch.wav` | `ch8/CH.WAV` |
+| `trap_ch_rr1.wav` | MckAudio `TR8/HATS/002_808_Closed_HiHat.wav` |
+| `trap_ch_rr2.wav` | MckAudio `TR8/HATS/004_808_Closed_HiHat_Short.wav` |
 | `trap_oh.wav` | `oh8/OH50.WAV` |
+| `trap_oh_rr1.wav` | `oh8/OH25.WAV` |
+| `trap_oh_rr2.wav` | `oh8/OH10.WAV` |
+| `trap_pedal.wav` | MckAudio `TR8/HATS/004_808_Closed_HiHat_Short.wav` |
 | `trap_tom.wav` | `lt8/LT50.WAV` |
 | `trap_crash.wav` | `cy8/CY5050.WAV` |
 | `trap_perc.wav` | `rs8/RS.WAV` |
@@ -74,7 +83,8 @@ Freesound recordings (or CC0 donations). Sonic Pi documents the mapping at:
 - License: https://creativecommons.org/publicdomain/zero/1.0/
 
 Lo-fi (`lofi_*`): `drum_bass_{soft,hard}`, `drum_snare_{soft,hard}`,
-`perc_snap`, `drum_cymbal_closed`, `drum_cymbal_open`, `drum_tom_lo_soft`,
+`perc_snap`, `hat_gnu` (closed), `hat_tap` / `hat_psych` (closed RR),
+`drum_cymbal_open` / `hat_zan` (open), `drum_cymbal_pedal`, `drum_tom_lo_soft`,
 `drum_splash_soft`, `ride_via` (https://freesound.org/people/trivialAccapella/sounds/425448/),
 `perc_snap2`.
 
@@ -96,5 +106,26 @@ Cinematic (`cine_*`): `drum_bass_hard`, `bd_boom` (https://freesound.org/people/
 `drum_tom_hi_hard`.
 
 Acoustic kit pieces with `_soft` / `_hard` filenames are velocity layers
-(soft below velocity ≈ 0.55, otherwise hard). Electronic kits use a single
-shot with velocity-scaled gain.
+(soft below velocity ≈ 0.55, otherwise hard). Hats also have `_rr1` / `_rr2`
+round-robins and a `_pedal` chick (GM 44) so 16th patterns do not machine-gun
+the same take. Electronic kits still scale gain with velocity.
+
+Hat round-robins (all CC0):
+
+| File | Original |
+| --- | --- |
+| `lofi_ch.wav` | Sonic Pi `hat_gnu` |
+| `lofi_ch_rr1.wav` | Sonic Pi `hat_tap` |
+| `lofi_ch_rr2.wav` | Sonic Pi `hat_psych` |
+| `lofi_oh.wav` | Sonic Pi `drum_cymbal_open` |
+| `lofi_oh_rr1.wav` | Sonic Pi `hat_zan` |
+| `lofi_pedal.wav` | Sonic Pi `drum_cymbal_pedal` |
+| `pop_ch_rr1.wav` | Sonic Pi `hat_star` |
+| `pop_oh_rr1.wav` | Sonic Pi `hat_gem` |
+| `pop_pedal.wav` | Sonic Pi `drum_cymbal_pedal` |
+| `rnb_ch_rr1.wav` | Sonic Pi `hat_zild` |
+| `rnb_oh_rr1.wav` | Sonic Pi `hat_raw` |
+| `rnb_pedal.wav` | Sonic Pi `drum_cymbal_pedal` |
+| `cine_ch_rr1.wav` | Sonic Pi `hat_metal` |
+| `cine_oh_rr1.wav` | Sonic Pi `hat_hier` |
+| `cine_pedal.wav` | Sonic Pi `drum_cymbal_pedal` |

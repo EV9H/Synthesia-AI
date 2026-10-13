@@ -20,20 +20,23 @@ public:
     static DrumLibrary& get();
     void ensureLoaded();
 
-    const Sample* find(Genre genre, DrumPiece piece, float velocity) const;
+    const Sample* find(Genre genre, DrumPiece piece, float velocity, int midiNote = 0) const;
     float gainFor(Genre genre, DrumPiece piece) const;
     double kitLowpassCoeff(Genre genre) const;
 
     static DrumPiece pieceFromNote(int midiNote);
     static bool isClosedHat(int midiNote);
     static bool isOpenHat(int midiNote);
+    static bool isPedalHat(int midiNote);
     static int tomRootNote() { return 45; }
 
 private:
     void load();
     void loadOne(const char* key, const char* data, int size);
     const Sample* lookup(const char* prefix, const char* piece, bool preferHard) const;
+    const Sample* findKey(const std::string& key) const;
 
     bool loaded{false};
     std::map<std::string, Sample> table;
+    mutable unsigned roundRobin{0};
 };
