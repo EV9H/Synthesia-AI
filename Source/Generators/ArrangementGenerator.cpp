@@ -1,5 +1,6 @@
 #include "ArrangementGenerator.h"
 #include "ArrangementPlan.h"
+#include "../StyleProfile.h"
 #include <cctype>
 #include <cmath>
 #include <map>
@@ -208,7 +209,15 @@ std::vector<ChordInfo> ArrangementGenerator::buildProgression(const MidiGenerati
 std::vector<ChordInfo> ArrangementGenerator::buildProgression(const MidiGenerationParams& params,
                                                               std::mt19937& rng)
 {
-    const auto& profile = getGenreProfile(params.genre);
+    if (params.styleBlend > 0.45 && !params.styleProfileJson.empty())
+    {
+        const auto style = StyleProfile::fromJson(juce::String(params.styleProfileJson));
+        auto sampled = StyleProfile::sampleProgression(style, params, rng);
+        if (!sampled.empty())
+            return sampled;
+    }
+
+    const auto profile = StyleProfile::effectiveGenre(params);
     const auto& templates = theory::isMinorMode(params.scale) ? profile.minorProgressions
                                                               : profile.majorProgressions;
     const auto& chosen = pick(templates, rng);
@@ -408,7 +417,7 @@ namespace
 GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationParams& input)
 {
     const auto params = realisedParams(input);
-    const auto& profile = getGenreProfile(params.genre);
+    const auto profile = StyleProfile::effectiveGenre(params);
     const unsigned int seed = params.seed != 0 ? params.seed : std::random_device{}();
 
     GenerationResult result;
@@ -1246,7 +1255,25 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const int direction = uniform(rng) < upChance ? 1 : -1;
             int delta;
 
-            if (std::abs(previous) >= 3)
+            double intervalSum = 0.0;
+            for (double w : role.intervalWeights)
+                intervalSum += w;
+
+            if (intervalSum > 1.0e-6 && std::abs(previous) < 3)
+            {
+                double cursor = uniform(rng) * intervalSum;
+                delta = 0;
+                for (int k = 0; k < 13; ++k)
+                {
+                    cursor -= role.intervalWeights[static_cast<size_t>(k)];
+                    if (cursor <= 0.0)
+                    {
+                        delta = k - 6;
+                        break;
+                    }
+                }
+            }
+            else if (std::abs(previous) >= 3)
                 delta = previous > 0 ? -1 : 1;     // fill the gap after a leap
             else
             {

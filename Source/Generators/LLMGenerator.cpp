@@ -1,4 +1,5 @@
 #include "LLMGenerator.h"
+#include "../StyleProfile.h"
 
 namespace
 {
@@ -74,6 +75,13 @@ juce::String LLMGenerator::buildPlanPrompt(const MidiGenerationParams& params) c
            << "- Length: " << params.lengthInBars << " bars of 4/4\n";
     if (!params.chordText.empty())
         prompt << "- Honour this chord progression: " << juce::String(params.chordText) << "\n";
+    if (!params.styleProfileJson.empty() && params.styleBlend > 0.2)
+    {
+        const auto style = StyleProfile::fromJson(juce::String(params.styleProfileJson));
+        if (!style.empty())
+            prompt << "- " << style.promptHint() << " (blend "
+                   << juce::roundToInt(params.styleBlend * 100.0) << "%)\n";
+    }
     prompt << "\n"
            << ArrangementPlan::schemaPrompt() << "\n"
            << "Keep the form to 8-32 bars. Put the chorus/drop energy high if the brief asks for a lift.";

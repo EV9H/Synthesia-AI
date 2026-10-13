@@ -6,6 +6,7 @@
 #include "Generators/GenreProfiles.h"
 #include "Music/MusicTheory.h"
 #include "MidiExporter.h"
+#include "StyleProfile.h"
 #include <cmath>
 #include <thread>
 
@@ -257,6 +258,8 @@ void SynthesiaAIProcessor::getStateInformation(juce::MemoryBlock& destData)
     xml.setAttribute("apiKey", apiKey);
     xml.setAttribute("apiEndpoint", apiEndpoint);
     xml.setAttribute("apiModel", apiModel);
+    xml.setAttribute("styleName", currentStyleName);
+    xml.setAttribute("styleBlend", styleBlend);
     
     copyXmlToBinary(xml, destData);
 }
@@ -272,6 +275,8 @@ void SynthesiaAIProcessor::setStateInformation(const void* data, int sizeInBytes
         apiKey = xml->getStringAttribute("apiKey");
         apiEndpoint = xml->getStringAttribute("apiEndpoint", apiEndpoint);
         apiModel = xml->getStringAttribute("apiModel", apiModel);
+        setStyleBlend(xml->getDoubleAttribute("styleBlend", 0.0));
+        setCurrentStyle(xml->getStringAttribute("styleName"));
         
         setGeneratorType(currentGeneratorType);
     }
@@ -365,6 +370,14 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
                  && currentGeneratorType != GeneratorType::Markov
                  && params.importMode == ImportMode::None;
 
+    if (params.styleProfileJson.empty() && !currentStyle.empty())
+    {
+        params.styleProfileJson = currentStyle.toJson().toStdString();
+        params.styleProfileName = currentStyleName.toStdString();
+        if (params.styleBlend <= 0.0)
+            params.styleBlend = styleBlend;
+    }
+
     if (lastImport.ok && params.importMode != ImportMode::None)
     {
         if (params.chordText.empty() && !lastImport.chordChart.empty())
@@ -412,7 +425,7 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
 
     if (params.progression.empty() && !params.chordText.empty())
     {
-        const auto& profile = getGenreProfile(params.genre);
+        const auto profile = StyleProfile::effectiveGenre(params);
         params.progression = theory::parseProgressionText(params.chordText, params.rootNote,
                                                           params.scale, params.lengthInBars,
                                                           profile.defaultExtension);
@@ -707,6 +720,54 @@ bool SynthesiaAIProcessor::finishMidiCapture()
 
     const double tempo = previewTempo.load();
     return importMidiBuffer(captured, ticksPerQuarterNote, tempo, "host capture");
+}
+
+juce::String SynthesiaAIProcessor::getCurrentStyleJson() const
+{
+    return currentStyle.empty() ? juce::String{} : currentStyle.toJson();
+}
+
+void SynthesiaAIProcessor::setStyleBlend(double amount)
+{
+    styleBlend = juce::jlimit(0.0, 1.0, amount);
+}
+
+void SynthesiaAIProcessor::setCurrentStyle(const juce::String& name)
+{
+    currentStyleName = StyleProfile::sanitiseName(name);
+    if (name.trim().isEmpty() || name == "None")
+    {
+        currentStyle = {};
+        currentStyleName = {};
+        ++styleVersion;
+        return;
+    }
+
+    currentStyle = StyleProfile::loadNamed(currentStyleName);
+    if (currentStyle.empty())
+        currentStyleName = {};
+    ++styleVersion;
+}
+
+bool SynthesiaAIProcessor::learnStyle(const juce::Array<juce::File>& files, const juce::String& name)
+{
+    auto learned = StyleProfile::learnFromFiles(files);
+    if (learned.empty())
+        return false;
+
+    learned.name = StyleProfile::sanitiseName(name).toStdString();
+    if (learned.name.empty())
+        learned.name = "style";
+    learned.finaliseSummary();
+    if (!StyleProfile::saveNamed(learned))
+        return false;
+
+    currentStyle = std::move(learned);
+    currentStyleName = juce::String(currentStyle.name);
+    if (styleBlend < 0.25)
+        styleBlend = 1.0;
+    ++styleVersion;
+    return true;
 }
 
 void SynthesiaAIProcessor::setApiModel(const juce::String& name)

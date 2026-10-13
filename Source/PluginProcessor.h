@@ -5,6 +5,7 @@
 #include "Generators/MidiGenerator.h"
 #include "Generators/ArrangementPlan.h"
 #include "MidiImporter.h"
+#include "StyleProfile.h"
 #include "SimpleSynth.h"
 
 class SynthesiaAIProcessor : public juce::AudioProcessor
@@ -84,6 +85,16 @@ public:
     bool isCapturingMidi() const { return captureEnabled.load(); }
     bool finishMidiCapture();
 
+    bool learnStyle(const juce::Array<juce::File>& files, const juce::String& name);
+    void setCurrentStyle(const juce::String& name);
+    void setStyleBlend(double amount);
+    const StyleProfile& getCurrentStyle() const { return currentStyle; }
+    juce::String getCurrentStyleName() const { return currentStyleName; }
+    juce::String getCurrentStyleJson() const;
+    double getStyleBlend() const { return styleBlend; }
+    int getStyleVersion() const { return styleVersion; }
+    juce::StringArray listStyleProfiles() const { return StyleProfile::listSaved(); }
+
 private:
     struct ClipEvent
     {
@@ -153,6 +164,10 @@ private:
     int planVersion{0};
     MidiAnalysis lastImport;
     int importVersion{0};
+    StyleProfile currentStyle;
+    juce::String currentStyleName;
+    double styleBlend{0.0};
+    int styleVersion{0};
 
     std::atomic<bool> captureEnabled{false};
     juce::SpinLock captureLock;
