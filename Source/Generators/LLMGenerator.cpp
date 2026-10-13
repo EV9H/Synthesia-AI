@@ -71,7 +71,10 @@ juce::String LLMGenerator::buildPlanPrompt(const MidiGenerationParams& params) c
            << "- Scale: " << scaleNames[static_cast<int>(params.scale)] << "\n"
            << "- Genre: " << genreName(params.genre) << "\n"
            << "- Tempo: " << params.tempo << " BPM\n"
-           << "- Length: " << params.lengthInBars << " bars of 4/4\n\n"
+           << "- Length: " << params.lengthInBars << " bars of 4/4\n";
+    if (!params.chordText.empty())
+        prompt << "- Honour this chord progression: " << juce::String(params.chordText) << "\n";
+    prompt << "\n"
            << ArrangementPlan::schemaPrompt() << "\n"
            << "Keep the form to 8-32 bars. Put the chorus/drop energy high if the brief asks for a lift.";
     return prompt;

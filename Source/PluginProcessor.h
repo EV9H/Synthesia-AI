@@ -4,6 +4,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "Generators/MidiGenerator.h"
 #include "Generators/ArrangementPlan.h"
+#include "MidiImporter.h"
 #include "SimpleSynth.h"
 
 class SynthesiaAIProcessor : public juce::AudioProcessor
@@ -74,6 +75,15 @@ public:
     void setApiModel(const juce::String& name);
     juce::String getApiModel() const { return apiModel; }
 
+    bool importMidiFile(const juce::File& file);
+    bool importMidiBuffer(const juce::MidiBuffer& midi, double ticksPerQuarter, double tempo,
+                          const juce::String& sourceName);
+    const MidiAnalysis& getLastImport() const { return lastImport; }
+    int getImportVersion() const { return importVersion; }
+    void setMidiCapture(bool shouldCapture);
+    bool isCapturingMidi() const { return captureEnabled.load(); }
+    bool finishMidiCapture();
+
 private:
     struct ClipEvent
     {
@@ -98,6 +108,7 @@ private:
     void applyResult(Result result, const MidiGenerationParams& params, bool mergeIntoClip);
     void storePlan(ArrangementPlan plan, bool bumpUi);
     void configureLlm(MidiGenerator& gen) const;
+    void applyImport(MidiAnalysis analysis);
     void setGeneratedClip(juce::MidiBuffer newMidi, double lengthInBeats);
     void collectClipEvents(double startBeat, double endBeat, double samplesPerBeat,
                            int numSamples, juce::MidiBuffer& out) const;
@@ -140,6 +151,15 @@ private:
     ArrangementPlan lastPlan;
     TokenUsage sessionUsage;
     int planVersion{0};
+    MidiAnalysis lastImport;
+    int importVersion{0};
+
+    std::atomic<bool> captureEnabled{false};
+    juce::SpinLock captureLock;
+    struct CaptureEvent { double beat; juce::MidiMessage message; };
+    std::vector<CaptureEvent> captureEvents;
+    double captureOriginBeat{0.0};
+    bool captureHasOrigin{false};
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIProcessor)
 };

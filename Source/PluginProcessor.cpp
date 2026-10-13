@@ -147,6 +147,25 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     const double endBeat = startBeat + numSamples / samplesPerBeat;
 
+    if (captureEnabled.load())
+    {
+        const juce::SpinLock::ScopedLockType lock(captureLock);
+        if (!captureHasOrigin)
+        {
+            captureOriginBeat = startBeat;
+            captureHasOrigin = true;
+        }
+        for (const auto metadata : midiMessages)
+        {
+            const auto message = metadata.getMessage();
+            if (message.isNoteOn() || message.isNoteOff())
+            {
+                const double beat = startBeat + metadata.samplePosition / samplesPerBeat;
+                captureEvents.push_back({ beat, message });
+            }
+        }
+    }
+
     // Live MIDI from the host keyboard/track also drives the preview synth.
     blockMidi.clear();
     blockMidi.addEvents(midiMessages, 0, numSamples, 0);
@@ -293,6 +312,7 @@ void SynthesiaAIProcessor::generateMidiBlocking(const MidiGenerationParams& para
     bool merge = false;
     const auto prepared = prepareParams(params, merge);
     applyResult(runGenerator(*generator, prepared), prepared, merge);
+    setPreviewPlaying(false);
 }
 
 void SynthesiaAIProcessor::planArrangement(const MidiGenerationParams& params)
@@ -342,7 +362,27 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
 
     const bool keepParts = params.part != Part::All || params.lockedParts != 0;
     mergeIntoClip = keepParts && sameContext
-                 && currentGeneratorType != GeneratorType::Markov;
+                 && currentGeneratorType != GeneratorType::Markov
+                 && params.importMode == ImportMode::None;
+
+    if (lastImport.ok && params.importMode != ImportMode::None)
+    {
+        if (params.chordText.empty() && !lastImport.chordChart.empty())
+        {
+            params.chordText = lastImport.chordChart;
+            params.lockProgression = true;
+        }
+        if (params.motifContour.empty())
+            params.motifContour = lastImport.motifContour;
+        if (params.motifRhythm.empty())
+            params.motifRhythm = lastImport.motifRhythm;
+        if (params.importMode == ImportMode::Accompany || params.importMode == ImportMode::Extend
+            || params.importMode == ImportMode::Restyle)
+            params.lockedParts |= partLockBit(lastImport.primaryPart);
+        if (params.importMode == ImportMode::Extend && params.form == ArrangementForm::Loop
+            && params.lengthInBars >= 16)
+            params.form = ArrangementForm::Song;
+    }
 
     if (params.lockProgression && !progression.empty() && sameContext)
         params.progression = progression;
@@ -509,6 +549,10 @@ void SynthesiaAIProcessor::applyResult(Result result, const MidiGenerationParams
 
     const auto& used = result.realised.lengthInBars > 0 ? result.realised : params;
 
+    if (params.importMode != ImportMode::None && lastImport.ok)
+        clip = MidiImporter::overlay(clip, lastImport, params.importMode, params.lockedParts,
+                                     used.lengthInBars * 4.0);
+
     if (!(params.lockProgression && !progression.empty()) || result.progression.empty())
         progression = std::move(result.progression);
     if (!result.sections.empty())
@@ -590,6 +634,79 @@ void SynthesiaAIProcessor::setApiEndpoint(const juce::String& url)
     if (trimmed.isNotEmpty())
         apiEndpoint = trimmed;
     configureLlm(*generator);
+}
+
+void SynthesiaAIProcessor::applyImport(MidiAnalysis analysis)
+{
+    lastImport = std::move(analysis);
+    ++importVersion;
+    if (!lastImport.ok)
+        return;
+
+    progression = lastImport.progression;
+    sections = { { SectionKind::Verse, 0.0, lastImport.lengthInBeats, 0.7f, 1, "Imported" } };
+    clipParams.rootNote = lastImport.rootNote;
+    clipParams.scale = lastImport.scale;
+    clipParams.tempo = lastImport.tempo;
+    clipParams.lengthInBars = lastImport.lengthInBars;
+    clipParams.chordText = lastImport.chordChart;
+    clipParams.lockProgression = true;
+    clipParams.genre = clipParams.genre;
+    previewTempo.store(lastImport.tempo);
+    simpleSynth.setKit(clipParams.genre);
+    setGeneratedClip(lastImport.remapped, lastImport.lengthInBeats);
+    setPreviewPlaying(true);
+}
+
+bool SynthesiaAIProcessor::importMidiFile(const juce::File& file)
+{
+    applyImport(MidiImporter::analyseFile(file));
+    return lastImport.ok;
+}
+
+bool SynthesiaAIProcessor::importMidiBuffer(const juce::MidiBuffer& midi, double ticksPerQuarter, double tempo,
+                                            const juce::String& sourceName)
+{
+    applyImport(MidiImporter::analyseBuffer(midi, ticksPerQuarter, tempo, sourceName));
+    return lastImport.ok;
+}
+
+void SynthesiaAIProcessor::setMidiCapture(bool shouldCapture)
+{
+    if (shouldCapture)
+    {
+        const juce::SpinLock::ScopedLockType lock(captureLock);
+        captureEvents.clear();
+        captureHasOrigin = false;
+        captureOriginBeat = 0.0;
+        captureEnabled.store(true);
+        return;
+    }
+
+    captureEnabled.store(false);
+}
+
+bool SynthesiaAIProcessor::finishMidiCapture()
+{
+    captureEnabled.store(false);
+    juce::MidiBuffer captured;
+    {
+        const juce::SpinLock::ScopedLockType lock(captureLock);
+        if (captureEvents.empty())
+            return false;
+
+        const double origin = captureHasOrigin ? captureOriginBeat : captureEvents.front().beat;
+        for (const auto& event : captureEvents)
+        {
+            const int tick = juce::roundToInt((event.beat - origin) * ticksPerQuarterNote);
+            captured.addEvent(event.message, juce::jmax(0, tick));
+        }
+        captureEvents.clear();
+        captureHasOrigin = false;
+    }
+
+    const double tempo = previewTempo.load();
+    return importMidiBuffer(captured, ticksPerQuarterNote, tempo, "host capture");
 }
 
 void SynthesiaAIProcessor::setApiModel(const juce::String& name)
