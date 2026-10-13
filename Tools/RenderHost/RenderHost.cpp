@@ -53,7 +53,7 @@ namespace
     }
 
     const juce::StringArray genreNames{ "pop", "lofi", "house", "trap", "rnb", "cinematic" };
-    const juce::StringArray partNames{ "all", "chords", "bass", "synth", "piano" };
+    const juce::StringArray partNames{ "all", "chords", "bass", "synth", "piano", "drums" };
 
     void printUsage()
     {
@@ -61,7 +61,7 @@ namespace
             "Usage: SynthesiaRender --out clip.wav [options]\n"
             "  --generator <genre|markov>  arranger (default) or the classic Markov melody\n"
             "  --genre <name>          pop|lofi|house|trap|rnb|cinematic (default pop)\n"
-            "  --part <name>           all|chords|bass|synth|piano (default all)\n"
+            "  --part <name>           all|chords|bass|synth|piano|drums (default all)\n"
             "  --key <C..B>            root note (default C)\n"
             "  --scale <name>          major|minor|dorian|mixolydian|pentatonic (default major)\n"
             "  --bars <1-16>           clip length in bars (default 8)\n"

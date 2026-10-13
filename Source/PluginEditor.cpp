@@ -23,10 +23,11 @@ namespace
     {
         switch (channel)
         {
-            case 1: return juce::Colour(0xffe8b86d); // chords
-            case 2: return juce::Colour(0xfff07178); // bass
-            case 3: return juce::Colour(0xff4f8cff); // synth
-            case 4: return juce::Colour(0xff7dcea0); // piano
+            case 1:  return juce::Colour(0xffe8b86d); // chords
+            case 2:  return juce::Colour(0xfff07178); // bass
+            case 3:  return juce::Colour(0xff4f8cff); // synth
+            case 4:  return juce::Colour(0xff7dcea0); // piano
+            case 10: return juce::Colour(0xffc4a5e8); // drums
             default: return Theme::accent;
         }
     }
@@ -174,8 +175,8 @@ void ClipView::paint(juce::Graphics& g)
         g.setColour(Theme::dimText);
         const auto name = juce::String(partName(part));
         g.drawText(name, juce::roundToInt(legendX + 14.0f), juce::roundToInt(legend.getY()),
-                   52, juce::roundToInt(legend.getHeight()), juce::Justification::centredLeft, false);
-        legendX += 68.0f;
+                   48, juce::roundToInt(legend.getHeight()), juce::Justification::centredLeft, false);
+        legendX += 58.0f;
     }
 
     const float pixelsPerBeat = area.getWidth() / static_cast<float>(clipLength);
@@ -277,10 +278,8 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addAndMakeVisible(partLabel);
 
     partComboBox.addItem(partName(Part::All), 1);
-    partComboBox.addItem(partName(Part::Chords), 2);
-    partComboBox.addItem(partName(Part::Bass), 3);
-    partComboBox.addItem(partName(Part::Synth), 4);
-    partComboBox.addItem(partName(Part::Piano), 5);
+    for (auto part : allParts)
+        partComboBox.addItem(partName(part), static_cast<int>(part) + 1);
     partComboBox.setSelectedId(1, juce::dontSendNotification);
     addAndMakeVisible(partComboBox);
     

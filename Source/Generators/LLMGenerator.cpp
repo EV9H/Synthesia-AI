@@ -27,8 +27,9 @@ juce::MidiBuffer LLMGenerator::generate(const MidiGenerationParams& params)
     auto notes = parseNotesFromJSON(*response, params, &channels);
 
     juce::MidiBuffer buffer;
-    for (int channel = 1; channel <= 4; ++channel)
+    for (const auto part : allParts)
     {
+        const int channel = partChannel(part);
         std::vector<Note> partNotes;
         for (size_t i = 0; i < notes.size(); ++i)
             if (channels[i] == channel)
@@ -50,6 +51,7 @@ namespace
             case Part::Bass:   return "bass: monophonic, MIDI 28-52, roots/fifths on strong beats with approach notes into chord changes";
             case Part::Synth:  return "synth: lead melody or arpeggio, MIDI 62-91, chord tones on strong beats, a repeated motif with variation";
             case Part::Piano:  return "piano: melodic line or comping, MIDI 48-84, complementing the synth";
+            case Part::Drums:  return "drums: General MIDI percussion (kick 36, snare 38, clap 39, closed hat 42, open hat 46, toms 45/47/50, crash 49) on a groove that matches the genre; include ghost notes and a fill at phrase ends";
             case Part::All:    break;
         }
         return "";
@@ -86,7 +88,7 @@ juce::String LLMGenerator::buildPrompt(const MidiGenerationParams& params)
     prompt << "\nReturn ONLY a JSON array of note objects with this exact format:\n"
            << "[{\"part\": \"synth\", \"pitch\": 60, \"start\": 0.0, \"duration\": 1.0, \"velocity\": 80}, ...]\n"
            << "where:\n"
-           << "- part: one of \"chords\", \"bass\", \"synth\", \"piano\"\n"
+           << "- part: one of \"chords\", \"bass\", \"synth\", \"piano\", \"drums\"\n"
            << "- pitch: MIDI note number (0-127)\n"
            << "- start: start time in quarter notes from beginning\n"
            << "- duration: note duration in quarter notes\n"
@@ -213,17 +215,18 @@ std::vector<Note> LLMGenerator::parseNotesFromJSON(const juce::String& jsonRespo
             note.startTime = noteObj->getProperty("start");
             note.duration = noteObj->getProperty("duration");
             note.velocity = noteObj->getProperty("velocity");
+
+            const auto partText = noteObj->getProperty("part").toString().toLowerCase();
+            const bool isDrum = partText == "drums" || params.part == Part::Drums;
             
-            // Validate and quantize
             note.pitch = juce::jlimit(0, 127, note.pitch);
-            note.velocity = juce::jlimit(60, 100, note.velocity);
+            note.velocity = isDrum ? juce::jlimit(1, 127, note.velocity)
+                                   : juce::jlimit(60, 100, note.velocity);
             
-            // Quantize start and duration
             note.startTime = std::round(note.startTime / quantStep) * quantStep;
             note.duration = std::max(quantStep, std::round(note.duration / quantStep) * quantStep);
             
-            // Ensure note is in scale
-            if (!scaleNotes.empty())
+            if (!isDrum && !scaleNotes.empty())
             {
                 auto it = std::min_element(scaleNotes.begin(), scaleNotes.end(),
                     [&](int a, int b) {
@@ -237,7 +240,6 @@ std::vector<Note> LLMGenerator::parseNotesFromJSON(const juce::String& jsonRespo
             if (channels != nullptr)
             {
                 int channel = defaultChannel;
-                const auto partText = noteObj->getProperty("part").toString().toLowerCase();
                 for (const auto part : allParts)
                     if (partText == juce::String(partName(part)).toLowerCase())
                         channel = partChannel(part);

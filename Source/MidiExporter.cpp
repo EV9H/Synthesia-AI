@@ -11,6 +11,7 @@ namespace
             case Part::Bass:   return 38;   // Synth Bass 1
             case Part::Synth:  return 81;   // Lead 2 (sawtooth)
             case Part::Piano:  return 0;    // Acoustic Grand Piano
+            case Part::Drums:  return 0;    // Standard GM kit (channel 10)
             case Part::All:    break;
         }
         return 0;

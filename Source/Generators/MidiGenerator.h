@@ -63,10 +63,11 @@ enum class Part
     Chords,
     Bass,
     Synth,
-    Piano
+    Piano,
+    Drums
 };
 
-constexpr Part allParts[] = { Part::Chords, Part::Bass, Part::Synth, Part::Piano };
+constexpr Part allParts[] = { Part::Chords, Part::Bass, Part::Synth, Part::Piano, Part::Drums };
 
 inline const char* partName(Part part)
 {
@@ -77,17 +78,23 @@ inline const char* partName(Part part)
         case Part::Bass:   return "Bass";
         case Part::Synth:  return "Synth";
         case Part::Piano:  return "Piano";
+        case Part::Drums:  return "Drums";
     }
     return "All parts";
 }
 
+// Melodic parts sit on channels 1-4; drums use GM channel 10 so exported
+// files play a drum kit in any General MIDI rack.
 inline int partChannel(Part part)
 {
-    return part == Part::All ? 0 : static_cast<int>(part);
+    if (part == Part::All)   return 0;
+    if (part == Part::Drums) return 10;
+    return static_cast<int>(part);
 }
 
 inline Part partFromChannel(int channel)
 {
+    if (channel == 10) return Part::Drums;
     return (channel >= 1 && channel <= 4) ? static_cast<Part>(channel) : Part::Synth;
 }
 
