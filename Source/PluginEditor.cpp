@@ -94,6 +94,14 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     generateButton.setButtonText("Generate MIDI");
     generateButton.onClick = [this]() { onGenerateClicked(); };
     addAndMakeVisible(generateButton);
+
+    previewButton.setButtonText("Play Preview");
+    previewButton.setEnabled(false);
+    previewButton.onClick = [this]()
+    {
+        audioProcessor.setPreviewPlaying(!audioProcessor.isPreviewPlaying());
+    };
+    addAndMakeVisible(previewButton);
     
     // Export button
     exportButton.setButtonText("Export as .mid");
@@ -170,7 +178,10 @@ void SynthesiaAIEditor::resized()
     generateButton.setBounds(area.removeFromTop(40));
     
     area.removeFromTop(10);
-    exportButton.setBounds(area.removeFromTop(40));
+    row = area.removeFromTop(40);
+    previewButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
+    row.removeFromLeft(10);
+    exportButton.setBounds(row);
     
     area.removeFromTop(10);
     statusLabel.setBounds(area.removeFromTop(30));
@@ -230,9 +241,13 @@ void SynthesiaAIEditor::updateUIState()
     
     bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     exportButton.setEnabled(hasMidi && !isGenerating);
+    previewButton.setEnabled(hasMidi && !isGenerating);
+    previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
     
-    if (!isGenerating && hasMidi && statusLabel.getText() == "Generating...")
-        statusLabel.setText("Generation complete!", juce::dontSendNotification);
+    if (!isGenerating && statusLabel.getText() == "Generating...")
+        statusLabel.setText(hasMidi ? "Generation complete!"
+                                    : "Generation failed (check generator settings)",
+                            juce::dontSendNotification);
 }
 
 // SettingsDialog implementation

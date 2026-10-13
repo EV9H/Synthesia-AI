@@ -44,6 +44,7 @@ private:
     juce::ComboBox generatorComboBox;
     
     juce::TextButton generateButton;
+    juce::TextButton previewButton;
     juce::TextButton exportButton;
     
     juce::Label statusLabel;
