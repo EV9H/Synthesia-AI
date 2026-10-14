@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from typing import Any
@@ -79,21 +80,34 @@ def critic_clip(clip: Clip, genre: str) -> dict[str, Any] | None:
             {"role": "user", "content": midi_to_text(clip, genre)},
         ],
     }
-    req = urllib.request.Request(
-        GROQ_URL,
-        data=json.dumps(payload).encode(),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (compatible; SynthesiaEval/1.0)",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=45) as resp:
-            body = json.loads(resp.read().decode())
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        return {"skipped": True, "reason": str(exc)}
+    body = None
+    last_error = None
+    for attempt in range(4):
+        req = urllib.request.Request(
+            GROQ_URL,
+            data=json.dumps(payload).encode(),
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (compatible; SynthesiaEval/1.0)",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                body = json.loads(resp.read().decode())
+            last_error = None
+            break
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code in {429, 503} and attempt < 3:
+                time.sleep(2 ** attempt)
+                continue
+            return {"skipped": True, "reason": str(exc)}
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+            return {"skipped": True, "reason": str(exc)}
+    if body is None:
+        return {"skipped": True, "reason": str(last_error or "empty critic response")}
     text = body.get("choices", [{}])[0].get("message", {}).get("content", "")
     text = text.strip()
     if text.startswith("```"):

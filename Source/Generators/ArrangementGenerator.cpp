@@ -813,21 +813,31 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
     std::vector<int> leading = previous;
     for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
-        const auto& bed = voicingForBar[static_cast<size_t>(bar)];
-        const double bedStart = bar * 4.0;
-        const int bedIndex = chordIndexAt(progression, bedStart);
-        const double bedLen = chordEnd(progression[static_cast<size_t>(bedIndex)]) - bedStart;
-        const float bedEnergy = ctx.energyAt(bedStart);
-        for (int pitch : bed)
-            notes.push_back({ pitch, bedStart, juce::jmax(0.8, bedLen) - 0.02,
-                              humanise(juce::roundToInt(54 * (0.45f + 0.55f * bedEnergy)), rng, 3) });
-
         const std::string* use = (bar % 8 == 7) ? fillPattern : pattern;
+        const auto hits = parsePattern(*use);
 
-        for (const auto& hit : parsePattern(*use))
+        bool hasDownbeat = false;
+        for (const auto& hit : hits)
+            if (hit.step == 0)
+                hasDownbeat = true;
+        if (!hasDownbeat)
         {
+            const auto& bed = voicingForBar[static_cast<size_t>(bar)];
+            const float bedEnergy = ctx.energyAt(bar * 4.0);
+            for (int pitch : bed)
+                notes.push_back({ pitch, bar * 4.0, 0.48,
+                                  humanise(juce::roundToInt(58 * (0.45f + 0.55f * bedEnergy)), rng, 3) });
+            leading = bed;
+        }
+
+        for (size_t hitIndex = 0; hitIndex < hits.size(); ++hitIndex)
+        {
+            const auto& hit = hits[hitIndex];
             const double start = bar * 4.0 + hit.step * stepBeats;
-            double length = hit.length * stepBeats;
+            const double nextHit = hitIndex + 1 < hits.size()
+                ? bar * 4.0 + hits[hitIndex + 1].step * stepBeats
+                : (bar + 1) * 4.0;
+            double length = juce::jmax(hit.length * stepBeats, nextHit - start);
             int index = chordIndexAt(progression, start);
 
             bool anticipated = false;
@@ -869,11 +879,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 from = 0;
             if (bar % 8 == 7 && hit.step >= 8 && hit.symbol != 'X')
                 continue;
-            // Hold through the rest of the chord so every beat keeps three tones
-            // (bass-vs-chord lint is beat-aligned and needs the root in the pad).
-            length = juce::jmax(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
+            length = juce::jmin(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
             for (size_t i = from; i < to; ++i)
-                notes.push_back({ voicing[i], start, length - 0.02, humanise(velocity, rng, 5) });
+                notes.push_back({ voicing[i], start, juce::jmax(0.2, length - 0.04),
+                                  humanise(velocity, rng, 5) });
         }
     }
 
@@ -1366,11 +1375,13 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
         const int sequence[] = { v(0), v(1), v(2), v(1), v(0), v(2), v(1), v(0) };
 
         const double end = chordEnd(chord);
+        const double rate = ctx.profile.genre == Genre::Trap ? 0.25 : 0.5;
+        const double gate = ctx.profile.genre == Genre::Trap ? 0.22 : juce::jmin(1.5, rate + 0.9);
         int index = 0;
-        for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += 0.5, ++index)
+        for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += rate, ++index)
         {
             const int velocity = index % 8 == 0 ? 84 : index % 2 == 0 ? 72 : 64;
-            notes.push_back({ sequence[index % 8], beat, juce::jmin(1.5, end - beat),
+            notes.push_back({ sequence[index % 8], beat, juce::jmin(gate, end - beat),
                               humanise(velocity, rng, 5) });
         }
     }

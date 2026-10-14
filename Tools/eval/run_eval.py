@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -86,6 +87,7 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
                 critic_rows.append({"clip": path.name, **c})
             elif c and c.get("skipped"):
                 critic_rows.append({"clip": path.name, "skipped": True, "reason": c.get("reason")})
+            time.sleep(0.7)
 
     by_genre = {}
     overall_scores = []

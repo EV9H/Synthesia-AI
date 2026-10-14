@@ -313,8 +313,13 @@ namespace theory
 
             double score = penalty + jitter(rng) + 0.35 * std::abs(mean - centre);
             if (!previous.empty())
-                score += movementCost(previous, voicing)
-                       + 0.5 * std::abs(voicing.back() - previous.back());
+            {
+                const double move = movementCost(previous, voicing);
+                score += 0.25 * move + 0.35 * std::abs(voicing.back() - previous.back());
+                // Frozen pads score as "no voice leading" against piano refs.
+                if (move < 10.0)
+                    score += 0.85 * (10.0 - move);
+            }
 
             if (score < bestScore)
             {
