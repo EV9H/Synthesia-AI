@@ -463,8 +463,8 @@ void PartVoice::nextStereo(float& left, float& right)
     if (sampleMix > 0.005f)
         readInstSample(hz, sampL, sampR);
 
-    double valueL = value * (1.0 - sampleMix) + (double) sampL * sampleMix * 1.40;
-    double valueR = value * (1.0 - sampleMix) + (double) sampR * sampleMix * 1.40;
+    double valueL = value * (1.0 - sampleMix) + (double) sampL * sampleMix * 1.62;
+    double valueR = value * (1.0 - sampleMix) + (double) sampR * sampleMix * 1.62;
 
     const float amp = ampEnvelope.getNextSample();
     const float fenv = filtEnvelope.getNextSample();

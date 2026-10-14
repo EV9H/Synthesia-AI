@@ -731,7 +731,7 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.28f;
         m.sidechainBass = 0.28f;
         m.compAmount = 0.32f;
-        m.outputGain = 2.12f;
+        m.outputGain = 2.90f;
         m.musicWidth = 1.42f;
         m.drum = bus(0.16f, 0.028f, 0.20f, 1.7f, 0.40f);
         m.bass = bus(0.16f, 0.030f, 0.20f, 1.7f, 0.40f);
@@ -748,7 +748,7 @@ juce::Array<MixSettings> MixLibrary::all()
         m.sidechainRelease = 0.24f;
         m.sidechainBass = 0.42f;
         m.compAmount = 0.36f;
-        m.outputGain = 2.58f;
+        m.outputGain = 3.36f;
         m.musicWidth = 1.90f;
         m.drum = bus(0.18f, 0.024f, 0.16f, 1.9f, 0.38f);
         m.bass = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.40f);
