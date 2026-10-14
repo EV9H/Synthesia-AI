@@ -30,11 +30,11 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 64, 80, 0.42, 0.50, 0.44, 0.36, 2, false, false, 92 };
+        p.leadMelody = { 62, 74, 0.42, 0.50, 0.44, 0.36, 2, false, false, 92 };
         p.leadMelody.intervalWeights = { 0.05, 0.1, 0.25, 0.7, 1.6, 2.8, 1.1, 2.8, 1.6, 0.7, 0.25, 0.1, 0.05 };
 
         p.pianoStyle = PianoStyle::Broken;
-        p.pianoVoicing = { 62, 78, 3, false, false };
+        p.pianoVoicing = { 62, 74, 3, false, false };
 
         p.drums.grooves = {
             { "X.......X.......", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "............x...", "" },
@@ -77,12 +77,12 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 64, 80, 0.32, 0.50, 0.48, 0.38, 2, true, false, 80 };
+        p.leadMelody = { 60, 72, 0.42, 0.42, 0.40, 0.32, 2, true, false, 80 };
         p.leadMelody.intervalWeights = { 0.1, 0.2, 0.4, 0.9, 1.6, 2.4, 1.4, 2.4, 1.6, 0.9, 0.4, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Comp;
         p.pianoPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....", "X---------..x---" };
-        p.pianoVoicing = { 62, 78, 4, false, false };
+        p.pianoVoicing = { 58, 72, 4, false, false };
 
         p.drums.grooves = {
             { "X.......x.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
@@ -117,8 +117,7 @@ namespace
 
         p.chordStyle = ChordStyle::Stabs;
         p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
-        // Close cluster, high enough that alternate-hit spreads can open to ~70.
-        p.chordVoicing = { 56, 78, 4, false, false };
+        p.chordVoicing = { 58, 80, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-", "R-..R-..R-..R-.." };
@@ -127,7 +126,7 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 64, 78, 0.36, 0.48, 0.46, 0.38, 2, false, false, 86 };
+        p.leadMelody = { 62, 74, 0.50, 0.22, 0.18, 0.22, 1, false, false, 86 };
         p.leadMelody.intervalWeights = { 0.0, 0.05, 0.1, 0.3, 0.8, 1.6, 2.6, 1.6, 0.8, 0.3, 0.1, 0.05, 0.0 };
 
         p.pianoStyle = PianoStyle::Comp;
@@ -174,7 +173,7 @@ namespace
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 62, 74, 0.70, 0.20, 0.12, 0.18, 1, false, false, 88 };
+        p.leadMelody = { 58, 70, 0.70, 0.20, 0.12, 0.18, 1, false, false, 88 };
         p.leadMelody.intervalWeights = { 0.15, 0.2, 0.35, 0.6, 1.1, 1.8, 1.8, 1.8, 1.1, 0.6, 0.35, 0.2, 0.15 };
 
         p.pianoStyle = PianoStyle::Broken;
@@ -224,7 +223,7 @@ namespace
         p.leadMelody.intervalWeights = { 0.1, 0.2, 0.35, 0.8, 1.5, 2.2, 1.3, 2.2, 1.5, 0.8, 0.35, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 64, 80, 0.26, 0.45, 0.48, 0.30, 1, true, true, 74 };
+        p.pianoMelody = { 60, 72, 0.26, 0.45, 0.48, 0.30, 1, true, true, 74 };
 
         p.drums.grooves = {
             { "X.......X.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
@@ -269,11 +268,11 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 64, 78, 0.32, 0.42, 0.48, 0.50, 2, false, false, 80 };
+        p.leadMelody = { 62, 74, 0.32, 0.42, 0.48, 0.50, 2, false, false, 80 };
         p.leadMelody.intervalWeights = { 0.2, 0.3, 0.5, 0.9, 1.5, 2.0, 1.2, 2.0, 1.5, 0.9, 0.5, 0.3, 0.2 };
 
         p.pianoStyle = PianoStyle::Arpeggio;
-        p.pianoArp = { 60, 78, { arpRolling, arpSkip, arpUpDown }, 0.92, 70 };
+        p.pianoArp = { 58, 72, { arpRolling, arpSkip, arpUpDown }, 0.88, 74 };
 
         p.drums.grooves = {
             { "X..x....X..x....", ".g..X.g..g..X.g.", "", ".x...x.x...x....", "", "........x......." },
