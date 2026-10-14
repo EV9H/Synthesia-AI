@@ -145,10 +145,18 @@ between ~22% and ~78% of the file for sustain.
 
 | Files | Pack | Notes |
 | --- | --- | --- |
-| `inst_piano_{36,48,54,72,84}_{soft,hard}.wav` | upright-piano-KW | Acoustic upright; C2–C6, two velocities |
+| `inst_piano_{36,42,48,54,60,66,72,78,84}_{soft,hard}.wav` | Salamander Grand Piano V3 (Yamaha C5) | Stereo, two velocities (v4/v12), every minor third C2–C6 |
 | `inst_ep_{36,48,54,60,72}_{soft,hard}.wav` | fm-piano1 | DX-style electric piano, v60/v100 layers |
 | `inst_str_{36,48,60,66,72}.wav` | synth-strings-1 | Loopable pad / string ensemble |
 | `inst_org_{36,48,60,64,72}.wav` | synth-calliope | Loopable organ / calliope (house organ) |
 | `inst_plk_{36,48,55,60,67}.wav` | spanish-classical-guitar | Nylon pluck with natural decay |
+
+### Salamander Grand Piano (CC-BY-3.0)
+
+Yamaha C5 recorded by Alexander Holm (AB pair, 44.1 kHz 16-bit). We ship a
+trimmed subset (9 roots × 2 velocities, 3.6 s tails) so the pack stays small.
+
+- Source: https://archive.org/details/SalamanderGrandPianoV3
+- License: https://creativecommons.org/licenses/by/3.0/ (credit: Alexander Holm)
 
 Supersaw, house stabs, 808 bass, and analog-style basses stay synthesized.

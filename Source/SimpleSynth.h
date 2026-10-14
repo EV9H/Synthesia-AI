@@ -35,7 +35,7 @@ public:
 private:
     void nextStereo(float& left, float& right);
     double oscSample(const OscSettings& osc, double* phases, double hz, double dtBase, double pw) const;
-    float readInstSample(double hz);
+    void readInstSample(double hz, float& left, float& right);
     void updateBend(int wheelValue);
     static double polyBlep(double t, double dt);
     static double wrap(double phase);

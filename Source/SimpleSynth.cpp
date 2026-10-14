@@ -303,23 +303,26 @@ double PartVoice::oscSample(const OscSettings& osc, double* phases, double hz, d
     return (sum / static_cast<double>(n)) * osc.mix;
 }
 
-float PartVoice::readInstSample(double hz)
+void PartVoice::readInstSample(double hz, float& left, float& right)
 {
+    left = right = 0.0f;
     if (instSample == nullptr)
-        return 0.0f;
+        return;
 
     const auto& buf = instSample->data;
     const int n = buf.getNumSamples();
     if (n < 2)
-        return 0.0f;
+        return;
 
-    const float* d = buf.getReadPointer(0);
+    const int chans = buf.getNumChannels();
+    const float* dL = buf.getReadPointer(0);
+    const float* dR = chans > 1 ? buf.getReadPointer(1) : dL;
     const double sr = getSampleRate();
     const double transpose = std::pow(2.0, (midiNote - instSample->rootNote) / 12.0);
     const double inc = (instSample->sourceRate / juce::jmax(1.0, sr)) * transpose
                      * (hz / juce::jmax(1.0, noteHz));
 
-    auto lerp = [&](double pos) -> float
+    auto lerp = [&](const float* d, double pos) -> float
     {
         if (pos < 0.0 || pos >= n - 1)
             return 0.0f;
@@ -329,7 +332,6 @@ float PartVoice::readInstSample(double hz)
     };
 
     double pos = instPos;
-    float s = 0.0f;
     if (instSample->loopable && isKeyDown())
     {
         const int ls = instSample->loopStart;
@@ -341,20 +343,23 @@ float PartVoice::readInstSample(double hz)
         if (xfade > 4 && pos >= le - xfade)
         {
             const float fade = (float) (le - pos) / (float) xfade;
-            s = fade * lerp(pos) + (1.0f - fade) * lerp(ls + (pos - (le - xfade)));
+            const double pos2 = ls + (pos - (le - xfade));
+            left = fade * lerp(dL, pos) + (1.0f - fade) * lerp(dL, pos2);
+            right = fade * lerp(dR, pos) + (1.0f - fade) * lerp(dR, pos2);
         }
         else
         {
-            s = lerp(pos);
+            left = lerp(dL, pos);
+            right = lerp(dR, pos);
         }
     }
     else
     {
-        s = lerp(pos);
+        left = lerp(dL, pos);
+        right = lerp(dR, pos);
     }
 
     instPos = pos + inc;
-    return s;
 }
 
 void PartVoice::nextStereo(float& left, float& right)
@@ -413,15 +418,17 @@ void PartVoice::nextStereo(float& left, float& right)
         }
     }
 
+    float sampL = 0.0f, sampR = 0.0f;
     if (sampleMix > 0.005f)
-    {
-        const double sampled = (double) readInstSample(hz) * 1.40;
-        value = value * (1.0 - sampleMix) + sampled * sampleMix;
-    }
+        readInstSample(hz, sampL, sampR);
+
+    double valueL = value * (1.0 - sampleMix) + (double) sampL * sampleMix * 1.40;
+    double valueR = value * (1.0 - sampleMix) + (double) sampR * sampleMix * 1.40;
 
     const float amp = ampEnvelope.getNextSample();
     const float fenv = filtEnvelope.getNextSample();
-    if (patch->filterMode != FilterMode::Off)
+    const bool filterStereo = sampleMix < 0.85f && patch->filterMode != FilterMode::Off;
+    if (filterStereo)
     {
         const double keyMul = std::pow(2.0, ((midiNote - 60) / 12.0) * patch->keyTrack);
         const double velMul = std::pow(2.0, (velocity - 0.5) * patch->velToCutoff * 2.0);
@@ -429,20 +436,21 @@ void PartVoice::nextStereo(float& left, float& right)
         const float cutoff = (float) juce::jlimit(40.0, sr * 0.42,
             patch->cutoff * keyMul * velMul * envMul);
         filter.setCutoffFrequency(cutoff);
-            value = filter.processSample(0, static_cast<float>(value));
-            if (!std::isfinite(value))
-                value = 0.0;
+        const float filtered = filter.processSample(0, static_cast<float>(0.5 * (valueL + valueR)));
+        valueL = valueR = std::isfinite(filtered) ? filtered : 0.0;
     }
 
     const float drive = 1.0f + 1.15f * patch->drive;
-    value = std::tanh(value * drive) / std::tanh(drive);
+    const float invTanh = 1.0f / std::tanh(drive);
+    valueL = std::tanh(valueL * drive) * invTanh;
+    valueR = std::tanh(valueR * drive) * invTanh;
 
     const float level = patch->gain * (0.38f + 0.62f * velocity) * 0.22f * amp;
     const float pan = juce::jlimit(-1.0f, 1.0f, patch->pan);
     const float gainL = std::sqrt(0.5f * (1.0f - pan));
     const float gainR = std::sqrt(0.5f * (1.0f + pan));
-    left = static_cast<float>(value) * level * gainL;
-    right = static_cast<float>(value) * level * gainR;
+    left = static_cast<float>(valueL) * level * gainL;
+    right = static_cast<float>(valueR) * level * gainR;
 
     lfoPhase = wrap(lfoPhase + patch->lfoRate / sr);
     wowPhase = wrap(wowPhase + 0.65 / sr);

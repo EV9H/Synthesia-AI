@@ -59,7 +59,8 @@ void InstrumentLibrary::loadOne(const char* key, SampleKind kind, int rootNote, 
     sample.hard = hard;
     sample.loopable = loopable;
     const int length = static_cast<int>(reader->lengthInSamples);
-    sample.data.setSize(1, juce::jmax(1, length));
+    const int chans = juce::jlimit(1, 2, (int) reader->numChannels);
+    sample.data.setSize(chans, juce::jmax(1, length));
     sample.data.clear();
     reader->read(&sample.data, 0, length, 0, true, true);
     if (loopable && length > 64)
@@ -86,12 +87,20 @@ void InstrumentLibrary::load()
 
     LOAD(inst_piano_36_soft, SampleKind::Piano, 36, false, false);
     LOAD(inst_piano_36_hard, SampleKind::Piano, 36, true,  false);
+    LOAD(inst_piano_42_soft, SampleKind::Piano, 42, false, false);
+    LOAD(inst_piano_42_hard, SampleKind::Piano, 42, true,  false);
     LOAD(inst_piano_48_soft, SampleKind::Piano, 48, false, false);
     LOAD(inst_piano_48_hard, SampleKind::Piano, 48, true,  false);
     LOAD(inst_piano_54_soft, SampleKind::Piano, 54, false, false);
     LOAD(inst_piano_54_hard, SampleKind::Piano, 54, true,  false);
+    LOAD(inst_piano_60_soft, SampleKind::Piano, 60, false, false);
+    LOAD(inst_piano_60_hard, SampleKind::Piano, 60, true,  false);
+    LOAD(inst_piano_66_soft, SampleKind::Piano, 66, false, false);
+    LOAD(inst_piano_66_hard, SampleKind::Piano, 66, true,  false);
     LOAD(inst_piano_72_soft, SampleKind::Piano, 72, false, false);
     LOAD(inst_piano_72_hard, SampleKind::Piano, 72, true,  false);
+    LOAD(inst_piano_78_soft, SampleKind::Piano, 78, false, false);
+    LOAD(inst_piano_78_hard, SampleKind::Piano, 78, true,  false);
     LOAD(inst_piano_84_soft, SampleKind::Piano, 84, false, false);
     LOAD(inst_piano_84_hard, SampleKind::Piano, 84, true,  false);
 
