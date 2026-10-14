@@ -170,37 +170,37 @@ float DrumLibrary::gainFor(Genre genre, DrumPiece piece) const
         case DrumPiece::Kick:      gain = 0.50f; break;
         case DrumPiece::Snare:     gain = 0.46f; break;
         case DrumPiece::Clap:      gain = 0.40f; break;
-        case DrumPiece::ClosedHat: gain = 0.52f; break;
-        case DrumPiece::OpenHat:   gain = 0.50f; break;
+        case DrumPiece::ClosedHat: gain = 0.10f; break;
+        case DrumPiece::OpenHat:   gain = 0.09f; break;
         case DrumPiece::Tom:       gain = 0.38f; break;
-        case DrumPiece::Crash:     gain = 0.24f; break;
-        case DrumPiece::Ride:      gain = 0.30f; break;
-        case DrumPiece::Perc:      gain = 0.32f; break;
+        case DrumPiece::Crash:     gain = 0.22f; break;
+        case DrumPiece::Ride:      gain = 0.08f; break;
+        case DrumPiece::Perc:      gain = 0.07f; break;
     }
 
     switch (genre)
     {
         case Genre::House:
-            if (piece == DrumPiece::Kick) gain = 0.16f;
-            if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.88f;
-            if (piece == DrumPiece::ClosedHat) gain = 0.54f;
-            if (piece == DrumPiece::OpenHat) gain = 0.48f;
+            if (piece == DrumPiece::Kick) gain = 0.24f;
+            if (piece == DrumPiece::Snare || piece == DrumPiece::Clap) gain *= 0.90f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.07f;
+            if (piece == DrumPiece::OpenHat) gain = 0.06f;
             break;
         case Genre::Trap:
-            if (piece == DrumPiece::Kick) gain = 0.20f;
-            if (piece == DrumPiece::ClosedHat) gain = 0.50f;
-            if (piece == DrumPiece::OpenHat) gain = 0.44f;
+            if (piece == DrumPiece::Kick) gain = 0.26f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.08f;
+            if (piece == DrumPiece::OpenHat) gain = 0.07f;
             break;
         case Genre::LoFiJazz:
-            if (piece == DrumPiece::ClosedHat) gain = 0.46f;
-            else if (piece == DrumPiece::Ride) gain = 0.34f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.09f;
+            else if (piece == DrumPiece::Ride) gain = 0.07f;
             else
                 gain *= 0.90f;
             break;
         case Genre::Cinematic:
             if (piece == DrumPiece::Kick) gain = 0.48f;
-            if (piece == DrumPiece::Crash) gain = 0.28f;
-            if (piece == DrumPiece::ClosedHat) gain = 0.40f;
+            if (piece == DrumPiece::Crash) gain = 0.26f;
+            if (piece == DrumPiece::ClosedHat) gain = 0.07f;
             break;
         case Genre::Pop:
         case Genre::RnB:

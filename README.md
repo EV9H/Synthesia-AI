@@ -6,7 +6,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 
 ### Current (MVP)
 - **Three generators**:
-  - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp, piano and drums, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic. Drums use the General MIDI percussion map on channel 10.
+  - **Genre engine** (default): offline arrangements with chord progressions, bass, synth lead/arp, piano and drums, each on its own MIDI channel. Genres: Pop, Lo-fi / Jazz, EDM / House, Trap / Hip-hop, R&B / Neo-soul, Cinematic. Drums use hand-authored groove templates (2–4 per genre) on the General MIDI percussion map, channel 10. Hats sit about 8–12 dB under kick/snare.
   - **Markov Generator**: classic single-line melody (no internet required)
   - **LLM planner**: OpenAI-compatible endpoint (your key, configurable base URL + model) returns a compact JSON arrangement plan only — form, chords, energy/density, motif, parts, tempo/swing, genre. The genre engine realises every note, so nothing is out of key. Without a key, prompt keywords pick genre/energy offline.
   

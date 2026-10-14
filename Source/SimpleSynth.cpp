@@ -1100,8 +1100,8 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
             case Piece::Kick:      pan = 0.0f; break;
             case Piece::Snare:     pan = -0.12f; break;
             case Piece::Clap:      pan = 0.16f; break;
-            case Piece::ClosedHat: pan = midiNoteNumber == 44 ? -0.32f : -0.62f; break;
-            case Piece::OpenHat:   pan = 0.58f; break;
+            case Piece::ClosedHat: pan = midiNoteNumber == 44 ? -0.22f : -0.38f; break;
+            case Piece::OpenHat:   pan = 0.34f; break;
             case Piece::Crash:     pan = 0.28f; break;
             case Piece::Ride:      pan = -0.22f; break;
             case Piece::Perc:      pan = (midiNoteNumber & 1) ? -0.58f : 0.55f; break;
@@ -1123,7 +1123,7 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
         sampleRateOfFile = sample->sourceRate;
         if (drumPiece == DrumPiece::Tom)
             tomRatio = std::pow(2.0, (midiNoteNumber - DrumLibrary::tomRootNote()) / 12.0);
-        kitLpCoeff = brightPiece ? 1.0 : library.kitLowpassCoeff(kit);
+        kitLpCoeff = brightPiece ? 0.16 : library.kitLowpassCoeff(kit);
         level = library.gainFor(kit, drumPiece) * vel;
         decayMul = 1.0;
         honourNoteOff = honourNoteOff || drumPiece == DrumPiece::OpenHat
@@ -1189,15 +1189,18 @@ void DrumVoice::startNote(int midiNoteNumber, float velocity,
             setDecay(0.28);
             break;
         case Piece::ClosedHat:
-            level *= (kit == Genre::House ? 0.45f : 0.38f);
+            level *= 0.22f;
+            kitLpCoeff = juce::jmin(kitLpCoeff, 0.16);
             setDecay(kit == Genre::Trap ? 0.07 : 0.09);
             break;
         case Piece::OpenHat:
-            level *= 0.42f;
+            level *= 0.20f;
+            kitLpCoeff = juce::jmin(kitLpCoeff, 0.16);
             setDecay(0.45);
             break;
         case Piece::Ride:
-            level *= 0.28f;
+            level *= 0.16f;
+            kitLpCoeff = juce::jmin(kitLpCoeff, 0.14);
             setDecay(0.7);
             break;
         case Piece::Crash:
@@ -1257,15 +1260,15 @@ float DrumVoice::nextSample()
         env *= decayMul;
         noteTime += 1.0 / sr;
 
-        if (kitLpCoeff < 0.99 && piece == Piece::Kick)
+        if (kitLpCoeff < 0.99 && (piece == Piece::Kick || brightPiece))
         {
             kitLpState += kitLpCoeff * (s - kitLpState);
             s = kitLpState;
         }
         if (brightPiece)
         {
-            hatAirLp += 0.18f * (static_cast<float>(s) - hatAirLp);
-            s += 0.55 * (s - hatAirLp);
+            hatAirLp += 0.22f * (static_cast<float>(s) - hatAirLp);
+            s = hatAirLp;
         }
 
         return static_cast<float>(s) * level * static_cast<float>(env);
@@ -1353,15 +1356,15 @@ float DrumVoice::nextSynthSample()
     env *= decayMul;
     s *= env;
 
-    if (kitLpCoeff < 0.99 && piece == Piece::Kick)
+    if (kitLpCoeff < 0.99 && (piece == Piece::Kick || brightPiece))
     {
         kitLpState += kitLpCoeff * (s - kitLpState);
         s = kitLpState;
     }
     if (brightPiece)
     {
-        hatAirLp += 0.18f * (static_cast<float>(s) - hatAirLp);
-        s += 0.5 * (s - hatAirLp);
+        hatAirLp += 0.22f * (static_cast<float>(s) - hatAirLp);
+        s = hatAirLp;
     }
 
     noteTime += 1.0 / sr;

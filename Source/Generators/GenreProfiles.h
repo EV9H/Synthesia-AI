@@ -41,27 +41,30 @@ struct ArpProfile
     int velocity{88};
 };
 
-// Drum pattern strings are 16 steps (one bar of 16ths): 'X' accent, 'x' hit, 'g' ghost, '.' rest.
+// One bar of 16ths: 'X' accent, 'x' hit, 'g' ghost, '.' rest. Grooves are
+// hand-authored kit templates (kick/snare/hats together), not independent lanes.
+struct DrumGroove
+{
+    std::string kick;
+    std::string snare;
+    std::string clap;
+    std::string closedHat;
+    std::string openHat;
+    std::string tom;
+};
+
 struct DrumProfile
 {
-    std::vector<std::string> kick;
-    std::vector<std::string> snare;
-    std::vector<std::string> clap;
-    std::vector<std::string> closedHat;
-    std::vector<std::string> openHat;
-    std::vector<std::string> perc;          // rim, shaker, tambourine
-    bool rideHats{false};                   // lo-fi/jazz: ride instead of busy closed hats
+    std::vector<DrumGroove> grooves;
+    bool rideHats{false};                   // lo-fi: ride instead of closed hats
     double hatSwing{0.5};                   // 0.5 = straight; 16th shuffle when > 0.5
     double laidBackMs{0.0};                 // delay the whole kit (Dilla / laid-back)
     double hatLagMs{0.0};                   // extra delay on hats only
-    double humanizeMs{5.0};
-    double ghostSnareChance{0.15};
-    double fillChance{0.8};
-    double hatRollChance{0.0};
-    bool lockKickToBass{false};
-    int kickVelocity{110};
-    int snareVelocity{108};
-    int hatVelocity{88};
+    double humanizeMs{4.0};
+    bool lockKickToBass{false};             // trap: kick follows the 808
+    int kickVelocity{112};
+    int snareVelocity{110};
+    int hatVelocity{52};
 };
 
 // Pattern strings are 16 steps (one bar of 16ths):
