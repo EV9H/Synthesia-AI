@@ -94,7 +94,10 @@ namespace
             "  --style-profile <file.json>    blend this learned profile with the genre\n"
             "  --style-blend <0-1>     0 = genre only, 1 = full learned style (default 1)\n"
             "  --preset <id>           factory/user preset (overrides genre/key/form/etc.)\n"
-            "  --sidechain <on|off>    kick-bus ducking on pads/bass (default on)\n"
+            "  --sidechain <on|off>    ignored; preview uses a fixed master\n"
+            "  --neutral-preview       one piano/EP/bass/pop-kit sound set for all genres\n"
+            "  --regen-part <name>     re-roll one part after the first generate (keep others)\n"
+            "  --regen-seed <n>        seed for --regen-part (default 2)\n"
             "  --list-presets          print factory (and user) preset ids and exit\n"
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
@@ -403,6 +406,25 @@ int main(int argc, char* argv[])
     if (!importOnly)
         synthesia->generateMidiBlocking(params);
 
+    const auto regenPartName = option("--regen-part", {});
+    if (regenPartName.isNotEmpty())
+    {
+        const int regenIndex = partNames.indexOf(regenPartName, true);
+        if (regenIndex <= 0)
+        {
+            std::cerr << "Invalid --regen-part (use chords|bass|synth|piano|drums)\n";
+            return 1;
+        }
+        params.part = static_cast<Part>(regenIndex);
+        params.seed = static_cast<unsigned int>(option("--regen-seed", "2").getLargeIntValue());
+        if (params.seed == 0)
+            params.seed = 2;
+        synthesia->generateMidiBlocking(params);
+    }
+
+    if (args.contains("--neutral-preview"))
+        synthesia->previewSynth().loadNeutralPreview();
+
     // Import starts preview so the editor can audition a drop-in; the offline
     // host must not keep that looping clip running into the release tail.
     synthesia->setPreviewPlaying(false);
@@ -424,7 +446,7 @@ int main(int argc, char* argv[])
     {
         const juce::File midiFile = juce::File::getCurrentWorkingDirectory().getChildFile(midiPath);
         midiFile.getParentDirectory().createDirectory();
-        if (!MidiExporter::exportToFile(clip, midiFile, params.tempo))
+        if (!MidiExporter::exportToFile(clip, midiFile, params.tempo, 4, 4))
         {
             std::cerr << "Failed to write " << midiFile.getFullPathName() << "\n";
             return 3;

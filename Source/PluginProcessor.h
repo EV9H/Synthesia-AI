@@ -116,6 +116,19 @@ public:
 
     juce::File writeTempMidi(Part part) const;
 
+    void regeneratePart(Part part, bool variation);
+
+    void setFollowHostTempo(bool shouldFollow);
+    bool getFollowHostTempo() const { return followHostTempo.load(); }
+    void setFollowHostKey(bool shouldFollow);
+    bool getFollowHostKey() const { return followHostKey.load(); }
+    double getHostTempo() const { return hostTempo.load(); }
+    int getHostTimeSigNumerator() const { return hostTimeSigNum.load(); }
+    int getHostTimeSigDenominator() const { return hostTimeSigDen.load(); }
+
+    void setAdvancedUi(bool enabled);
+    bool isAdvancedUi() const;
+
     void setLicenseKey(const juce::String& key);
     juce::String getLicenseKey() const { return licenseKey; }
     bool isLicensed() const { return LicenseStub::isLicensed(licenseKey); }
@@ -224,6 +237,13 @@ private:
     juce::String currentStyleName;
     double styleBlend{0.0};
     int styleVersion{0};
+
+    std::atomic<bool> followHostTempo{true};
+    std::atomic<bool> followHostKey{false};
+    std::atomic<double> hostTempo{0.0};
+    std::atomic<int> hostTimeSigNum{4};
+    std::atomic<int> hostTimeSigDen{4};
+    bool advancedUi{false};
 
     std::atomic<bool> captureEnabled{false};
     juce::SpinLock captureLock;

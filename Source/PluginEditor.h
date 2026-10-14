@@ -133,6 +133,8 @@ private:
     Part selectedSoundPart() const;
     void styleControl(juce::Component& c);
     void styleSlider(juce::Slider& slider);
+    void applyAdvancedVisibility();
+    void onRegeneratePart(Part part, bool variation);
 
     SynthesiaAIProcessor& audioProcessor;
     SynthesiaLookAndFeel lookAndFeel;
@@ -168,6 +170,8 @@ private:
     juce::Slider tempoSlider;
     juce::Label tempoSyncLabel;
     juce::ComboBox tempoSyncComboBox;
+    juce::ToggleButton followHostTempoButton;
+    juce::ToggleButton followHostKeyButton;
     juce::Label generatorLabel;
     juce::ComboBox generatorComboBox;
     juce::Label chordsLabel;
@@ -232,6 +236,8 @@ private:
     juce::Label mixLabel;
     juce::OwnedArray<juce::TextButton> muteButtons;
     juce::OwnedArray<juce::TextButton> soloButtons;
+    juce::OwnedArray<juce::TextButton> regenButtons;
+    juce::OwnedArray<juce::TextButton> variationButtons;
     juce::Label dragHintLabel;
     juce::OwnedArray<MidiDragChip> dragChips;
     juce::TextButton previewButton;
@@ -273,6 +279,7 @@ private:
     juce::TextEditor endpointEditor;
     juce::Label modelLabel;
     juce::TextEditor modelEditor;
+    juce::ToggleButton advancedToggle;
     juce::Label licenseLabel;
     juce::TextEditor licenseEditor;
     juce::Label usageLabel;

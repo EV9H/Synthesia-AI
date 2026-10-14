@@ -11,23 +11,22 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
   - **LLM planner**: OpenAI-compatible endpoint (your key, configurable base URL + model) returns a compact JSON arrangement plan only — form, chords, energy/density, motif, parts, tempo/swing, genre. The genre engine realises every note, so nothing is out of key. Without a key, prompt keywords pick genre/energy offline.
   
 - **UI Controls**:
-  - Dark, resizable editor with **Generate / Plan / Import / Style / Sound** tabs, readable 15pt fonts, and a persistent piano-roll footer
+  - Dark, resizable editor with **Generate / Plan / Import / Style** tabs. Headline features are **LLM text-to-arrangement** and **MIDI import / accompany**
   - Genre, part (All / Chords / Bass / Synth / Piano / Drums), key and scale
   - Form (loop or song: intro / verse / pre / chorus / drop / bridge / break / outro) and length (1-32 bars)
   - Chord input (symbols like `Am9 Fmaj9` or Roman numerals, `|` for bar groups) with a lock so regenerating keeps the progression
-  - Per-part locks (keep drums, regenerate bass, etc.) and per-part **mute / solo** on the piano roll
-  - Tempo (60-180 bpm, defaults follow the genre) and grid / quantization
+  - Per-part locks, mute / solo, and **Regenerate (R)** / **Variation (V)** to re-roll one part while keeping the others
+  - Tempo and grid, plus **Follow host tempo** (AudioPlayHead BPM / time signature / PPQ). **Follow host key** keeps the key you set (hosts do not send key)
   - Style/prompt text input; **Plan** fills sections/chords (editable) then **Generate MIDI** realises them
   - **MIDI import**: file chooser, drag-drop, or host MIDI capture. Detects key/scale/tempo, per-bar chords (editable in the lock field) and part roles
   - Import modes: **Accompany** (keep the user's part, write the rest + drums), **Extend** (continue N bars with song form), **Rewrite** (same chords, new voicings/melody/bass), **Restyle** (same harmony/melody in another genre groove)
-  - **Style profiles**: learn chord vocabulary, voicings, rhythm grids, bass approaches, swing and melody intervals from several `.mid` files (or a folder). Named JSON profiles live in user app data; a **Blend** slider mixes them with the selected genre (arranger, LLM plan, and import modes)
-  - **Factory presets** (~10 across pop, lo-fi, house, trap, neo-soul, cinematic, song form, locked jazz changes). Save your own; the host restores full generator state plus the last clip via `getStateInformation`
-  - Settings: OpenAI or **Groq** preset (or a custom OpenAI-compatible URL), API key, model, last/session token counts, offline license key
+  - **Style profiles**: learn chord vocabulary, voicings, rhythm, bass approaches and swing from `.mid` files. Blend slider and Trial/license stub are behind **Advanced UI** (Settings checkbox or `SYNTHESIA_ADVANCED=1`)
+  - **Factory presets**. Save your own; the host restores full generator state plus the last clip via `getStateInformation`
+  - Settings: OpenAI or **Groq** preset (or a custom OpenAI-compatible URL), API key, model, last/session token counts
   
 - **Preview & Export**:
-  - Built-in preview synth with per-part patches: 2–3 oscillators (supersaw unison, sub, noise, FM tine), ADSR amp + filter envelopes, resonant LP/HP/BP, pitch envelope, LFO (vibrato / filter / PWM), glide, then chorus, tempo-synced stereo delay, reverb, tape saturation, EQ, glue compressor and limiter. Genre-aware defaults layer **real stereo multisamples** (Salamander grand, Wurlitzer EP, VSCO-2 CE strings/brass/flute/organ, Yamaha RBX bass, nylon + steel guitar, velocity layers, round-robins, release samples) and keep synth for supersaw / house stabs / 808 / house bass. Mix bus: per-part HPF/mud/air, bass mono below 120 Hz, Haas/width on the music bus, kick-triggered sidechain with a smoothed envelope, gentler per-bus comps (about 2–4 dB GR) and master glue + oversampled-style true-peak limiter at −1 dBTP. Target loudness is about −10…−12 LUFS (lo-fi / R&B / cinematic −13…−14). Drums stay on the CC0 sampled kits with hat round-robins, pedal chicks, and open-hat choke. Sample pack ~75 MB; licenses in `Samples/README.md`. `Tools/analyze_mix.sh` prints LUFS, true peak, LRA, band RMS and side RMS.
-  - **Sound** tab: pick a part and a patch, then tweak A/D/S/R, cutoff, resonance, drive, reverb and delay sends, plus Mix preset / sidechain / comp. Saved with host state and factory/user presets (genre defaults).
-  - **Drag a part (or All parts) out of the plugin as `.mid`** into a DAW; also **Export MIDI** for multi-track, per-part files, or a single part
+  - The product is **MIDI**. Play it with **your sounds in the DAW**. Built-in audio is a sketch: one fixed preview patch per genre (piano / EP / bass samples + synth for stabs / 808 / supersaw) through a single master (light compressor + −1 dBTP limiter). Sample pack ~32 MB; licenses in `Samples/README.md`
+  - **Drag a part (or All parts) out as `.mid`** — bar 1, 960 PPQ, tempo and time-signature meta. **Export MIDI** for multi-track, per-part files, or a single part
   - MIDI output routing to DAW tracks
   
 - **Non-Blocking Generation**: All generation happens off the audio thread for smooth performance
@@ -140,8 +139,9 @@ API key the planner uses a keyword heuristic. `--import file.mid` analyses a cli
 (key, chords, part roles) and `--import-mode accompany|extend|rewrite|restyle`
 keeps or rewrites it through the arranger. `--style-profile file.json` and
 `--style-blend 0..1` mix a learned style with the genre. `--preset <id>` loads a factory
-(or user) preset; `--list-presets` prints ids. `--sidechain on|off` enables kick-bus
-ducking (default on; house pumps hard, trap leaves the 808). `--part` selects chords, bass, synth,
+(or user) preset; `--list-presets` prints ids. `--neutral-preview` renders every genre
+through the same piano / EP / bass / pop-kit so A/B is about the MIDI. `--regen-part`
+re-rolls one part after the first generate. `--part` selects chords, bass, synth,
 piano, drums, or all five. `--split-midi` also writes one `.mid` per part.
 It exits non-zero if the render is silent, clips, or plays a different number of
 notes than the clip contains.

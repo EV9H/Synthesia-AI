@@ -129,7 +129,16 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         if (auto position = playHead->getPosition())
         {
             if (auto hostBpm = position->getBpm())
+            {
                 bpm = *hostBpm;
+                hostTempo.store(*hostBpm);
+            }
+
+            if (auto sig = position->getTimeSignature())
+            {
+                hostTimeSigNum.store(juce::jmax(1, sig->numerator));
+                hostTimeSigDen.store(juce::jmax(1, sig->denominator));
+            }
 
             if (position->getIsPlaying())
             {
@@ -141,6 +150,9 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             }
         }
     }
+
+    if (followHostTempo.load() && hostTempo.load() > 0.0)
+        bpm = hostTempo.load();
 
     simpleSynth.setTempo(bpm);
 
@@ -428,6 +440,12 @@ ArrangementPlan SynthesiaAIProcessor::planArrangementBlocking(const MidiGenerati
 
 MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams params, bool& mergeIntoClip) const
 {
+    if (params.seed == 0)
+        params.seed = static_cast<unsigned int>(juce::Random::getSystemRandom().nextInt(0x3fffffff)) + 1u;
+
+    if (followHostTempo.load() && hostTempo.load() > 20.0)
+        params.tempo = hostTempo.load();
+
     const bool sameContext = !progression.empty()
                           && params.rootNote == clipParams.rootNote
                           && params.scale == clipParams.scale
@@ -478,6 +496,8 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
         const auto quant = params.quantization;
         const auto style = params.stylePrompt;
         const auto chordOverride = params.chordText;
+        const auto key = params.rootNote;
+        const auto scale = params.scale;
         auto plan = ArrangementPlan::parseJson(params.planJson, params);
         plan.applyTo(params);
         params.seed = seed;
@@ -485,6 +505,11 @@ MidiGenerationParams SynthesiaAIProcessor::prepareParams(MidiGenerationParams pa
         params.lockedParts = locked;
         params.quantization = quant;
         params.stylePrompt = style;
+        if (followHostKey.load())
+        {
+            params.rootNote = key;
+            params.scale = scale;
+        }
         if (!chordOverride.empty())
         {
             params.chordText = chordOverride;
@@ -561,6 +586,11 @@ SynthesiaAIProcessor::Result SynthesiaAIProcessor::runGenerator(MidiGenerator& g
         realised.part = params.part;
         realised.lockedParts = params.lockedParts;
         realised.quantization = params.quantization;
+        if (followHostKey.load())
+        {
+            realised.rootNote = params.rootNote;
+            realised.scale = params.scale;
+        }
         if (!params.chordText.empty())
         {
             realised.chordText = params.chordText;
@@ -948,6 +978,44 @@ bool SynthesiaAIProcessor::isPartAudible(Part part) const
     return (muteMask.load() & partLockBit(part)) == 0;
 }
 
+void SynthesiaAIProcessor::regeneratePart(Part part, bool variation)
+{
+    auto params = lastUiParams;
+    params.part = part;
+    const unsigned base = clipParams.seed != 0 ? clipParams.seed
+                        : (lastUiParams.seed != 0 ? lastUiParams.seed : 1u);
+    params.seed = variation
+        ? base + 1009u * static_cast<unsigned int>(part) + 1u
+        : static_cast<unsigned int>(juce::Random::getSystemRandom().nextInt(0x3fffffff)) + 1u;
+    generateMidi(params);
+}
+
+void SynthesiaAIProcessor::setFollowHostTempo(bool shouldFollow)
+{
+    followHostTempo.store(shouldFollow);
+    persistLocalSettings();
+}
+
+void SynthesiaAIProcessor::setFollowHostKey(bool shouldFollow)
+{
+    followHostKey.store(shouldFollow);
+    persistLocalSettings();
+}
+
+void SynthesiaAIProcessor::setAdvancedUi(bool enabled)
+{
+    advancedUi = enabled;
+    persistLocalSettings();
+}
+
+bool SynthesiaAIProcessor::isAdvancedUi() const
+{
+    const auto env = juce::SystemStats::getEnvironmentVariable("SYNTHESIA_ADVANCED", {});
+    if (env == "1" || env.equalsIgnoreCase("true") || env.equalsIgnoreCase("yes"))
+        return true;
+    return advancedUi;
+}
+
 juce::File SynthesiaAIProcessor::writeTempMidi(Part part) const
 {
     auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory)
@@ -956,7 +1024,10 @@ juce::File SynthesiaAIProcessor::writeTempMidi(Part part) const
     const auto stem = juce::String(partName(part)).replaceCharacters(" /", "--").replace("--", "-");
     auto file = dir.getChildFile(stem + ".mid");
     const auto midi = MidiExporter::filterPart(generatedMidi, part);
-    MidiExporter::exportToFile(midi, file, previewTempo.load());
+    const double tempo = followHostTempo.load() && hostTempo.load() > 20.0
+        ? hostTempo.load() : previewTempo.load();
+    MidiExporter::exportToFile(midi, file, tempo,
+                               hostTimeSigNum.load(), hostTimeSigDen.load());
     return file;
 }
 
@@ -1009,6 +1080,9 @@ void SynthesiaAIProcessor::persistLocalSettings() const
     xml.setAttribute("apiModel", apiModel);
     xml.setAttribute("apiProvider", apiProvider);
     xml.setAttribute("licenseKey", licenseKey);
+    xml.setAttribute("advancedUi", advancedUi ? 1 : 0);
+    xml.setAttribute("followHostTempo", followHostTempo.load() ? 1 : 0);
+    xml.setAttribute("followHostKey", followHostKey.load() ? 1 : 0);
     xml.writeTo(localSettingsFile());
 }
 
@@ -1025,6 +1099,9 @@ void SynthesiaAIProcessor::loadLocalSettings()
     apiModel = xml->getStringAttribute("apiModel", apiModel);
     apiProvider = xml->getStringAttribute("apiProvider", apiProvider);
     licenseKey = xml->getStringAttribute("licenseKey");
+    advancedUi = xml->getIntAttribute("advancedUi", 0) != 0;
+    followHostTempo.store(xml->getIntAttribute("followHostTempo", 1) != 0);
+    followHostKey.store(xml->getIntAttribute("followHostKey", 0) != 0);
     configureLlm(*generator);
 }
 
