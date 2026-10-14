@@ -82,6 +82,11 @@ namespace theory
         else if (ext == "s2")  spec.suspension = 2;
         else if (ext == "s4")  spec.suspension = 4;
         else if (ext == "a9")  spec.add9 = true;
+        else if (ext == "h" || ext == "ø")
+        {
+            spec.halfDiminished = true;
+            spec.extension = 7;
+        }
 
         return spec;
     }
@@ -96,7 +101,13 @@ namespace theory
         ChordInfo chord;
         std::vector<int> intervals;
 
-        if (spec.borrowed || spec.dominant)
+        if (spec.halfDiminished)
+        {
+            const int degree = spec.degree;
+            chord.rootPitchClass = (keyRoot + mode[static_cast<size_t>(degree)]) % 12;
+            intervals = { 0, 3, 6, 10 };
+        }
+        else if (spec.borrowed || spec.dominant)
         {
             static const std::array<int, 7> majorScale{ 0, 2, 4, 5, 7, 9, 11 };
             const int rootOffset = spec.borrowed ? majorScale[static_cast<size_t>(spec.degree)] - 1
@@ -286,6 +297,14 @@ namespace theory
             for (size_t i = 1; i < voicing.size(); ++i)
                 if (voicing[i - 1] < 52 && voicing[i] - voicing[i - 1] < 5)
                     penalty += 6.0;
+            // Minor-second clusters (9th against a minor 3rd, 11th against a 5th).
+            for (size_t i = 0; i < voicing.size(); ++i)
+                for (size_t j = i + 1; j < voicing.size(); ++j)
+                    if (std::abs(voicing[j] - voicing[i]) % 12 == 1)
+                        penalty += 9.0;
+            if (!voicing.empty() && voicing.front() % 12 == chord.rootPitchClass
+                && voicing.back() - voicing.front() < 10)
+                penalty += 2.8;
 
             double mean = 0.0;
             for (int note : voicing)
@@ -318,6 +337,9 @@ namespace theory
                     int note = close.back() + 1;
                     while (note % 12 != pc)
                         ++note;
+                    // Keep 9ths/11ths off the adjacent minor 2nd by lifting them.
+                    if (note - close.back() == 1 && note + 12 <= options.high + 12)
+                        note += 12;
                     close.push_back(note);
                 }
 
@@ -327,7 +349,10 @@ namespace theory
                     for (auto& note : shifted)
                         note += octaveShift;
 
-                    const double inversionPenalty = previous.empty() && inversion != 0 ? 4.0 : 0.0;
+                    // Prefer inverted / drop-2 voicings over stacked root-position triads.
+                    const double inversionPenalty = inversion == 0
+                        ? (previous.empty() ? 1.2 : 3.4)
+                        : (inversion == 1 ? 0.0 : 0.45);
 
                     if (options.open)
                     {

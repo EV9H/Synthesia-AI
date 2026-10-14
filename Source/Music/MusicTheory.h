@@ -23,7 +23,7 @@ namespace theory
     //   [b]<degree 1-7>[D][ext]
     //   b    borrowed chord, a major chord on the flattened degree (bVI, bVII, bIII, bII)
     //   D    dominant quality (major third, minor seventh), e.g. "5D" for V7 in minor
-    //   ext  "t" triad, "7", "9", "11", "s2"/"s4" suspended, "a9" add9
+    //   ext  "t" triad, "7", "9", "11", "s2"/"s4" suspended, "a9" add9, "h" half-dim
     // Without ext the genre's default extension level is used.
     struct ChordSpec
     {
@@ -33,6 +33,7 @@ namespace theory
         int extension{0};       // 0 = genre default, else 3/7/9/11
         int suspension{0};      // 0, 2 or 4
         bool add9{false};
+        bool halfDiminished{false};
     };
 
     ChordSpec parseChordToken(const std::string& token);
