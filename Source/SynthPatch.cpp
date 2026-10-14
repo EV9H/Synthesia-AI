@@ -287,7 +287,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.filterMode = FilterMode::LowPass; p.cutoff = 4200.0f; p.resonance = 0.12f;
         p.filterEnvAmount = 0.5f;
         p.chorusSend = 0.22f; p.reverbSend = 0.10f; p.drive = 0.16f; p.gain = 0.54f;
-        p.sampleKind = SampleKind::Organ; p.sampleMix = 0.92f;
+        p.sampleKind = SampleKind::Off; p.sampleMix = 0.0f;
         p.cutoff = 5600.0f; p.filterEnvAmount = 0.25f;
         patches.add(p);
     }
@@ -325,7 +325,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.cutoff = 1100.0f; p.resonance = 0.32f; p.filterEnvAmount = 1.8f;
         p.chorusSend = 0.42f; p.delaySend = 0.14f; p.reverbSend = 0.36f;
         p.drive = 0.14f; p.gain = 0.50f;
-        p.sampleKind = SampleKind::Strings; p.sampleMix = 0.78f;
+        p.sampleKind = SampleKind::Ep; p.sampleMix = 0.78f;
         patches.add(p);
     }
     {
@@ -364,7 +364,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.filterMode = FilterMode::HighPass; p.cutoff = 380.0f; p.resonance = 0.22f;
         p.filterEnvAmount = 0.55f;
         p.delaySend = 0.18f; p.reverbSend = 0.16f; p.chorusSend = 0.12f; p.gain = 0.48f;
-        p.sampleKind = SampleKind::Pluck; p.sampleMix = 0.90f;
+        p.sampleKind = SampleKind::Piano; p.sampleMix = 0.90f;
         p.cutoff = 5200.0f;
         patches.add(p);
     }
@@ -418,7 +418,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.lfoRate = 0.22f; p.lfoToFilter = 0.18f;
         p.chorusSend = 0.52f; p.delaySend = 0.16f; p.reverbSend = 0.36f;
         p.gain = 0.46f;
-        p.sampleKind = SampleKind::Strings; p.sampleMix = 0.76f;
+        p.sampleKind = SampleKind::Ep; p.sampleMix = 0.76f;
         patches.add(p);
     }
 
@@ -433,7 +433,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.lfoRate = 0.16f; p.lfoToFilter = 0.12f; p.lfoToPitch = 3.0f;
         p.chorusSend = 0.48f; p.delaySend = 0.10f; p.reverbSend = 0.55f;
         p.drive = 0.06f; p.gain = 0.48f;
-        p.sampleKind = SampleKind::Strings; p.sampleMix = 0.88f;
+        p.sampleKind = SampleKind::Piano; p.sampleMix = 0.88f;
         p.cutoff = 2800.0f;
         patches.add(p);
     }
@@ -474,7 +474,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.lfoRate = 4.5f; p.lfoDelay = 0.4f; p.lfoToPitch = 8.0f;
         p.chorusSend = 0.36f; p.delaySend = 0.22f; p.reverbSend = 0.48f;
         p.gain = 0.42f;
-        p.sampleKind = SampleKind::Woodwind; p.sampleMix = 0.86f;
+        p.sampleKind = SampleKind::Piano; p.sampleMix = 0.86f;
         p.cutoff = 4200.0f; p.filterEnvAmount = 0.35f;
         patches.add(p);
     }
@@ -528,7 +528,7 @@ juce::Array<SynthPatch> PatchLibrary::all()
         p.lfoToPwm = 0.15f; p.lfoRate = 0.7f;
         p.delaySend = 0.18f; p.reverbSend = 0.16f; p.chorusSend = 0.15f;
         p.gain = 0.55f;
-        p.sampleKind = SampleKind::Steel; p.sampleMix = 0.90f;
+        p.sampleKind = SampleKind::Piano; p.sampleMix = 0.90f;
         p.cutoff = 3600.0f;
         patches.add(p);
     }

@@ -1,23 +1,16 @@
 # Preview drum and instrument samples
 
-One-shots and velocity-layered instrument samples embedded in the plugin via
-JUCE BinaryData. Processed to **44.1 kHz, 16-bit, stereo**, trimmed, and
-loudness-matched (drums peak-normalised to about −1 dBFS; pitched instruments
-loudnorm I=−18, TP=−1.2). Total pack is about **75 MB**, under the 150 MB
-budget.
+Preview-only samples for the built-in synth. Users are expected to play the
+generated MIDI with **their own sounds in the DAW**. Processed to **44.1 kHz,
+16-bit, stereo**. Total pack is about **32 MB**.
 
-Pitched preview parts prefer **real recorded instruments** for piano, EP,
-strings, brass, woodwinds, organ, bass guitar, and nylon/steel guitar.
-Synthesis stays on electronic voices: supersaw, house stabs, 808 sine with
-pitch envelope, house pluck-bass, and cinematic sub. `InstrumentLibrary`
-picks the nearest root, a soft/mid/hard velocity layer, and a round-robin
-take; piano and steel guitar also fire a release sample on note-off.
-Strings, organ, brass, and woodwinds loop with a short crossfade so sustain
-tails hold.
+Keep **piano, EP, bass guitar, and one drum kit per genre**. Orchestra, organ,
+and guitar layers were dropped to stay near 30 MB. `InstrumentLibrary` picks
+the nearest root and a soft/hard velocity layer; piano also fires a release
+sample on note-off.
 
 Every source below is **CC0 1.0** or **CC-BY-3.0** (attribution in this file).
-CC-BY-NC packs such as jRhodes3d are **not** shipped. The synthesized kit
-and oscillator voices in `SimpleSynth` remain as a fallback if a slot is missing.
+CC-BY-NC packs such as jRhodes3d are **not** shipped.
 
 ## Kits
 
@@ -138,21 +131,20 @@ Hat round-robins (all CC0):
 
 ## Pitched instruments
 
-Stereo multisamples. Zones are trimmed so the whole `Samples/` tree stays
-under ~150 MB. `InstrumentLibrary` nearest-neighbour pitches between roots.
+Stereo preview multisamples (piano, EP, bass). One drum kit per genre is
+documented above.
 
 ### Salamander Grand Piano (CC-BY-3.0)
 
-Yamaha C5 recorded by Alexander Holm (AB pair, 44.1 kHz 16-bit). Three
-velocity layers (v4/v8/v12 → soft/mid/hard) on C and F# from C2–C6, plus
-hammer-release samples.
+Yamaha C5 recorded by Alexander Holm (AB pair, 44.1 kHz 16-bit). Two
+velocity layers (v4/v12) on C and F# from C2–C6, plus hammer-release samples.
 
 - Source: https://archive.org/details/SalamanderGrandPianoV3
 - License: https://creativecommons.org/licenses/by/3.0/ (credit: Alexander Holm)
 
 | Files | Notes |
 | --- | --- |
-| `inst_piano_{36,42,48,54,60,66,72,78,84}_{soft,mid,hard}.wav` | 9 roots × 3 velocities, ~3.6 s tails |
+| `inst_piano_{36,42,48,54,60,66,72,78,84}_{soft,hard}.wav` | 9 roots × 2 velocities, ~3.6 s tails |
 | `inst_piano_{36,48,60,72}_rel.wav` | Pitched key-release (rel36/48/60/72) |
 | `inst_piano_rel_{soft,hard}.wav` | Generic releases (rel5 / rel12) |
 
@@ -169,47 +161,16 @@ and is not included; this Wurlitzer is the permissive stand-in.
 | --- | --- |
 | `inst_ep_{33,40,45,51,56,61,67,73,79}_{soft,hard}.wav` | pp/mp vs f/ff, A1–G5 |
 
-### VSCO-2 Community Edition (CC0-1.0)
+### FreePats electric bass (CC0-1.0)
 
-Versilian Studios Community Orchestra 2 CE. Strings are violin-section
-susVib plus cello-section susvib for the low end; brass is tenor trombone
-plus trumpet sustain; woodwinds are flute susvib; organ is the Ivy Audio
-Rode pipe organ (Loud/Quiet).
+Yamaha RBX finger (soft) and pick (hard), chromatic E1–E2.
 
-- Pack: https://github.com/sgossner/VSCO-2-CE
-- License: CC0 1.0
-- Organ sampled by Simon Dalzell / Ivy Audio, Winter 2015–16
-
-| Files | Source | Notes |
-| --- | --- | --- |
-| `inst_str_{24,43,48,60,64,67,74}_{soft,hard}.wav` | Cello + violin section susvib | 2 velocities, looped |
-| `inst_brs_{29,34,41,48,55,62}_{soft,hard}.wav` | Trombone F1/A#1 + trumpet F2–D4 | 2 velocities, looped |
-| `inst_ww_{48,52,64,69,72,84,96}_soft.wav` | Flute susvib | RR on E4 (`_rr1`) |
-| `inst_org_{36,48,60,72,84}_{soft,hard}.wav` | Organ Quiet / Loud manuals | Looped |
-
-### FreePats bass and nylon guitar (CC0-1.0)
-
-- Packs: https://freepats.zenvoid.org/
-- Bass: https://github.com/freepats/electric-bass-YR (Yamaha RBX, finger + pick)
-- Nylon: https://github.com/freepats/spanish-classical-guitar
+- Pack: https://github.com/freepats/electric-bass-YR
 - License: CC0-1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
-
-| Files | Pack | Notes |
-| --- | --- | --- |
-| `inst_bass_{28–40}_{soft,hard}.wav` | electric-bass-YR | Chromatic E1–E2; finger=soft, pick=hard |
-| `inst_plk_{40,43,48,52,55,60,64,67,72,76}_hard.wav` | spanish-classical-guitar | Nylon, E2–E5 |
-
-### Karoryfer Emily guitar (CC0-1.0)
-
-Steel-string acoustic, four recorded dynamics (we ship p/f) with round-robins
-and per-note release noises.
-
-- Pack: https://github.com/sfzinstruments/karoryfer.emilyguitar
-- License: CC0 1.0
 
 | Files | Notes |
 | --- | --- |
-| `inst_stl_{52,57,60,63,69,72,78,84,90}_{soft,hard}[_rr2].wav` | 9 roots × 2 vel × 2 RR |
-| `inst_stl_*_rel.wav` | Fret/finger release |
+| `inst_bass_{28–40}_{soft,hard}.wav` | Chromatic E1–E2 |
 
-Supersaw, house stabs, 808 bass, house pluck-bass, and cinematic sub stay synthesized.
+House stabs, supersaw, 808 bass, and cinematic sub stay synthesized. Preview
+only — drag the MIDI into the DAW for the real mix.
