@@ -18,13 +18,13 @@ namespace
         p.minorProgressions = { { "1 6 3 7" }, { "6 7 1 1" }, { "1 7 6 7" } };
 
         p.chordStyle = ChordStyle::Pulse;
-        p.chordPatterns = { "X-------x-------", "X-----x-------x-", "X-------x---x---" };
-        p.chordVoicing = { 50, 72, 4, false, false };
+        p.chordPatterns = { "X-------x-------", "X-----x-------x-", "X-------x---x---", "X---x---X-------" };
+        p.chordVoicing = { 52, 74, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "R-R-R-R-R-R-F-A-", "R---..R-R---..A-", "R-.RR-.RR-.RF-A-" };
+        p.bassPatterns = { "R-R-R-R-R-R-F-A-", "R---..R-R---..A-", "R-.RR-.RR-.RF-A-", "R---R---R---F-A-" };
         p.bassLow = 33;
-        p.bassHigh = 50;
+        p.bassHigh = 48;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
@@ -37,6 +37,7 @@ namespace
             { "X.......X.......", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "............x...", "" },
             { "X.x.....X.......", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "............x...", "" },
             { "X.......X.x.....", "....X.......X...", "", "x.x.x.x.x.x.x...", "........x.......", "" },
+            { "X...x...X.......", "....X.......X...", "", "x...x.x.x...x.x.", "............x...", "" },
         };
         p.drums.hatSwing = 0.50;
         p.drums.humanizeMs = 3.0;
@@ -61,13 +62,13 @@ namespace
         p.minorProgressions = { { "1 4 7 3" }, { "2 5D 1 1" }, { "1 6 2 5D" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....",
-                            "X-----.x-----...", "X---------..x---", "x---....X-------" };
-        p.chordVoicing = { 50, 70, 4, true, false };
+        p.chordPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....", "X---------..x---" };
+        p.chordVoicing = { 52, 71, 4, true, false };
 
         p.bassStyle = BassStyle::Walking;
+        p.bassPatterns = { "R-------R-------", "R---F---R---A---", "R-T-F-A-R-T-F-A-" };
         p.bassLow = 28;
-        p.bassHigh = 48;
+        p.bassHigh = 47;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
@@ -80,6 +81,7 @@ namespace
             { "X.......x.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
             { "X-----------x---", "....X.......X...", "", "x...x.x.x...x...", "................", "" },
             { "X.....x.X.......", "....X.......X...", "", "x...x...x...x.g.", "............x...", "" },
+            { "X.......X.......", "....X.....g.X...", "", "x...x.g.x...x...", "............x...", "" },
         };
         p.drums.rideHats = false;
         p.drums.hatSwing = 0.66;
@@ -107,14 +109,13 @@ namespace
         p.minorProgressions = { { "1 6 3 7" }, { "1 7 6 7" }, { "1 4 1 4" }, { "1 6 7 1" } };
 
         p.chordStyle = ChordStyle::Stabs;
-        p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..",
-                            "..x-..x-........", "x-..x-..x-..x-.." };
+        p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
         p.chordVoicing = { 55, 76, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-", "R-..R-..R-..R-.." };
         p.bassLow = 33;
-        p.bassHigh = 48;
+        p.bassHigh = 46;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Arp;
@@ -128,6 +129,7 @@ namespace
             { "X...X...X...X...", "", "....X.......X...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", "" },
             { "X...X...X...X.x.", "", "....X.......X...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", "" },
             { "X...X...X...X...", "", "....X.......X...", "x.x.xxx.x.x.x.x.", "..x...x...x...x.", "" },
+            { "X...X...X...X...", "", "....X.......X...", "x...x...x...x...", "..x...x...x...x.", "" },
         };
         p.drums.hatSwing = 0.50;
         p.drums.humanizeMs = 2.0;
@@ -152,14 +154,13 @@ namespace
         p.minorProgressions = { { "1 6", 2.0 }, { "1 6 3 7" }, { "1 4 6 5D" }, { "1 b2 1 6" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X---x---X---x---", "X-----x---x-----", "X-..x-----x-....",
-                            "X-------x-x-----", "X---....----x---", "X-----x-........" };
-        p.chordVoicing = { 52, 71, 4, false, false };
+        p.chordPatterns = { "X---x---X---x---", "X-----x---x-----", "X-..x-----x-....", "X-------x-x-----" };
+        p.chordVoicing = { 55, 74, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-------..R---R-", "R-----R-----O---", "R---------R-.R--", "R-------R---..A-" };
         p.bassLow = 26;
-        p.bassHigh = 41;
+        p.bassHigh = 40;
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
@@ -171,7 +172,8 @@ namespace
         p.drums.grooves = {
             { "X---------------", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "..............x.", "" },
             { "X---------------", "........X.......", "........X.......", "x.x.x.x.x.x.x.x.", "................", "" },
-            { "X---------------", "........X.......", "",                   "x.x.x.x.x.x.xxx.", "..............x.", "" },
+            { "X-----x---------", "........X.......", "",                   "x.x.x.x.x.x.xxx.", "..............x.", "" },
+            { "X-----------x---", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "..............x.", "" },
         };
         p.drums.hatSwing = 0.50;
         p.drums.humanizeMs = 3.0;
@@ -197,14 +199,13 @@ namespace
         p.minorProgressions = { { "111 4 111 4" }, { "1 4 7 3" }, { "6 7 1 1" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X-----------..x-", "X---------..x---", "X-------..x-x---",
-                            "..x-----..x-----", "X---....x-------" };
-        p.chordVoicing = { 52, 72, 5, true, false };
+        p.chordPatterns = { "X-----------..x-", "X---------..x---", "X-------..x-x---", "..x-----..x-----" };
+        p.chordVoicing = { 53, 73, 5, true, false };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "R--.....R-.F..A-", "R---..TR-...O.A.", "R-----..F-.R..A-" };
+        p.bassPatterns = { "R--.....R-.F..A-", "R---..TR-...O.A.", "R-----..F-.R..A-", "R-.T..R-R-.F..A-" };
         p.bassLow = 28;
-        p.bassHigh = 48;
+        p.bassHigh = 47;
         p.slideChance = 0.15;
 
         p.leadStyle = LeadStyle::Melody;
@@ -217,6 +218,7 @@ namespace
             { "X.......X.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
             { "X..x....X.......", "....X.......X...", "", "x...x.x.x...x...", "................", "" },
             { "X.....x.X.......", "....X.....g.X...", "", "x...x...x...x...", "............x...", "" },
+            { "X.......X..x....", "....X.......X...", "", "x.g.x...x.g.x...", "............x...", "" },
         };
         p.drums.hatSwing = 0.60;
         p.drums.laidBackMs = 28.0;
@@ -243,12 +245,13 @@ namespace
         p.minorProgressions = { { "1 6 3 7" }, { "1 6 4 5D" }, { "1 3 7 4" } };
 
         p.chordStyle = ChordStyle::Sustained;
-        p.chordVoicing = { 43, 76, 4, false, true };
+        p.chordPatterns = { "X---------------", "X-------x-------", "X-----------x---" };
+        p.chordVoicing = { 52, 76, 4, false, true };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "R---------------", "R-------F-------" };
+        p.bassPatterns = { "R---------------", "R-------F-------", "R-------R-------", "R-----------F---" };
         p.bassLow = 28;
-        p.bassHigh = 46;
+        p.bassHigh = 45;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
@@ -261,6 +264,7 @@ namespace
             { "X...............", "", "", "", "", "........x......." },
             { "X.......X.......", "", "", "", "", "X..............." },
             { "X...............", "", "", "", "", "X.......x......." },
+            { "X...........x...", "", "", "", "", "........X......." },
         };
         p.drums.humanizeMs = 5.0;
         p.drums.kickVelocity = 120;

@@ -547,7 +547,12 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         }
 
         if (part != Part::Drums)
+        {
             applySwing(notes, swing, swingSixteenths);
+            humanizeTiming(notes, rng, profile.drums.humanizeMs * 0.7, params.tempo);
+            if (part == Part::Chords || part == Part::Piano)
+                liftAboveBass(notes, profile.bassHigh);
+        }
         finalise(notes, ctx.totalBeats);
 
         if (part == Part::Bass)
@@ -625,13 +630,13 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
     PartNotes notes;
     const std::string* pattern = &pick(patterns, rng);
+    const std::string* fillPattern = patterns.size() > 1 ? &pick(patterns, rng) : pattern;
 
     for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
-        if (bar % 2 == 0)
-            pattern = &pick(patterns, rng);
+        const std::string* use = (bar % 8 == 7) ? fillPattern : pattern;
 
-        for (const auto& hit : parsePattern(*pattern))
+        for (const auto& hit : parsePattern(*use))
         {
             const double start = bar * 4.0 + hit.step * stepBeats;
             double length = hit.length * stepBeats;
@@ -653,13 +658,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 length = juce::jmin(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
 
             const float density = ctx.densityAt(part, start);
-            if (hit.symbol == 'g' && density < 0.4f)
+            if (hit.symbol == 'g' && density < 0.45f)
                 continue;
-            if (hit.symbol != 'X' && uniform(rng) > 0.3 + 0.7 * density)
+            if (hit.symbol != 'X' && density < 0.22f)
                 continue;
-            if (hit.step >= 12 && bar % 4 == 3 && uniform(rng) < 0.65)
-                continue;
-            if (ctx.energyAt(start) < 0.4f && hit.step % 4 != 0 && hit.symbol != 'X')
+            if (ctx.energyAt(start) < 0.28f && hit.step % 4 != 0 && hit.symbol != 'X')
                 continue;
 
             const float energy = ctx.energyAt(start);
@@ -694,8 +697,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
 ArrangementGenerator::PartNotes ArrangementGenerator::generateBass(const Context& ctx, std::mt19937& rng)
 {
-    auto notes = ctx.profile.bassStyle == BassStyle::Walking ? generateWalkingBass(ctx, rng)
-                                                             : generatePatternBass(ctx, rng);
+    const bool walking = ctx.profile.bassStyle == BassStyle::Walking;
+    const bool useTwoFeel = walking && !ctx.profile.bassPatterns.empty() && uniform(rng) < 0.35;
+    auto notes = (walking && !useTwoFeel) ? generateWalkingBass(ctx, rng)
+                                          : generatePatternBass(ctx, rng);
     addSlides(notes, ctx.profile.slideChance, rng);
     return notes;
 }
@@ -715,14 +720,15 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
     PartNotes notes;
     int previousRoot = foldIntoRange(theory::nearestPitchWithClass(progression.front().rootPitchClass,
                                                                    low + 7), low, high);
-    const std::string* pattern = &pick(profile.bassPatterns, rng);
+    const std::string* primary = &pick(profile.bassPatterns, rng);
+    const std::string* pattern = primary;
 
     for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
-        if (bar % 4 == 3 && !approachPatterns.empty())
+        if (bar % 8 == 7 && !approachPatterns.empty())
             pattern = &pick(approachPatterns, rng);
-        else if (bar % 2 == 0)
-            pattern = &pick(profile.bassPatterns, rng);
+        else
+            pattern = primary;
 
         for (const auto& hit : parsePattern(*pattern))
         {
@@ -990,7 +996,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
 
     for (int bar = 0; bar < bars; ++bar)
     {
-        if (bar > 0 && bar % 4 == 0)
+        if (bar > 0 && bar % 8 == 0)
             grooveIndex = (grooveIndex + 1) % nGrooves;
 
         const auto& groove = drums.grooves[static_cast<size_t>(grooveIndex)];
@@ -1136,7 +1142,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 
     for (const auto& chord : ctx.progression)
     {
-        bass = foldIntoRange(theory::nearestPitchWithClass(chord.rootPitchClass, bass), 40, 52);
+        bass = foldIntoRange(theory::nearestPitchWithClass(chord.rootPitchClass, bass), 52, 64);
         const auto voicing = theory::voiceChord(chord, previous, ctx.profile.pianoVoicing, rng);
         previous = voicing;
 
@@ -1534,6 +1540,27 @@ void ArrangementGenerator::addSlides(PartNotes& notes, double chance, std::mt199
             current.glideToNext = true;
         }
     }
+}
+
+void ArrangementGenerator::humanizeTiming(PartNotes& notes, std::mt19937& rng, double ms, double tempo)
+{
+    if (ms < 0.4)
+        return;
+    const double amount = ms * tempo / 60000.0;
+    for (auto& note : notes)
+    {
+        const double beatFrac = note.start - std::floor(note.start + 1.0e-9);
+        const double scale = beatFrac < 0.04 ? 0.28 : 1.0;
+        note.start = juce::jmax(0.0, note.start + (uniform(rng) * 2.0 - 1.0) * amount * scale);
+    }
+}
+
+void ArrangementGenerator::liftAboveBass(PartNotes& notes, int bassHigh)
+{
+    const int floorPitch = bassHigh + 3;
+    for (auto& note : notes)
+        while (note.pitch < floorPitch && note.pitch + 12 <= 88)
+            note.pitch += 12;
 }
 
 void ArrangementGenerator::applySwing(PartNotes& notes, double swing, bool sixteenths)

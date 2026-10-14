@@ -72,6 +72,8 @@ private:
 
     static void addSlides(PartNotes& notes, double chance, std::mt19937& rng);
     static void applySwing(PartNotes& notes, double swing, bool sixteenths);
+    static void humanizeTiming(PartNotes& notes, std::mt19937& rng, double ms, double tempo);
+    static void liftAboveBass(PartNotes& notes, int bassHigh);
     static void finalise(PartNotes& notes, double totalBeats);
     static void appendToBuffer(const PartNotes& notes, int channel, int bendRangeSemitones,
                                juce::MidiBuffer& buffer);
