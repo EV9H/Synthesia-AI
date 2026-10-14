@@ -263,19 +263,22 @@ float ArrangementGenerator::Context::energyAt(double beat) const
 float ArrangementGenerator::Context::densityAt(Part part, double beat) const
 {
     const auto* section = sectionAt(beat);
-    if (section == nullptr)
-        return 0.7f;
-
-    switch (part)
+    float d = 0.7f;
+    if (section != nullptr)
     {
-        case Part::Chords: return section->densityChords;
-        case Part::Bass:   return section->densityBass;
-        case Part::Synth:  return section->densitySynth;
-        case Part::Piano:  return section->densityPiano;
-        case Part::Drums:  return section->densityDrums;
-        case Part::All:    return section->energy;
+        switch (part)
+        {
+            case Part::Chords: d = section->densityChords; break;
+            case Part::Bass:   d = section->densityBass; break;
+            case Part::Synth:  d = section->densitySynth; break;
+            case Part::Piano:  d = section->densityPiano; break;
+            case Part::Drums:  d = section->densityDrums; break;
+            case Part::All:    d = section->energy; break;
+        }
     }
-    return 0.7f;
+    if (params.density > 0.01f)
+        d = juce::jlimit(0.05f, 1.0f, 0.4f * d + 0.6f * params.density);
+    return d;
 }
 
 namespace
@@ -549,7 +552,8 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         if (part != Part::Drums)
         {
             applySwing(notes, swing, swingSixteenths);
-            humanizeTiming(notes, rng, profile.drums.humanizeMs * 0.7, params.tempo);
+            const double humanize = params.humanizeMs > 0.0 ? params.humanizeMs : profile.drums.humanizeMs;
+            humanizeTiming(notes, rng, humanize * 0.7, params.tempo);
             if (part == Part::Chords || part == Part::Piano)
                 liftAboveBass(notes, profile.bassHigh);
         }
@@ -960,7 +964,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         t += msToBeats(drums.laidBackMs);
         if (isHat)
             t += msToBeats(drums.hatLagMs);
-        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(drums.humanizeMs);
+        const double humanize = ctx.params.humanizeMs > 0.0 ? ctx.params.humanizeMs : drums.humanizeMs;
+        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(humanize);
         t = juce::jmax(0.0, t);
 
         if (pitch == gm::closedHat || pitch == gm::pedalHat)

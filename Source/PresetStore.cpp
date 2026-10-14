@@ -210,6 +210,8 @@ void PresetStore::writeParams(juce::XmlElement& xml, const MidiGenerationParams&
     xml.setAttribute("lockProgression", params.lockProgression ? 1 : 0);
     xml.setAttribute("lockedParts", params.lockedParts);
     xml.setAttribute("swing", params.swing);
+    xml.setAttribute("humanizeMs", params.humanizeMs);
+    xml.setAttribute("density", (double) params.density);
     xml.setAttribute("motifContour", juce::String(params.motifContour));
     xml.setAttribute("motifRhythm", juce::String(params.motifRhythm));
     xml.setAttribute("enabledParts", params.enabledParts);
@@ -236,6 +238,8 @@ MidiGenerationParams PresetStore::readParams(const juce::XmlElement& xml)
     params.lockProgression = xml.getIntAttribute("lockProgression", 0) != 0;
     params.lockedParts = xml.getIntAttribute("lockedParts", 0);
     params.swing = xml.getDoubleAttribute("swing", 0.0);
+    params.humanizeMs = juce::jlimit(0.0, 24.0, xml.getDoubleAttribute("humanizeMs", 0.0));
+    params.density = (float) juce::jlimit(0.0, 1.0, xml.getDoubleAttribute("density", 0.0));
     params.motifContour = xml.getStringAttribute("motifContour").toStdString();
     params.motifRhythm = xml.getStringAttribute("motifRhythm").toStdString();
     params.enabledParts = xml.getIntAttribute("enabledParts", 0);
@@ -263,6 +267,8 @@ juce::var PresetStore::paramsToVar(const MidiGenerationParams& params)
     obj->setProperty("lockProgression", params.lockProgression);
     obj->setProperty("lockedParts", params.lockedParts);
     obj->setProperty("swing", params.swing);
+    obj->setProperty("humanizeMs", params.humanizeMs);
+    obj->setProperty("density", params.density);
     obj->setProperty("motifContour", juce::String(params.motifContour));
     obj->setProperty("motifRhythm", juce::String(params.motifRhythm));
     obj->setProperty("enabledParts", params.enabledParts);
@@ -312,6 +318,8 @@ MidiGenerationParams PresetStore::paramsFromVar(const juce::var& value)
                                  || !params.chordText.empty();
         params.lockedParts = static_cast<int>(obj->getProperty("lockedParts"));
         params.swing = static_cast<double>(obj->getProperty("swing"));
+        params.humanizeMs = juce::jlimit(0.0, 24.0, static_cast<double>(obj->getProperty("humanizeMs")));
+        params.density = (float) juce::jlimit(0.0, 1.0, static_cast<double>(obj->getProperty("density")));
         params.motifContour = obj->getProperty("motifContour").toString().toStdString();
         params.motifRhythm = obj->getProperty("motifRhythm").toString().toStdString();
         params.enabledParts = static_cast<int>(obj->getProperty("enabledParts"));

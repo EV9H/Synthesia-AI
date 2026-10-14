@@ -213,6 +213,10 @@ struct MidiGenerationParams
     int lockedParts{0};
     // 0 = use the genre profile's swing; otherwise 0.5 (straight) to ~0.75
     double swing{0.0};
+    // 0 = genre default. Otherwise milliseconds of timing scatter.
+    double humanizeMs{0.0};
+    // 0 = use section densities. Otherwise 0.15–1 blends toward this amount.
+    float density{0.0f};
     std::string motifContour;   // rising | falling | arch | static
     std::string motifRhythm;    // straight | swung | syncopated | sparse
     // 0 = every part on; otherwise a mask of partLockBit()
