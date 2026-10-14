@@ -8,7 +8,9 @@
 
 namespace
 {
-    constexpr int labelWidth = 88;
+    const char* keyNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    const char* scaleNames[] = { "Major", "Minor", "Dorian", "Mixolydian", "Pentatonic" };
+    const char* shortGenre[] = { "Pop", "Lo-fi", "House", "Trap", "R&B", "Film" };
 
     juce::Colour colourForChannel(int channel)
     {
@@ -16,55 +18,126 @@ namespace
         {
             case 1:  return juce::Colour(0xffe8b86d);
             case 2:  return juce::Colour(0xfff07178);
-            case 3:  return juce::Colour(0xff5b8def);
+            case 3:  return juce::Colour(0xff6e8bff);
             case 4:  return juce::Colour(0xff7dcea0);
             case 10: return juce::Colour(0xffc4a5e8);
             default: return Theme::accent;
         }
     }
 
-    void setUpLabel(juce::Label& label, const juce::String& text)
+    juce::Colour colourForPart(Part part) { return colourForChannel(partChannel(part)); }
+
+    const char* laneName(Part part)
+    {
+        switch (part)
+        {
+            case Part::Chords: return "Chords";
+            case Part::Bass:   return "Bass";
+            case Part::Synth:  return "Melody";
+            case Part::Piano:  return "Piano";
+            case Part::Drums:  return "Drums";
+            default:           return "All";
+        }
+    }
+
+    void setupLabel(juce::Label& label, const juce::String& text)
     {
         label.setText(text, juce::dontSendNotification);
-        label.setColour(juce::Label::textColourId, Theme::label);
-        label.setFont(juce::Font(14.5f));
+        label.setColour(juce::Label::textColourId, Theme::dimText);
+        label.setFont(juce::Font(13.0f));
     }
 
-    int generatorComboId(GeneratorType type)
+}
+
+void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> b, juce::Colour colour)
+{
+    auto r = b.reduced(b.getWidth() * 0.22f, b.getHeight() * 0.22f);
+    juce::Path p;
+    const float x = r.getX(), y = r.getY(), w = r.getWidth(), h = r.getHeight();
+
+    switch (kind)
     {
-        switch (type)
+        case IconKind::Unmute:
+            p.addTriangle(x, y + h * 0.3f, x + w * 0.38f, y + h * 0.3f, x + w * 0.38f, y + h * 0.7f);
+            p.addRectangle(x, y + h * 0.3f, w * 0.22f, h * 0.4f);
+            p.startNewSubPath(x + w * 0.55f, y + h * 0.32f);
+            p.quadraticTo(x + w, y + h * 0.5f, x + w * 0.55f, y + h * 0.68f);
+            break;
+        case IconKind::Mute:
+            p.addTriangle(x, y + h * 0.3f, x + w * 0.38f, y + h * 0.3f, x + w * 0.38f, y + h * 0.7f);
+            p.addRectangle(x, y + h * 0.3f, w * 0.22f, h * 0.4f);
+            p.startNewSubPath(x + w * 0.55f, y + h * 0.28f);
+            p.lineTo(x + w * 0.92f, y + h * 0.72f);
+            p.startNewSubPath(x + w * 0.92f, y + h * 0.28f);
+            p.lineTo(x + w * 0.55f, y + h * 0.72f);
+            break;
+        case IconKind::Regen:
+            p.addCentredArc(x + w * 0.5f, y + h * 0.5f, w * 0.38f, h * 0.38f, 0.0f, 0.4f, 3.6f, true);
+            p.startNewSubPath(x + w * 0.78f, y + h * 0.18f);
+            p.lineTo(x + w * 0.92f, y + h * 0.38f);
+            p.lineTo(x + w * 0.62f, y + h * 0.36f);
+            break;
+        case IconKind::Drag:
+            for (int row = 0; row < 2; ++row)
+                for (int col = 0; col < 3; ++col)
+                    p.addEllipse(x + col * w * 0.32f, y + h * 0.22f + row * h * 0.38f, w * 0.18f, h * 0.18f);
+            break;
+        case IconKind::Play:
+            p.addTriangle(x + w * 0.18f, y, x + w * 0.18f, y + h, x + w * 0.92f, y + h * 0.5f);
+            break;
+        case IconKind::Stop:
+            p.addRoundedRectangle(x + w * 0.12f, y + h * 0.12f, w * 0.76f, h * 0.76f, 2.0f);
+            break;
+        case IconKind::Settings:
         {
-            case GeneratorType::Genre:  return 1;
-            case GeneratorType::Markov: return 2;
-            case GeneratorType::LLM:    return 3;
+            const auto c = r.getCentre();
+            p.addEllipse(c.x - w * 0.16f, c.y - h * 0.16f, w * 0.32f, h * 0.32f);
+            for (int i = 0; i < 6; ++i)
+            {
+                const float a = (float) i * juce::MathConstants<float>::pi / 3.0f;
+                juce::Path tooth;
+                tooth.addRoundedRectangle(-w * 0.08f, -h * 0.48f, w * 0.16f, h * 0.22f, 1.2f);
+                tooth.applyTransform(juce::AffineTransform::rotation(a).translated(c.x, c.y));
+                p.addPath(tooth);
+            }
+            break;
         }
-        return 1;
+        case IconKind::Chevron:
+            p.startNewSubPath(x + w * 0.15f, y + h * 0.32f);
+            p.lineTo(x + w * 0.5f, y + h * 0.68f);
+            p.lineTo(x + w * 0.85f, y + h * 0.32f);
+            break;
+        case IconKind::Import:
+            p.startNewSubPath(x + w * 0.5f, y);
+            p.lineTo(x + w * 0.5f, y + h * 0.58f);
+            p.startNewSubPath(x + w * 0.28f, y + h * 0.36f);
+            p.lineTo(x + w * 0.5f, y + h * 0.62f);
+            p.lineTo(x + w * 0.72f, y + h * 0.36f);
+            p.startNewSubPath(x, y + h * 0.78f);
+            p.lineTo(x, y + h);
+            p.lineTo(x + w, y + h);
+            p.lineTo(x + w, y + h * 0.78f);
+            break;
+        case IconKind::Close:
+            p.startNewSubPath(x, y);
+            p.lineTo(x + w, y + h);
+            p.startNewSubPath(x + w, y);
+            p.lineTo(x, y + h);
+            break;
     }
 
-    GeneratorType generatorFromComboId(int id)
-    {
-        switch (id)
-        {
-            case 2: return GeneratorType::Markov;
-            case 3: return GeneratorType::LLM;
-            default: return GeneratorType::Genre;
-        }
-    }
-
-    bool partAudible(int muteMask, int soloMask, int channel)
-    {
-        const auto part = partFromChannel(channel);
-        if (soloMask != 0)
-            return (soloMask & partLockBit(part)) != 0;
-        return (muteMask & partLockBit(part)) == 0;
-    }
+    g.setColour(colour);
+    if (kind == IconKind::Play || kind == IconKind::Stop || kind == IconKind::Drag || kind == IconKind::Settings)
+        g.fillPath(p);
+    else
+        g.strokePath(p, juce::PathStrokeType(1.7f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 }
 
 SynthesiaLookAndFeel::SynthesiaLookAndFeel()
 {
     setColourScheme({
-        0xff12151c, 0xff1c2230, 0xff1a1f2b, 0xff2c3448,
-        0xffd5dbe8, 0xff5b8def, 0xffffffff, 0xff5b8def, 0xffffffff
+        0xff0b0d12, 0xff1b2030, 0xff12151c, 0xff2a3144,
+        0xffeef1f7, 0xff6e8bff, 0xffffffff, 0xff6e8bff, 0xffffffff
     });
     setColour(juce::ResizableWindow::backgroundColourId, Theme::background);
     setColour(juce::TextButton::buttonColourId, Theme::panel);
@@ -77,10 +150,6 @@ SynthesiaLookAndFeel::SynthesiaLookAndFeel()
     setColour(juce::PopupMenu::textColourId, Theme::label);
     setColour(juce::PopupMenu::highlightedBackgroundColourId, Theme::accent);
     setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
-    setColour(juce::TabbedComponent::backgroundColourId, Theme::background);
-    setColour(juce::TabbedComponent::outlineColourId, Theme::outline);
-    setColour(juce::TabbedButtonBar::tabOutlineColourId, Theme::outline);
-    setColour(juce::TabbedButtonBar::frontOutlineColourId, Theme::accent);
     setColour(juce::Slider::thumbColourId, Theme::accent);
     setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.65f));
     setColour(juce::Slider::backgroundColourId, Theme::clipBackground);
@@ -98,67 +167,217 @@ SynthesiaLookAndFeel::SynthesiaLookAndFeel()
     setColour(juce::ScrollBar::thumbColourId, Theme::outline);
 }
 
-juce::Font SynthesiaLookAndFeel::getTextButtonFont(juce::TextButton&, int)
+void SynthesiaLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& button,
+                                                const juce::Colour& backgroundColour,
+                                                bool highlighted, bool down)
 {
-    return juce::Font(15.0f);
+    auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
+    auto colour = backgroundColour;
+    if (down)
+        colour = colour.brighter(0.10f);
+    else if (highlighted)
+        colour = colour.brighter(0.14f);
+    g.setColour(colour);
+    g.fillRoundedRectangle(bounds, 10.0f);
 }
 
-juce::Font SynthesiaLookAndFeel::getLabelFont(juce::Label&)
+void SynthesiaLookAndFeel::drawComboBox(juce::Graphics& g, int width, int height, bool,
+                                        int, int, int, int, juce::ComboBox& box)
 {
-    return juce::Font(14.5f);
+    auto bounds = juce::Rectangle<float>(0, 0, (float) width, (float) height).reduced(0.5f);
+    g.setColour(box.findColour(juce::ComboBox::backgroundColourId));
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(box.findColour(juce::ComboBox::outlineColourId));
+    g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
+    juce::Path arrow;
+    const float x = (float) width - 18.0f, y = (float) height * 0.42f;
+    arrow.addTriangle(x, y, x + 8.0f, y, x + 4.0f, y + 6.0f);
+    g.setColour(Theme::dimText);
+    g.fillPath(arrow);
 }
 
-juce::Font SynthesiaLookAndFeel::getComboBoxFont(juce::ComboBox&)
+void SynthesiaLookAndFeel::fillTextEditorBackground(juce::Graphics& g, int width, int height,
+                                                    juce::TextEditor& editor)
 {
-    return juce::Font(15.0f);
+    g.setColour(editor.findColour(juce::TextEditor::backgroundColourId));
+    g.fillRoundedRectangle(0.0f, 0.0f, (float) width, (float) height, 12.0f);
 }
 
-juce::Font SynthesiaLookAndFeel::getPopupMenuFont()
+void SynthesiaLookAndFeel::drawTextEditorOutline(juce::Graphics& g, int width, int height,
+                                                 juce::TextEditor& editor)
 {
-    return juce::Font(15.0f);
+    const auto colour = editor.hasKeyboardFocus(true)
+        ? editor.findColour(juce::TextEditor::focusedOutlineColourId)
+        : editor.findColour(juce::TextEditor::outlineColourId);
+    g.setColour(colour);
+    g.drawRoundedRectangle(0.5f, 0.5f, (float) width - 1.0f, (float) height - 1.0f, 12.0f, 1.2f);
 }
 
-MidiDragChip::MidiDragChip(std::function<void()> dragFn, juce::String text)
-    : onDrag(std::move(dragFn)), label(std::move(text))
+juce::Font SynthesiaLookAndFeel::getTextButtonFont(juce::TextButton&, int) { return juce::Font(15.0f); }
+juce::Font SynthesiaLookAndFeel::getLabelFont(juce::Label&) { return juce::Font(13.5f); }
+juce::Font SynthesiaLookAndFeel::getComboBoxFont(juce::ComboBox&) { return juce::Font(14.5f); }
+juce::Font SynthesiaLookAndFeel::getPopupMenuFont() { return juce::Font(14.5f); }
+
+IconButton::IconButton(IconKind k, juce::String tip) : juce::Button({}), kind(k)
 {
-    setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+    setTooltip(std::move(tip));
 }
 
-void MidiDragChip::paint(juce::Graphics& g)
+void IconButton::setKind(IconKind k)
+{
+    kind = k;
+    repaint();
+}
+
+void IconButton::paintButton(juce::Graphics& g, bool highlighted, bool down)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
-    g.setColour(hasMidi ? Theme::panel : Theme::clipBackground);
-    g.fillRoundedRectangle(bounds, 6.0f);
-    g.setColour(hasMidi ? Theme::accent.withAlpha(0.85f) : Theme::outline);
-    g.drawRoundedRectangle(bounds, 6.0f, 1.2f);
-    g.setColour(hasMidi ? Theme::label : Theme::dimText);
+    if (highlighted || down || getToggleState())
+    {
+        g.setColour(Theme::accent.withAlpha(down ? 0.28f : 0.16f));
+        g.fillRoundedRectangle(bounds, 8.0f);
+    }
+    const auto colour = getToggleState() ? Theme::accent : (highlighted ? Theme::label : Theme::dimText);
+    drawIcon(g, kind, bounds, colour);
+}
+
+GenreChip::GenreChip(juce::String label) : juce::Button(label)
+{
+    setClickingTogglesState(false);
+}
+
+void GenreChip::paintButton(juce::Graphics& g, bool highlighted, bool down)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    const bool on = getToggleState();
+    g.setColour(on ? Theme::accent : (down ? Theme::panel.brighter(0.08f)
+                                           : (highlighted ? Theme::panel.brighter(0.12f) : Theme::panel)));
+    g.fillRoundedRectangle(bounds, 16.0f);
+    if (!on)
+    {
+        g.setColour(Theme::outline);
+        g.drawRoundedRectangle(bounds, 16.0f, 1.0f);
+    }
+    g.setColour(on ? juce::Colours::white : Theme::label);
     g.setFont(juce::Font(13.5f, juce::Font::bold));
-    g.drawText(label, getLocalBounds().reduced(6, 0), juce::Justification::centred, false);
+    g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred, false);
 }
 
-void MidiDragChip::mouseDown(const juce::MouseEvent&)
+void ParamPill::setText(juce::String t)
 {
-    dragging = false;
+    text = std::move(t);
+    repaint();
 }
 
-void MidiDragChip::mouseDrag(const juce::MouseEvent& event)
+void ParamPill::paint(juce::Graphics& g)
 {
-    if (dragging || !hasMidi || event.getDistanceFromDragStart() < 4)
+    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    g.setColour(hovered ? Theme::panel.brighter(0.10f) : Theme::panel);
+    g.fillRoundedRectangle(bounds, 14.0f);
+    g.setColour(Theme::outline);
+    g.drawRoundedRectangle(bounds, 14.0f, 1.0f);
+    g.setColour(Theme::label);
+    g.setFont(juce::Font(13.0f, juce::Font::bold));
+    g.drawText(text, getLocalBounds().reduced(10, 0), juce::Justification::centred, false);
+}
+
+void ParamPill::mouseUp(const juce::MouseEvent& e)
+{
+    if (e.mouseWasClicked() && onClick)
+        onClick();
+}
+
+void ParamPill::mouseEnter(const juce::MouseEvent&) { hovered = true; repaint(); }
+void ParamPill::mouseExit(const juce::MouseEvent&) { hovered = false; repaint(); }
+
+void DragHandle::setReady(bool r)
+{
+    ready = r;
+    setMouseCursor(ready ? juce::MouseCursor::DraggingHandCursor : juce::MouseCursor::NormalCursor);
+    repaint();
+}
+
+void DragHandle::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    g.setColour(ready ? (hovered ? Theme::panel.brighter(0.10f) : Theme::panel) : Theme::clipBackground);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    drawIcon(g, IconKind::Drag, bounds, ready ? Theme::accent : Theme::outline);
+}
+
+void DragHandle::mouseDown(const juce::MouseEvent&) { dragging = false; }
+
+void DragHandle::mouseDrag(const juce::MouseEvent& event)
+{
+    if (dragging || !ready || event.getDistanceFromDragStart() < 4)
         return;
     dragging = true;
     if (onDrag)
         onDrag();
 }
 
-void MidiDragChip::setEnabledLook(bool midiReady)
+void DragHandle::mouseEnter(const juce::MouseEvent&) { hovered = true; repaint(); }
+void DragHandle::mouseExit(const juce::MouseEvent&) { hovered = false; repaint(); }
+
+void LabeledDrag::setReady(bool r)
 {
-    hasMidi = midiReady;
+    ready = r;
+    setMouseCursor(ready ? juce::MouseCursor::DraggingHandCursor : juce::MouseCursor::NormalCursor);
     repaint();
 }
 
-void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
-                       const std::vector<ChordInfo>& chords,
-                       const std::vector<SectionInfo>& formSections)
+void LabeledDrag::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(0.5f);
+    g.setColour(ready ? (hovered ? Theme::panel.brighter(0.12f) : Theme::panel) : Theme::clipBackground);
+    g.fillRoundedRectangle(bounds, 10.0f);
+    g.setColour(Theme::outline);
+    g.drawRoundedRectangle(bounds, 10.0f, 1.0f);
+    auto icon = getLocalBounds().removeFromLeft(36).toFloat();
+    drawIcon(g, IconKind::Drag, icon, ready ? Theme::accent : Theme::outline);
+    g.setColour(ready ? Theme::label : Theme::dimText);
+    g.setFont(juce::Font(14.0f, juce::Font::bold));
+    g.drawText("Drag all", getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
+}
+
+void LabeledDrag::mouseDown(const juce::MouseEvent&) { dragging = false; }
+
+void LabeledDrag::mouseDrag(const juce::MouseEvent& event)
+{
+    if (dragging || !ready || event.getDistanceFromDragStart() < 4)
+        return;
+    dragging = true;
+    if (onDrag)
+        onDrag();
+}
+
+void LabeledDrag::mouseEnter(const juce::MouseEvent&) { hovered = true; repaint(); }
+void LabeledDrag::mouseExit(const juce::MouseEvent&) { hovered = false; repaint(); }
+
+TrackLanes::TrackLanes()
+{
+    const Part parts[] = { Part::Chords, Part::Bass, Part::Synth, Part::Drums };
+    for (auto part : parts)
+    {
+        auto lane = std::make_unique<Lane>();
+        lane->part = part;
+        lane->name = laneName(part);
+        lane->colour = colourForPart(part);
+        lane->mute.setClickingTogglesState(true);
+        addAndMakeVisible(lane->mute);
+        addAndMakeVisible(lane->regen);
+        addAndMakeVisible(lane->drag);
+        lane->mute.onClick = [this, part]() { if (onMute) onMute(part); };
+        lane->regen.onClick = [this, part]() { if (onRegen) onRegen(part); };
+        lane->drag.onDrag = [this, part]() { if (onDrag) onDrag(part); };
+        lanes.push_back(std::move(lane));
+    }
+    setReady(false);
+}
+
+void TrackLanes::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
+                         const std::vector<ChordInfo>& chords,
+                         const std::vector<SectionInfo>& formSections)
 {
     notes.clear();
     progression = chords;
@@ -166,7 +385,6 @@ void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
     clipLength = lengthInBeats;
 
     std::map<std::pair<int, int>, std::pair<double, int>> openNotes;
-
     auto closeNote = [this](int channel, int pitch, double start, int velocity, double end)
     {
         notes.push_back({ pitch, start, juce::jmax(0.0, end - start), velocity, channel });
@@ -177,7 +395,6 @@ void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
         const auto message = metadata.getMessage();
         const double beat = metadata.samplePosition / 960.0;
         const auto key = std::make_pair(message.getChannel(), message.getNoteNumber());
-
         if (message.isNoteOn())
         {
             auto it = openNotes.find(key);
@@ -198,30 +415,15 @@ void ClipView::setClip(const juce::MidiBuffer& midi, double lengthInBeats,
             }
         }
     }
-
     for (const auto& [key, start] : openNotes)
         closeNote(key.first, key.second, start.first, start.second, clipLength);
 
-    lowestPitch = 127;
-    highestPitch = 0;
-    for (const auto& note : notes)
-    {
-        if (!noteAudible(note.channel))
-            continue;
-        lowestPitch = juce::jmin(lowestPitch, note.pitch);
-        highestPitch = juce::jmax(highestPitch, note.pitch);
-    }
-
-    if (lowestPitch > highestPitch)
-    {
-        lowestPitch = 60;
-        highestPitch = 72;
-    }
-
+    hasMidi = !notes.empty();
+    setReady(hasMidi);
     repaint();
 }
 
-void ClipView::setPlaybackBeat(double beat)
+void TrackLanes::setPlaybackBeat(double beat)
 {
     if (std::abs(beat - playbackBeat) > 1.0e-4)
     {
@@ -230,172 +432,206 @@ void ClipView::setPlaybackBeat(double beat)
     }
 }
 
-void ClipView::setMuteSolo(int mute, int solo)
+void TrackLanes::setMuteMask(int mask)
 {
-    if (mute == muteMask && solo == soloMask)
+    if (mask == muteMask)
         return;
-    muteMask = mute;
-    soloMask = solo;
-    lowestPitch = 127;
-    highestPitch = 0;
-    for (const auto& note : notes)
+    muteMask = mask;
+    for (auto& lane : lanes)
     {
-        if (!noteAudible(note.channel))
-            continue;
-        lowestPitch = juce::jmin(lowestPitch, note.pitch);
-        highestPitch = juce::jmax(highestPitch, note.pitch);
-    }
-    if (lowestPitch > highestPitch)
-    {
-        lowestPitch = 60;
-        highestPitch = 72;
+        const bool muted = (mask & partLockBit(lane->part)) != 0;
+        lane->mute.setToggleState(muted, juce::dontSendNotification);
+        lane->mute.setKind(muted ? IconKind::Mute : IconKind::Unmute);
     }
     repaint();
 }
 
-bool ClipView::noteAudible(int channel) const
+void TrackLanes::setReady(bool midiReady)
 {
-    return partAudible(muteMask, soloMask, channel);
+    hasMidi = midiReady;
+    for (auto& lane : lanes)
+    {
+        lane->drag.setReady(midiReady);
+        lane->mute.setVisible(midiReady);
+        lane->regen.setVisible(midiReady);
+        lane->drag.setVisible(midiReady);
+    }
 }
 
-void ClipView::paint(juce::Graphics& g)
+void TrackLanes::resized()
 {
-    auto bounds = getLocalBounds().toFloat();
+    auto area = getLocalBounds().reduced(10, 8);
+    const int laneH = area.getHeight() / juce::jmax(1, (int) lanes.size());
+    for (auto& lane : lanes)
+    {
+        auto row = area.removeFromTop(laneH).reduced(0, 4);
+        row.removeFromLeft(72);
+        lane->drag.setBounds(row.removeFromRight(36).reduced(2));
+        row.removeFromRight(6);
+        lane->regen.setBounds(row.removeFromRight(36).reduced(2));
+        row.removeFromRight(6);
+        lane->mute.setBounds(row.removeFromRight(36).reduced(2));
+    }
+}
+
+void TrackLanes::paintLaneRoll(juce::Graphics& g, const Lane& lane, juce::Rectangle<float> area) const
+{
     g.setColour(Theme::clipBackground);
-    g.fillRoundedRectangle(bounds, 6.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(bounds.reduced(0.5f), 6.0f, 1.0f);
+    g.fillRoundedRectangle(area, 8.0f);
 
-    if (clipLength <= 0.0 || notes.empty())
-    {
-        g.setColour(Theme::dimText);
-        g.setFont(15.0f);
-        g.drawText("Generate a clip, then drag a part out as .mid", getLocalBounds(),
-                   juce::Justification::centred);
+    const bool muted = (muteMask & partLockBit(lane.part)) != 0;
+    if (clipLength <= 0.0)
         return;
+
+    const int ch = partChannel(lane.part);
+    int lo = 127, hi = 0;
+    for (const auto& n : notes)
+    {
+        if (n.channel != ch)
+            continue;
+        lo = juce::jmin(lo, n.pitch);
+        hi = juce::jmax(hi, n.pitch);
+    }
+    if (lo > hi)
+    {
+        lo = 48;
+        hi = 72;
     }
 
-    auto area = bounds.reduced(10.0f, 8.0f);
-    auto caption = area.removeFromTop(16.0f);
-    area.removeFromTop(2.0f);
-    auto legend = area.removeFromTop(16.0f);
-    area.removeFromTop(2.0f);
+    const float ppb = area.getWidth() / (float) clipLength;
+    const int rows = juce::jmax(1, hi - lo + 3);
+    const float rh = area.getHeight() / (float) rows;
 
-    const bool drawSections = !sections.empty() && sections.size() > 1;
-    auto sectionStrip = drawSections ? area.removeFromTop(14.0f) : juce::Rectangle<float>{};
-    if (drawSections)
-        area.removeFromTop(2.0f);
-
-    const bool drawChords = !progression.empty();
-    auto chordStrip = drawChords ? area.removeFromTop(16.0f) : juce::Rectangle<float>{};
-    if (drawChords)
-        area.removeFromTop(2.0f);
-
-    int audibleNotes = 0;
-    for (const auto& note : notes)
-        if (noteAudible(note.channel))
-            ++audibleNotes;
-
-    g.setColour(Theme::dimText);
-    g.setFont(12.5f);
-    g.drawText(juce::String(juce::roundToInt(clipLength / 4.0)) + " bars  |  "
-                   + juce::String(audibleNotes) + " notes  |  "
-                   + juce::MidiMessage::getMidiNoteName(lowestPitch, true, true, 4) + " - "
-                   + juce::MidiMessage::getMidiNoteName(highestPitch, true, true, 4),
-               caption, juce::Justification::centredLeft);
-
-    float legendX = legend.getX();
-    g.setFont(11.5f);
-    for (Part part : allParts)
+    g.setColour(juce::Colours::white.withAlpha(0.04f));
+    for (int beat = 0; beat <= (int) clipLength; ++beat)
     {
-        const bool audible = partAudible(muteMask, soloMask, partChannel(part));
-        const auto colour = colourForChannel(partChannel(part)).withAlpha(audible ? 1.0f : 0.28f);
-        g.setColour(colour);
-        g.fillRoundedRectangle(legendX, legend.getY() + 3.0f, 10.0f, 10.0f, 2.0f);
-        g.setColour(audible ? Theme::dimText : Theme::dimText.withAlpha(0.45f));
-        const auto name = juce::String(partName(part));
-        g.drawText(name, juce::roundToInt(legendX + 14.0f), juce::roundToInt(legend.getY()),
-                   56, juce::roundToInt(legend.getHeight()), juce::Justification::centredLeft, false);
-        legendX += 68.0f;
-    }
-
-    const float pixelsPerBeat = area.getWidth() / static_cast<float>(clipLength);
-    const int pitchRows = highestPitch - lowestPitch + 3;
-    const float rowHeight = area.getHeight() / static_cast<float>(juce::jmax(1, pitchRows));
-
-    if (drawSections)
-    {
-        static const juce::Colour sectionColours[] = {
-            juce::Colour(0xff3d4a63), juce::Colour(0xff35556e), juce::Colour(0xff4a5a3d),
-            juce::Colour(0xff6a4a3a), juce::Colour(0xff4a3d63), juce::Colour(0xff6a3d4a),
-            juce::Colour(0xff3d3d3d), juce::Colour(0xff3d4a4a)
-        };
-        g.setFont(10.5f);
-        for (const auto& section : sections)
-        {
-            const float x = sectionStrip.getX() + static_cast<float>(section.startBeat) * pixelsPerBeat;
-            const float w = juce::jmax(8.0f, static_cast<float>(section.lengthBeats) * pixelsPerBeat - 2.0f);
-            const auto colour = sectionColours[static_cast<int>(section.kind) % 8];
-            g.setColour(colour);
-            g.fillRoundedRectangle(x, sectionStrip.getY(), w, sectionStrip.getHeight(), 3.0f);
-            g.setColour(juce::Colours::white.withAlpha(0.85f));
-            g.drawText(section.label, juce::roundToInt(x + 3.0f), juce::roundToInt(sectionStrip.getY()),
-                       juce::roundToInt(w - 4.0f), juce::roundToInt(sectionStrip.getHeight()),
-                       juce::Justification::centredLeft, false);
-        }
-    }
-
-    for (int beat = 0; beat <= static_cast<int>(clipLength); ++beat)
-    {
-        const float x = area.getX() + beat * pixelsPerBeat;
-        const bool bar = beat % 4 == 0;
-        g.setColour(juce::Colours::white.withAlpha(bar ? 0.18f : 0.05f));
+        const float x = area.getX() + beat * ppb;
         g.drawVerticalLine(juce::roundToInt(x), area.getY(), area.getBottom());
-        if (drawChords)
-        {
-            g.setColour(juce::Colours::white.withAlpha(bar ? 0.18f : 0.05f));
-            g.drawVerticalLine(juce::roundToInt(x), chordStrip.getY(), chordStrip.getBottom());
-        }
     }
 
-    if (drawChords)
+    for (const auto& n : notes)
     {
-        g.setFont(12.0f);
-        for (const auto& chord : progression)
-        {
-            const float x = chordStrip.getX() + static_cast<float>(chord.startBeat) * pixelsPerBeat;
-            const float w = juce::jmax(24.0f, static_cast<float>(chord.lengthBeats) * pixelsPerBeat - 4.0f);
-            g.setColour(Theme::label);
-            g.drawText(chord.symbol,
-                       juce::roundToInt(x + 2.0f), juce::roundToInt(chordStrip.getY()),
-                       juce::roundToInt(w), juce::roundToInt(chordStrip.getHeight()),
-                       juce::Justification::centredLeft, false);
-        }
-    }
-
-    for (const auto& note : notes)
-    {
-        const bool audible = noteAudible(note.channel);
-        const float x = area.getX() + static_cast<float>(note.start) * pixelsPerBeat;
-        const float w = juce::jmax(2.0f, static_cast<float>(note.length) * pixelsPerBeat - 1.0f);
-        const float y = area.getY() + (highestPitch + 1 - note.pitch) * rowHeight;
-        const float alpha = juce::jmap(static_cast<float>(note.velocity), 0.0f, 127.0f, 0.45f, 1.0f)
-                            * (audible ? 1.0f : 0.18f);
-
-        g.setColour(colourForChannel(note.channel).withAlpha(alpha));
-        g.fillRoundedRectangle(x, y, w, juce::jmax(2.0f, rowHeight - 1.0f), 2.0f);
+        if (n.channel != ch)
+            continue;
+        const float x = area.getX() + (float) n.start * ppb;
+        const float w = juce::jmax(2.0f, (float) n.length * ppb - 1.0f);
+        const float y = area.getY() + (hi + 1 - n.pitch) * rh;
+        g.setColour(lane.colour.withAlpha(muted ? 0.18f : juce::jmap((float) n.velocity, 0.0f, 127.0f, 0.45f, 1.0f)));
+        g.fillRoundedRectangle(x, y, w, juce::jmax(2.0f, rh - 1.0f), 2.0f);
     }
 
     if (playbackBeat >= 0.0)
     {
-        const float x = area.getX() + static_cast<float>(playbackBeat) * pixelsPerBeat;
-        g.setColour(juce::Colours::white.withAlpha(0.85f));
-        g.fillRect(x, area.getY(), 1.5f, area.getHeight());
-        if (drawChords)
-            g.fillRect(x, chordStrip.getY(), 1.5f, chordStrip.getHeight());
-        if (drawSections)
-            g.fillRect(x, sectionStrip.getY(), 1.5f, sectionStrip.getHeight());
+        const float x = area.getX() + (float) playbackBeat * ppb;
+        g.setColour(juce::Colours::white.withAlpha(0.8f));
+        g.fillRect(x, area.getY(), 1.4f, area.getHeight());
     }
+}
+
+void TrackLanes::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    g.setColour(Theme::surface);
+    g.fillRoundedRectangle(bounds, 14.0f);
+    g.setColour(Theme::outline);
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 14.0f, 1.0f);
+
+    if (!hasMidi)
+    {
+        g.setColour(Theme::dimText);
+        g.setFont(juce::Font(15.0f));
+        g.drawText("Describe a track or pick a genre, then Generate.",
+                   getLocalBounds(), juce::Justification::centred);
+        g.setFont(juce::Font(13.0f));
+        auto hint = getLocalBounds().reduced(24);
+        hint.removeFromTop(getHeight() / 2 + 14);
+        g.drawText("Drop a .mid here to accompany, extend, rewrite or restyle.",
+                   hint.removeFromTop(22), juce::Justification::centred);
+        return;
+    }
+
+    auto area = getLocalBounds().reduced(10, 8);
+    const int laneH = area.getHeight() / juce::jmax(1, (int) lanes.size());
+    g.setFont(juce::Font(13.0f, juce::Font::bold));
+    for (const auto& lane : lanes)
+    {
+        auto row = area.removeFromTop(laneH).reduced(0, 4);
+        auto name = row.removeFromLeft(72);
+        g.setColour(lane->colour);
+        g.fillEllipse((float) name.getX() + 2.0f, (float) name.getCentreY() - 4.0f, 8.0f, 8.0f);
+        g.setColour(Theme::label);
+        g.drawText(lane->name, name.withTrimmedLeft(16), juce::Justification::centredLeft, false);
+        row.removeFromRight(36 + 6 + 36 + 6 + 36);
+        paintLaneRoll(g, *lane, row.toFloat());
+    }
+}
+
+ImportModePicker::ImportModePicker()
+{
+    title.setText("Use this MIDI as", juce::dontSendNotification);
+    title.setFont(juce::Font(18.0f, juce::Font::bold));
+    title.setColour(juce::Label::textColourId, Theme::label);
+    title.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(title);
+
+    subtitle.setText("Choose how the generator should treat the file.", juce::dontSendNotification);
+    subtitle.setFont(juce::Font(13.5f));
+    subtitle.setColour(juce::Label::textColourId, Theme::dimText);
+    subtitle.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(subtitle);
+
+    auto bind = [this](juce::TextButton& b, ImportMode mode)
+    {
+        b.setColour(juce::TextButton::buttonColourId, Theme::panel);
+        b.onClick = [this, mode]() { if (onPick) onPick(mode); };
+        addAndMakeVisible(b);
+    };
+    bind(accompany, ImportMode::Accompany);
+    bind(extend, ImportMode::Extend);
+    bind(rewrite, ImportMode::Rewrite);
+    bind(restyle, ImportMode::Restyle);
+    cancel.setColour(juce::TextButton::buttonColourId, Theme::clipBackground);
+    cancel.onClick = [this]() { if (onCancel) onCancel(); };
+    addAndMakeVisible(cancel);
+}
+
+void ImportModePicker::setFileName(const juce::String& name)
+{
+    subtitle.setText(name.isEmpty()
+                         ? "Choose how the generator should treat the file."
+                         : name + "  ·  pick a mode, then we import.",
+                     juce::dontSendNotification);
+}
+
+void ImportModePicker::paint(juce::Graphics& g)
+{
+    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.fillRect(getLocalBounds());
+    auto card = getLocalBounds().withSizeKeepingCentre(420, 280);
+    g.setColour(Theme::surface);
+    g.fillRoundedRectangle(card.toFloat(), 16.0f);
+    g.setColour(Theme::outline);
+    g.drawRoundedRectangle(card.toFloat().reduced(0.5f), 16.0f, 1.0f);
+}
+
+void ImportModePicker::resized()
+{
+    auto card = getLocalBounds().withSizeKeepingCentre(420, 280).reduced(24);
+    title.setBounds(card.removeFromTop(28));
+    card.removeFromTop(6);
+    subtitle.setBounds(card.removeFromTop(36));
+    card.removeFromTop(16);
+    auto row = card.removeFromTop(40);
+    accompany.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
+    row.removeFromLeft(10);
+    extend.setBounds(row);
+    card.removeFromTop(10);
+    row = card.removeFromTop(40);
+    rewrite.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
+    row.removeFromLeft(10);
+    restyle.setBounds(row);
+    card.removeFromTop(16);
+    cancel.setBounds(card.removeFromTop(36).withSizeKeepingCentre(120, 36));
 }
 
 SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
@@ -403,505 +639,298 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 {
     setLookAndFeel(&lookAndFeel);
 
-    titleLabel.setText("Synthesia AI", juce::dontSendNotification);
+    titleLabel.setText("Synthesia", juce::dontSendNotification);
     titleLabel.setFont(juce::Font(22.0f, juce::Font::bold));
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    titleLabel.setColour(juce::Label::textColourId, Theme::label);
     addAndMakeVisible(titleLabel);
 
-    subtitleLabel.setText("Text-to-arrangement · MIDI import / accompany · drag MIDI to your DAW",
-                          juce::dontSendNotification);
-    subtitleLabel.setFont(juce::Font(13.0f));
-    subtitleLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    subtitleLabel.setMinimumHorizontalScale(0.75f);
-    addAndMakeVisible(subtitleLabel);
-
+    licenseBadge.setFont(juce::Font(11.5f, juce::Font::bold));
     licenseBadge.setJustificationType(juce::Justification::centred);
-    licenseBadge.setFont(juce::Font(12.5f, juce::Font::bold));
-    licenseBadge.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(licenseBadge);
-    updateLicenseBadge();
 
-    setUpLabel(presetLabel, "Preset");
-    addAndMakeVisible(presetLabel);
-    presetComboBox.onChange = [this]() { applyPresetFromCombo(); };
-    addAndMakeVisible(presetComboBox);
+    keyPill.onClick = [this]() { showKeyMenu(); };
+    tempoPill.onClick = [this]() { showTempoMenu(); };
+    barsPill.onClick = [this]() { showBarsMenu(); };
+    addAndMakeVisible(keyPill);
+    addAndMakeVisible(tempoPill);
+    addAndMakeVisible(barsPill);
 
-    savePresetButton.setButtonText("Save");
-    savePresetButton.onClick = [this]() { onSavePresetClicked(); };
-    addAndMakeVisible(savePresetButton);
-
-    settingsButton.setButtonText("Settings");
-    settingsButton.onClick = [this]()
-    {
-        auto* dialog = new SettingsDialog(audioProcessor);
-        dialog->setSize(460, audioProcessor.isAdvancedUi() ? 560 : 500);
-        juce::DialogWindow::LaunchOptions options;
-        options.content.setOwned(dialog);
-        options.dialogTitle = "Synthesia AI Settings";
-        options.useNativeTitleBar = true;
-        options.resizable = false;
-        options.dialogBackgroundColour = Theme::background;
-        options.launchAsync();
-    };
+    settingsButton.onClick = [this]() { openSettings(); };
     addAndMakeVisible(settingsButton);
 
-    tabs.setOutline(0);
-    tabs.setTabBarDepth(32);
-    tabs.setColour(juce::TabbedComponent::backgroundColourId, Theme::background);
-    tabs.addTab("Generate", Theme::header, &generatePage, false);
-    tabs.addTab("Plan", Theme::header, &planPage, false);
-    tabs.addTab("Import", Theme::header, &importPage, false);
-    tabs.addTab("Style", Theme::header, &stylePage, false);
-    addAndMakeVisible(tabs);
+    promptEditor.setMultiLine(true);
+    promptEditor.setReturnKeyStartsNewLine(true);
+    promptEditor.setFont(juce::Font(16.0f));
+    promptEditor.setTextToShowWhenEmpty("Describe your track  ·  optional", Theme::dimText);
+    promptEditor.setColour(juce::TextEditor::backgroundColourId, Theme::surface);
+    addAndMakeVisible(promptEditor);
 
-    setUpLabel(keyLabel, "Key");
-    generatePage.addAndMakeVisible(keyLabel);
-    const char* keyNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    for (int i = 0; i < 12; ++i)
-        keyComboBox.addItem(keyNames[i], i + 1);
-    keyComboBox.setSelectedId(1, juce::dontSendNotification);
-    generatePage.addAndMakeVisible(keyComboBox);
-
-    setUpLabel(scaleLabel, "Scale");
-    generatePage.addAndMakeVisible(scaleLabel);
-    scaleComboBox.addItem("Major", 1);
-    scaleComboBox.addItem("Minor", 2);
-    scaleComboBox.addItem("Dorian", 3);
-    scaleComboBox.addItem("Mixolydian", 4);
-    scaleComboBox.addItem("Pentatonic", 5);
-    scaleComboBox.setSelectedId(1, juce::dontSendNotification);
-    generatePage.addAndMakeVisible(scaleComboBox);
-
-    setUpLabel(genreLabel, "Genre");
-    generatePage.addAndMakeVisible(genreLabel);
     for (int i = 0; i < numGenres; ++i)
-        genreComboBox.addItem(genreName(static_cast<Genre>(i)), i + 1);
-    genreComboBox.setSelectedId(1, juce::dontSendNotification);
-    genreComboBox.onChange = [this]() { applyGenreDefaults(); };
-    generatePage.addAndMakeVisible(genreComboBox);
-
-    setUpLabel(partLabel, "Part");
-    generatePage.addAndMakeVisible(partLabel);
-    partComboBox.addItem(partName(Part::All), 1);
-    for (auto part : allParts)
-        partComboBox.addItem(partName(part), static_cast<int>(part) + 1);
-    partComboBox.setSelectedId(1, juce::dontSendNotification);
-    generatePage.addAndMakeVisible(partComboBox);
-
-    setUpLabel(formLabel, "Form");
-    generatePage.addAndMakeVisible(formLabel);
-    formComboBox.addItem("Loop", 1);
-    formComboBox.addItem("Song form", 2);
-    formComboBox.setSelectedId(1, juce::dontSendNotification);
-    formComboBox.onChange = [this]()
     {
-        if (formComboBox.getSelectedId() == 2 && lengthSlider.getValue() < 16)
-            lengthSlider.setValue(24, juce::dontSendNotification);
-    };
-    generatePage.addAndMakeVisible(formComboBox);
-
-    setUpLabel(lengthLabel, "Length");
-    generatePage.addAndMakeVisible(lengthLabel);
-    lengthSlider.setRange(1, 32, 1);
-    lengthSlider.setValue(8, juce::dontSendNotification);
-    lengthSlider.setTextValueSuffix(" bars");
-    lengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 24);
-    styleSlider(lengthSlider);
-    generatePage.addAndMakeVisible(lengthSlider);
-
-    setUpLabel(tempoLabel, "Tempo");
-    generatePage.addAndMakeVisible(tempoLabel);
-    tempoSlider.setRange(60, 180, 1);
-    tempoSlider.setTextValueSuffix(" bpm");
-    tempoSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 24);
-    styleSlider(tempoSlider);
-    generatePage.addAndMakeVisible(tempoSlider);
-
-    setUpLabel(tempoSyncLabel, "Grid");
-    generatePage.addAndMakeVisible(tempoSyncLabel);
-    tempoSyncComboBox.addItem("1/16", 1);
-    tempoSyncComboBox.addItem("1/8", 2);
-    tempoSyncComboBox.addItem("1/4", 3);
-    tempoSyncComboBox.addItem("1/2", 4);
-    generatePage.addAndMakeVisible(tempoSyncComboBox);
-
-    followHostTempoButton.setButtonText("Follow host tempo");
-    followHostTempoButton.setToggleState(audioProcessor.getFollowHostTempo(), juce::dontSendNotification);
-    followHostTempoButton.onClick = [this]()
-    {
-        audioProcessor.setFollowHostTempo(followHostTempoButton.getToggleState());
-        tempoSlider.setEnabled(!followHostTempoButton.getToggleState());
-        snapshotParams();
-    };
-    generatePage.addAndMakeVisible(followHostTempoButton);
-    tempoSlider.setEnabled(!audioProcessor.getFollowHostTempo());
-
-    followHostKeyButton.setButtonText("Follow host key");
-    followHostKeyButton.setToggleState(audioProcessor.getFollowHostKey(), juce::dontSendNotification);
-    followHostKeyButton.setTooltip("Hosts do not send key. When on, Generate keeps the key you set here.");
-    followHostKeyButton.onClick = [this]()
-    {
-        audioProcessor.setFollowHostKey(followHostKeyButton.getToggleState());
-        snapshotParams();
-    };
-    generatePage.addAndMakeVisible(followHostKeyButton);
-
-    setUpLabel(generatorLabel, "Engine");
-    generatePage.addAndMakeVisible(generatorLabel);
-    generatorComboBox.addItem("Genre engine (offline)", 1);
-    generatorComboBox.addItem("Markov (classic)", 2);
-    generatorComboBox.addItem("LLM text-to-arrangement", 3);
-    generatorComboBox.setSelectedId(generatorComboId(audioProcessor.getCurrentGeneratorType()),
-                                    juce::dontSendNotification);
-    generatorComboBox.onChange = [this]()
-    {
-        audioProcessor.setGeneratorType(generatorFromComboId(generatorComboBox.getSelectedId()));
-        snapshotParams();
-    };
-    generatePage.addAndMakeVisible(generatorComboBox);
-
-    setUpLabel(chordsLabel, "Chords");
-    generatePage.addAndMakeVisible(chordsLabel);
-    chordsEditor.setMultiLine(false);
-    chordsEditor.setTextToShowWhenEmpty("Am9 Fmaj9 Dm7 E7b9   or   Am9 | Fmaj9 | Dm7 | E7b9", Theme::dimText);
-    generatePage.addAndMakeVisible(chordsEditor);
-
-    lockProgressionButton.setButtonText("Lock chords");
-    generatePage.addAndMakeVisible(lockProgressionButton);
-
-    setUpLabel(locksLabel, "Keep");
-    generatePage.addAndMakeVisible(locksLabel);
-    for (auto part : allParts)
-    {
-        auto* button = partLockButtons.add(new juce::ToggleButton(partName(part)));
-        generatePage.addAndMakeVisible(button);
+        auto* chip = genreChips.add(new GenreChip(shortGenre[i]));
+        chip->onClick = [this, i]() { chooseGenre(static_cast<Genre>(i)); };
+        addAndMakeVisible(chip);
     }
 
-    setUpLabel(styleLabel, "Style / prompt");
-    generatePage.addAndMakeVisible(styleLabel);
-    styleTextEditor.setMultiLine(true);
-    styleTextEditor.setReturnKeyStartsNewLine(true);
-    styleTextEditor.setTextToShowWhenEmpty("late-night synthwave, chorus should explode", Theme::dimText);
-    generatePage.addAndMakeVisible(styleTextEditor);
-
-    generateButton.setButtonText("Generate MIDI");
+    generateButton.setButtonText("Generate");
     generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     generateButton.onClick = [this]() { onGenerateClicked(); };
     addAndMakeVisible(generateButton);
 
-    setUpLabel(planLabel, "Arrangement plan");
-    planPage.addAndMakeVisible(planLabel);
-    planSummaryEditor.setMultiLine(true);
-    planSummaryEditor.setReadOnly(true);
-    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
-    planSummaryEditor.setTextToShowWhenEmpty(
-        "Plan a track to see sections and chords here. Edit Chords on the Generate tab, then Generate.",
-        Theme::dimText);
-    planPage.addAndMakeVisible(planSummaryEditor);
-    planButton.setButtonText("Plan");
-    planButton.onClick = [this]() { onPlanClicked(); };
-    planPage.addAndMakeVisible(planButton);
-
-    setUpLabel(importModeLabel, "Mode");
-    importPage.addAndMakeVisible(importModeLabel);
-    importModeComboBox.addItem("Off", 1);
-    importModeComboBox.addItem("Accompany", 2);
-    importModeComboBox.addItem("Extend", 3);
-    importModeComboBox.addItem("Rewrite", 4);
-    importModeComboBox.addItem("Restyle", 5);
-    importModeComboBox.setSelectedId(1, juce::dontSendNotification);
-    importModeComboBox.onChange = [this]()
-    {
-        if (importModeComboBox.getSelectedId() == 3 && lengthSlider.getValue() < 16)
-        {
-            lengthSlider.setValue(24, juce::dontSendNotification);
-            formComboBox.setSelectedId(2, juce::dontSendNotification);
-        }
-    };
-    importPage.addAndMakeVisible(importModeComboBox);
-
-    importButton.setButtonText("Import MIDI...");
+    importButton.setButtonText("Import MIDI");
     importButton.onClick = [this]() { onImportClicked(); };
-    importPage.addAndMakeVisible(importButton);
+    addAndMakeVisible(importButton);
 
-    captureButton.setButtonText("Capture MIDI");
-    captureButton.onClick = [this]() { onCaptureClicked(); };
-    importPage.addAndMakeVisible(captureButton);
+    moreButton.setButtonText("More options");
+    moreButton.onClick = [this]() { setMoreOpen(!moreOpen); };
+    addAndMakeVisible(moreButton);
 
-    importHintLabel.setText("Headline workflow: import a .mid (drop, file, or capture) and Accompany it "
-                            "with drums/bass/chords — or describe a track on Generate and use the LLM planner. "
-                            "Preview is a sketch; drag MIDI into the DAW for the real sounds.",
-                            juce::dontSendNotification);
-    importHintLabel.setFont(juce::Font(14.5f));
-    importHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    importHintLabel.setJustificationType(juce::Justification::topLeft);
-    importPage.addAndMakeVisible(importHintLabel);
+    setupSectionLabel(moreArrangement, "ARRANGEMENT");
+    setupSectionLabel(moreHarmony, "HARMONY");
+    setupSectionLabel(moreFeel, "FEEL");
+    setupSectionLabel(moreStyle, "STYLE");
+    setupSectionLabel(moreLibrary, "LIBRARY");
+    morePage.addAndMakeVisible(moreArrangement);
+    morePage.addAndMakeVisible(moreHarmony);
+    morePage.addAndMakeVisible(moreFeel);
+    morePage.addAndMakeVisible(moreStyle);
+    morePage.addAndMakeVisible(moreLibrary);
 
-    setUpLabel(styleProfileLabel, "Profile");
-    stylePage.addAndMakeVisible(styleProfileLabel);
-    styleProfileComboBox.onChange = [this]()
+    trackLanes.onMute = [this](Part part)
     {
-        if (styleProfileComboBox.getSelectedId() <= 1)
-            audioProcessor.setCurrentStyle({});
-        else
-            audioProcessor.setCurrentStyle(styleProfileComboBox.getText());
-        shownStyleVersion = audioProcessor.getStyleVersion();
-        if (!audioProcessor.getCurrentStyle().empty())
-            planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
-        if (styleProfileComboBox.getSelectedId() > 1 && blendSlider.getValue() < 25.0)
-            blendSlider.setValue(100.0, juce::sendNotification);
-        snapshotParams();
+        audioProcessor.setPartMuted(part, !audioProcessor.isPartMuted(part));
+        trackLanes.setMuteMask(audioProcessor.getMuteMask());
     };
-    stylePage.addAndMakeVisible(styleProfileComboBox);
+    trackLanes.onRegen = [this](Part part) { onRegeneratePart(part, false); };
+    trackLanes.onDrag = [this](Part part) { startExternalMidiDrag(part); };
+    addAndMakeVisible(trackLanes);
 
-    setUpLabel(blendLabel, "Blend");
-    stylePage.addAndMakeVisible(blendLabel);
-    blendSlider.setRange(0, 100, 1);
-    blendSlider.setValue(0, juce::dontSendNotification);
-    blendSlider.setTextValueSuffix("%");
-    blendSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 24);
-    styleSlider(blendSlider);
-    blendSlider.onValueChange = [this]()
-    {
-        audioProcessor.setStyleBlend(blendSlider.getValue() / 100.0);
-        snapshotParams();
-    };
-    stylePage.addAndMakeVisible(blendSlider);
+    dragAllButton.onDrag = [this]() { startExternalMidiDrag(Part::All); };
+    addAndMakeVisible(dragAllButton);
 
-    learnStyleButton.setButtonText("Learn style...");
-    learnStyleButton.onClick = [this]() { onLearnStyleClicked(); };
-    stylePage.addAndMakeVisible(learnStyleButton);
-
-    styleHintLabel.setText("Learn chord vocabulary, voicings, rhythm and swing from MIDI files "
-                           "or a folder. Enable Advanced UI in Settings to blend a learned profile "
-                           "with the selected genre.",
-                           juce::dontSendNotification);
-    styleHintLabel.setFont(juce::Font(14.5f));
-    styleHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    styleHintLabel.setJustificationType(juce::Justification::topLeft);
-    stylePage.addAndMakeVisible(styleHintLabel);
-
-    setUpLabel(soundPartLabel, "Part");
-    soundPage.addAndMakeVisible(soundPartLabel);
-    soundPartCombo.addItem("Chords", 1);
-    soundPartCombo.addItem("Bass", 2);
-    soundPartCombo.addItem("Synth", 3);
-    soundPartCombo.addItem("Piano", 4);
-    soundPartCombo.setSelectedId(1, juce::dontSendNotification);
-    soundPartCombo.onChange = [this]()
-    {
-        refreshSoundPatchCombo();
-        pullSoundToUI();
-    };
-    soundPage.addAndMakeVisible(soundPartCombo);
-
-    setUpLabel(soundPatchLabel, "Patch");
-    soundPage.addAndMakeVisible(soundPatchLabel);
-    soundPatchCombo.onChange = [this]()
-    {
-        if (pullingSound)
-            return;
-        const auto id = soundPatchCombo.getText();
-        auto found = PatchLibrary::find(id);
-        if (found.id.isEmpty())
-        {
-            const auto ids = PatchLibrary::idsFor(selectedSoundPart());
-            const int idx = soundPatchCombo.getSelectedId() - 1;
-            if (juce::isPositiveAndBelow(idx, ids.size()))
-                found = PatchLibrary::find(ids[idx]);
-        }
-        if (found.id.isNotEmpty())
-        {
-            found.part = selectedSoundPart();
-            audioProcessor.setPreviewPatch(selectedSoundPart(), found);
-            pullSoundToUI();
-        }
-    };
-    soundPage.addAndMakeVisible(soundPatchCombo);
-
-    auto bindSoundSlider = [this](juce::Slider& slider, double min, double max, double interval,
-                                  const juce::String& suffix)
-    {
-        slider.setRange(min, max, interval);
-        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 22);
-        if (suffix.isNotEmpty())
-            slider.setTextValueSuffix(suffix);
-        styleSlider(slider);
-        slider.onValueChange = [this]() { pushSoundFromUI(); };
-        soundPage.addAndMakeVisible(slider);
-    };
-
-    setUpLabel(attackLabel, "Attack");
-    soundPage.addAndMakeVisible(attackLabel);
-    bindSoundSlider(attackSlider, 0.001, 2.0, 0.001, " s");
-    attackSlider.setSkewFactorFromMidPoint(0.2);
-
-    setUpLabel(decayLabel, "Decay");
-    soundPage.addAndMakeVisible(decayLabel);
-    bindSoundSlider(decaySlider, 0.01, 3.0, 0.001, " s");
-    decaySlider.setSkewFactorFromMidPoint(0.4);
-
-    setUpLabel(sustainLabel, "Sustain");
-    soundPage.addAndMakeVisible(sustainLabel);
-    bindSoundSlider(sustainSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(releaseLabel, "Release");
-    soundPage.addAndMakeVisible(releaseLabel);
-    bindSoundSlider(releaseSlider, 0.01, 3.0, 0.001, " s");
-    releaseSlider.setSkewFactorFromMidPoint(0.4);
-
-    setUpLabel(cutoffLabel, "Cutoff");
-    soundPage.addAndMakeVisible(cutoffLabel);
-    bindSoundSlider(cutoffSlider, 80.0, 12000.0, 1.0, " Hz");
-    cutoffSlider.setSkewFactorFromMidPoint(1200.0);
-
-    setUpLabel(resoLabel, "Resonance");
-    soundPage.addAndMakeVisible(resoLabel);
-    bindSoundSlider(resoSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(driveLabel, "Drive");
-    soundPage.addAndMakeVisible(driveLabel);
-    bindSoundSlider(driveSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(reverbSendLabel, "Reverb");
-    soundPage.addAndMakeVisible(reverbSendLabel);
-    bindSoundSlider(reverbSendSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(delaySendLabel, "Delay");
-    soundPage.addAndMakeVisible(delaySendLabel);
-    bindSoundSlider(delaySendSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(mixSectionLabel, "Mix");
-    soundPage.addAndMakeVisible(mixSectionLabel);
-
-    setUpLabel(mixPresetLabel, "Preset");
-    soundPage.addAndMakeVisible(mixPresetLabel);
-    {
-        const auto names = MixLibrary::names();
-        for (int i = 0; i < names.size(); ++i)
-            mixPresetCombo.addItem(names[i], i + 1);
-        mixPresetCombo.setSelectedId(1, juce::dontSendNotification);
-        mixPresetCombo.onChange = [this]()
-        {
-            if (pullingSound)
-                return;
-            const auto ids = MixLibrary::ids();
-            const int idx = mixPresetCombo.getSelectedId() - 1;
-            if (juce::isPositiveAndBelow(idx, ids.size()))
-            {
-                audioProcessor.setPreviewMix(MixLibrary::find(ids[idx]));
-                pullSoundToUI();
-            }
-        };
-        soundPage.addAndMakeVisible(mixPresetCombo);
-    }
-
-    setUpLabel(sidechainLabel, "Sidechain");
-    soundPage.addAndMakeVisible(sidechainLabel);
-    bindSoundSlider(sidechainSlider, 0.0, 1.0, 0.01, {});
-
-    setUpLabel(mixCompLabel, "Comp");
-    soundPage.addAndMakeVisible(mixCompLabel);
-    bindSoundSlider(mixCompSlider, 0.0, 1.0, 0.01, {});
-
-    soundHintLabel.setText("Genre-aware preview patches (Rhodes, supersaw, 808, strings, EP) plus a Mix "
-                           "bus: kick sidechain, drum/bass/music compressors, glue and limiter. "
-                           "Drums stay on the sampled kit. Changes save with the project.",
-                           juce::dontSendNotification);
-    soundHintLabel.setFont(juce::Font(14.0f));
-    soundHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    soundHintLabel.setJustificationType(juce::Justification::topLeft);
-    soundPage.addAndMakeVisible(soundHintLabel);
-
-    refreshSoundPatchCombo();
-    pullSoundToUI();
-
-    refreshStyleCombo();
-    refreshPresetCombo();
-    applyParamsToUI(audioProcessor.getLastUiParams());
-
-    addAndMakeVisible(clipView);
-
-    setUpLabel(mixLabel, "Parts");
-    addAndMakeVisible(mixLabel);
-    for (auto part : allParts)
-    {
-        auto* name = mixPartLabels.add(new juce::Label({}, partName(part)));
-        name->setFont(juce::Font(12.0f));
-        name->setColour(juce::Label::textColourId, Theme::dimText);
-        addAndMakeVisible(name);
-
-        auto* mute = muteButtons.add(new juce::TextButton("M"));
-        mute->setClickingTogglesState(true);
-        mute->setColour(juce::TextButton::buttonOnColourId, Theme::trial);
-        mute->setTooltip(juce::String(partName(part)) + " mute");
-        mute->onClick = [this, part, mute]()
-        {
-            audioProcessor.setPartMuted(part, mute->getToggleState());
-            clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
-        };
-        addAndMakeVisible(mute);
-
-        auto* solo = soloButtons.add(new juce::TextButton("S"));
-        solo->setClickingTogglesState(true);
-        solo->setColour(juce::TextButton::buttonOnColourId, Theme::accentAlt);
-        solo->setTooltip(juce::String(partName(part)) + " solo");
-        solo->onClick = [this, part, solo]()
-        {
-            audioProcessor.setPartSoloed(part, solo->getToggleState());
-            clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
-        };
-        addAndMakeVisible(solo);
-
-        auto* regen = regenButtons.add(new juce::TextButton("R"));
-        regen->setTooltip("Regenerate " + juce::String(partName(part)) + " (keep other parts)");
-        regen->onClick = [this, part]() { onRegeneratePart(part, false); };
-        addAndMakeVisible(regen);
-
-        auto* vary = variationButtons.add(new juce::TextButton("V"));
-        vary->setTooltip("Variation of " + juce::String(partName(part)) + " (keep other parts)");
-        vary->onClick = [this, part]() { onRegeneratePart(part, true); };
-        addAndMakeVisible(vary);
-    }
-
-    dragHintLabel.setText("Drag MIDI", juce::dontSendNotification);
-    dragHintLabel.setFont(juce::Font(13.5f, juce::Font::bold));
-    dragHintLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    addAndMakeVisible(dragHintLabel);
-
-    auto addChip = [this](Part part)
-    {
-        auto* chip = dragChips.add(new MidiDragChip([this, part]() { startExternalMidiDrag(part); },
-                                                    partName(part)));
-        addAndMakeVisible(chip);
-    };
-    addChip(Part::All);
-    for (auto part : allParts)
-        addChip(part);
-
-    previewButton.setButtonText("Play Preview");
-    previewButton.setEnabled(false);
     previewButton.onClick = [this]()
     {
         audioProcessor.setPreviewPlaying(!audioProcessor.isPreviewPlaying());
     };
     addAndMakeVisible(previewButton);
 
-    exportButton.setButtonText("Export MIDI");
-    exportButton.setEnabled(false);
-    exportButton.onClick = [this]() { onExportMidi(); };
-    addAndMakeVisible(exportButton);
-
-    statusLabel.setText("Ready", juce::dontSendNotification);
-    statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    statusLabel.setFont(juce::Font(13.0f));
     addAndMakeVisible(statusLabel);
 
+    moreViewport.setViewedComponent(&morePage, false);
+    moreViewport.setScrollBarsShown(true, false);
+    moreViewport.setScrollBarThickness(7);
+    addChildComponent(moreViewport);
+
+    auto addMore = [this](juce::Component& c) { morePage.addAndMakeVisible(c); };
+    setupLabel(scaleLabel, "Scale");
+    addMore(scaleLabel);
+    for (int i = 0; i < 5; ++i)
+        scaleComboBox.addItem(scaleNames[i], i + 1);
+    scaleComboBox.setSelectedId(1, juce::dontSendNotification);
+    addMore(scaleComboBox);
+
+    setupLabel(formLabel, "Form");
+    addMore(formLabel);
+    formComboBox.addItem("Loop", 1);
+    formComboBox.addItem("Song form", 2);
+    formComboBox.setSelectedId(1, juce::dontSendNotification);
+    addMore(formComboBox);
+
+    setupLabel(gridLabel, "Grid");
+    addMore(gridLabel);
+    gridComboBox.addItem("1/16", 1);
+    gridComboBox.addItem("1/8", 2);
+    gridComboBox.addItem("1/4", 3);
+    gridComboBox.addItem("1/2", 4);
+    gridComboBox.setSelectedId(2, juce::dontSendNotification);
+    addMore(gridComboBox);
+
+    setupLabel(engineLabel, "Engine");
+    addMore(engineLabel);
+    engineComboBox.addItem("Auto (prompt → LLM)", 1);
+    engineComboBox.addItem("Genre engine", 2);
+    engineComboBox.addItem("Markov", 3);
+    engineComboBox.addItem("LLM planner", 4);
+    engineComboBox.setSelectedId(1, juce::dontSendNotification);
+    engineComboBox.onChange = [this]() { applyEngineChoice(); snapshotParams(); };
+    addMore(engineComboBox);
+
+    setupLabel(partLabel, "Generate");
+    addMore(partLabel);
+    partComboBox.addItem("All parts", 1);
+    for (auto part : allParts)
+        partComboBox.addItem(laneName(part), static_cast<int>(part) + 1);
+    partComboBox.setSelectedId(1, juce::dontSendNotification);
+    addMore(partComboBox);
+
+    setupLabel(chordsLabel, "Chords");
+    addMore(chordsLabel);
+    chordsEditor.setTextToShowWhenEmpty("Am9 Fmaj9 Dm7 E7b9", Theme::dimText);
+    addMore(chordsEditor);
+    lockProgressionButton.setButtonText("Lock chords");
+    addMore(lockProgressionButton);
+
+    setupLabel(locksLabel, "Keep");
+    addMore(locksLabel);
+    for (auto part : allParts)
+    {
+        auto* button = partLockButtons.add(new juce::ToggleButton(laneName(part)));
+        addMore(*button);
+    }
+
+    planButton.setButtonText("Plan arrangement");
+    planButton.onClick = [this]() { onPlanClicked(); };
+    addMore(planButton);
+    planSummaryEditor.setMultiLine(true);
+    planSummaryEditor.setReadOnly(true);
+    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 12.5f, juce::Font::plain));
+    addMore(planSummaryEditor);
+
+    setupLabel(pianoLabel, "Piano");
+    addMore(pianoLabel);
+    pianoMute.setClickingTogglesState(true);
+    pianoMute.onClick = [this]()
+    {
+        audioProcessor.setPartMuted(Part::Piano, pianoMute.getToggleState());
+        pianoMute.setKind(pianoMute.getToggleState() ? IconKind::Mute : IconKind::Unmute);
+    };
+    pianoRegen.onClick = [this]() { onRegeneratePart(Part::Piano, false); };
+    pianoDrag.onDrag = [this]() { startExternalMidiDrag(Part::Piano); };
+    addMore(pianoMute);
+    addMore(pianoRegen);
+    addMore(pianoDrag);
+
+    setupLabel(seedLabel, "Seed");
+    addMore(seedLabel);
+    seedSlider.setRange(0, 9999, 1);
+    seedSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 22);
+    styleSlider(seedSlider);
+    addMore(seedSlider);
+
+    setupLabel(swingLabel, "Swing");
+    addMore(swingLabel);
+    swingSlider.setRange(0.50, 0.72, 0.01);
+    swingSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 22);
+    styleSlider(swingSlider);
+    addMore(swingSlider);
+
+    setupLabel(humanizeLabel, "Humanize");
+    addMore(humanizeLabel);
+    humanizeSlider.setRange(0, 16, 0.5);
+    humanizeSlider.setTextValueSuffix(" ms");
+    humanizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 22);
+    styleSlider(humanizeSlider);
+    addMore(humanizeSlider);
+
+    setupLabel(densityLabel, "Density");
+    addMore(densityLabel);
+    densitySlider.setRange(0, 100, 1);
+    densitySlider.setTextValueSuffix("%");
+    densitySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 22);
+    styleSlider(densitySlider);
+    addMore(densitySlider);
+
+    setupLabel(importModeLabel, "Import as");
+    addMore(importModeLabel);
+    importModeComboBox.addItem("Off", 1);
+    importModeComboBox.addItem("Accompany", 2);
+    importModeComboBox.addItem("Extend", 3);
+    importModeComboBox.addItem("Rewrite", 4);
+    importModeComboBox.addItem("Restyle", 5);
+    importModeComboBox.setSelectedId(1, juce::dontSendNotification);
+    addMore(importModeComboBox);
+
+    followHostTempoButton.setButtonText("Follow host tempo");
+    followHostTempoButton.setToggleState(audioProcessor.getFollowHostTempo(), juce::dontSendNotification);
+    followHostTempoButton.onClick = [this]()
+    {
+        audioProcessor.setFollowHostTempo(followHostTempoButton.getToggleState());
+        refreshPills();
+    };
+    addMore(followHostTempoButton);
+
+    followHostKeyButton.setButtonText("Keep my key");
+    followHostKeyButton.setToggleState(audioProcessor.getFollowHostKey(), juce::dontSendNotification);
+    followHostKeyButton.onClick = [this]()
+    {
+        audioProcessor.setFollowHostKey(followHostKeyButton.getToggleState());
+    };
+    addMore(followHostKeyButton);
+
+    setupLabel(styleProfileLabel, "Style");
+    addMore(styleProfileLabel);
+    styleProfileComboBox.onChange = [this]()
+    {
+        if (styleProfileComboBox.getSelectedId() <= 1)
+            audioProcessor.setCurrentStyle({});
+        else
+            audioProcessor.setCurrentStyle(styleProfileComboBox.getText());
+        snapshotParams();
+    };
+    addMore(styleProfileComboBox);
+
+    setupLabel(blendLabel, "Blend");
+    addMore(blendLabel);
+    blendSlider.setRange(0, 100, 1);
+    blendSlider.setTextValueSuffix("%");
+    blendSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 22);
+    styleSlider(blendSlider);
+    blendSlider.onValueChange = [this]()
+    {
+        audioProcessor.setStyleBlend(blendSlider.getValue() / 100.0);
+        snapshotParams();
+    };
+    addMore(blendSlider);
+
+    learnStyleButton.setButtonText("Learn style...");
+    learnStyleButton.onClick = [this]() { onLearnStyleClicked(); };
+    addMore(learnStyleButton);
+
+    captureButton.setButtonText("Capture MIDI");
+    captureButton.onClick = [this]() { onCaptureClicked(); };
+    addMore(captureButton);
+
+    exportButton.setButtonText("Export MIDI");
+    exportButton.onClick = [this]() { onExportMidi(); };
+    addMore(exportButton);
+
+    setupLabel(presetLabel, "Preset");
+    addMore(presetLabel);
+    presetComboBox.onChange = [this]() { applyPresetFromCombo(); };
+    addMore(presetComboBox);
+    savePresetButton.setButtonText("Save");
+    savePresetButton.onClick = [this]() { onSavePresetClicked(); };
+    addMore(savePresetButton);
+
+    setupLabel(varyLabel, "Variation");
+    addMore(varyLabel);
+    for (auto part : allParts)
+    {
+        auto* button = variationButtons.add(new juce::TextButton(juce::String("Vary ") + laneName(part)));
+        button->onClick = [this, part]() { onRegeneratePart(part, true); };
+        addMore(*button);
+    }
+
+    importPicker.onPick = [this](ImportMode mode) { applyImportMode(mode); };
+    importPicker.onCancel = [this]() { hideImportPicker(); };
+    addChildComponent(importPicker);
+
+    settingsOverlay = std::make_unique<SettingsOverlay>(audioProcessor);
+    settingsOverlay->onClose = [this]() { hideSettings(); };
+    addChildComponent(*settingsOverlay);
+
+    refreshStyleCombo();
+    refreshPresetCombo();
+    applyParamsToUI(audioProcessor.getLastUiParams());
+    chooseGenre(audioProcessor.getLastUiParams().genre);
+    refreshPills();
+
     setResizable(true, true);
-    setResizeLimits(880, 640, 1400, 1100);
-    setSize(960, 780);
-    applyAdvancedVisibility();
+    setResizeLimits(640, 560, 1200, 1100);
+    setSize(760, 760);
     startTimerHz(30);
 }
 
@@ -917,388 +946,437 @@ void SynthesiaAIEditor::styleSlider(juce::Slider& slider)
     slider.setColour(juce::Slider::trackColourId, Theme::accent.withAlpha(0.6f));
 }
 
-void SynthesiaAIEditor::styleControl(juce::Component&)
+void SynthesiaAIEditor::setupSectionLabel(juce::Label& label, const juce::String& text)
 {
+    label.setText(text, juce::dontSendNotification);
+    label.setColour(juce::Label::textColourId, Theme::dimText);
+    label.setFont(juce::Font(11.5f, juce::Font::bold));
+}
+
+void SynthesiaAIEditor::chooseGenre(Genre genre)
+{
+    genreValue = genre;
+    for (int i = 0; i < genreChips.size(); ++i)
+        genreChips[i]->setToggleState(i == static_cast<int>(genre), juce::dontSendNotification);
+    if (!applyingPreset)
+        applyGenreDefaults();
+}
+
+Genre SynthesiaAIEditor::selectedGenre() const { return genreValue; }
+ScaleType SynthesiaAIEditor::selectedScale() const
+{
+    return static_cast<ScaleType>(juce::jmax(0, scaleComboBox.getSelectedId() - 1));
 }
 
 void SynthesiaAIEditor::applyGenreDefaults()
 {
     if (applyingPreset)
         return;
-    const int id = genreComboBox.getSelectedId();
-    if (id <= 0)
-        return;
+    const auto& profile = getGenreProfile(genreValue);
+    if (!followHostTempoButton.getToggleState())
+        tempoValue = profile.defaultTempo;
+    gridComboBox.setSelectedId(static_cast<int>(profile.defaultGrid) + 1, juce::dontSendNotification);
+    audioProcessor.loadGenreSounds(genreValue);
+    refreshPills();
+}
 
-    const auto& profile = getGenreProfile(static_cast<Genre>(id - 1));
-    tempoSlider.setValue(profile.defaultTempo, juce::dontSendNotification);
-    audioProcessor.loadGenreSounds(static_cast<Genre>(id - 1));
-    pullSoundToUI();
-    tempoSyncComboBox.setSelectedId(static_cast<int>(profile.defaultGrid) + 1,
-                                    juce::dontSendNotification);
+void SynthesiaAIEditor::refreshPills()
+{
+    const auto scale = selectedScale();
+    keyPill.setText(juce::String(keyNames[juce::jlimit(0, 11, keyIndex)]) + "  "
+                    + juce::String(scaleNames[static_cast<int>(scale)]).substring(0, 3));
+    double bpm = tempoValue;
+    juce::String tempoText;
+    if (followHostTempoButton.getToggleState() && audioProcessor.getHostTempo() > 20.0)
+    {
+        bpm = audioProcessor.getHostTempo();
+        tempoText = juce::String(juce::roundToInt(bpm)) + " bpm  host";
+    }
+    else
+    {
+        tempoText = juce::String(juce::roundToInt(bpm)) + " bpm";
+    }
+    tempoPill.setText(tempoText);
+    barsPill.setText(juce::String(barsValue) + " bars");
+}
+
+void SynthesiaAIEditor::showKeyMenu()
+{
+    juce::PopupMenu menu;
+    for (int i = 0; i < 12; ++i)
+        menu.addItem(i + 1, keyNames[i], true, i == keyIndex);
+    menu.addSeparator();
+    for (int i = 0; i < 5; ++i)
+        menu.addItem(20 + i, scaleNames[i], true, scaleComboBox.getSelectedId() == i + 1);
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&keyPill),
+                       [this](int result)
+                       {
+                           if (result >= 1 && result <= 12)
+                               keyIndex = result - 1;
+                           else if (result >= 20 && result <= 24)
+                               scaleComboBox.setSelectedId(result - 19, juce::dontSendNotification);
+                           refreshPills();
+                           snapshotParams();
+                       });
+}
+
+void SynthesiaAIEditor::showTempoMenu()
+{
+    juce::PopupMenu menu;
+    menu.addItem(1, "Follow host", true, followHostTempoButton.getToggleState());
+    menu.addSeparator();
+    static const int tempoChoices[] = { 80, 88, 110, 120, 124, 140 };
+    for (int i = 0; i < 6; ++i)
+        menu.addItem(10 + i, juce::String(tempoChoices[i]) + " bpm");
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&tempoPill),
+                       [this](int result)
+                       {
+                           if (result == 1)
+                           {
+                               followHostTempoButton.setToggleState(!followHostTempoButton.getToggleState(),
+                                                                    juce::sendNotification);
+                               return;
+                           }
+                           if (result >= 10)
+                           {
+                               static const int chosenTempo[] = { 80, 88, 110, 120, 124, 140 };
+                               followHostTempoButton.setToggleState(false, juce::dontSendNotification);
+                               audioProcessor.setFollowHostTempo(false);
+                               tempoValue = chosenTempo[result - 10];
+                               refreshPills();
+                               snapshotParams();
+                           }
+                       });
+}
+
+void SynthesiaAIEditor::showBarsMenu()
+{
+    juce::PopupMenu menu;
+    const int bars[] = { 4, 8, 16, 24, 32 };
+    for (int i = 0; i < 5; ++i)
+        menu.addItem(bars[i], juce::String(bars[i]) + " bars", true, barsValue == bars[i]);
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&barsPill),
+                       [this](int result)
+                       {
+                           if (result > 0)
+                           {
+                               barsValue = result;
+                               refreshPills();
+                               snapshotParams();
+                           }
+                       });
+}
+
+void SynthesiaAIEditor::setMoreOpen(bool open)
+{
+    moreOpen = open;
+    moreButton.setButtonText(open ? "Hide options" : "More options");
+    moreViewport.setVisible(open);
+    resized();
+}
+
+void SynthesiaAIEditor::showImportPicker(const juce::File& file)
+{
+    hideSettings();
+    pendingImportFile = file;
+    importPicker.setFileName(file.getFileName());
+    importPicker.setVisible(true);
+    importPickerOpen = true;
+    importPicker.toFront(true);
+    resized();
+}
+
+void SynthesiaAIEditor::hideImportPicker()
+{
+    importPicker.setVisible(false);
+    importPickerOpen = false;
+    pendingImportFile = juce::File();
+}
+
+void SynthesiaAIEditor::applyImportMode(ImportMode mode)
+{
+    switch (mode)
+    {
+        case ImportMode::Accompany:
+            partComboBox.setSelectedId(1, juce::dontSendNotification);
+            break;
+        case ImportMode::Extend:
+            formComboBox.setSelectedId(2, juce::dontSendNotification);
+            if (barsValue < 16)
+                barsValue = 24;
+            break;
+        case ImportMode::Rewrite:
+        case ImportMode::Restyle:
+        case ImportMode::None:
+            break;
+    }
+    importModeComboBox.setSelectedId(static_cast<int>(mode) + 1, juce::dontSendNotification);
+
+    const auto file = pendingImportFile;
+    hideImportPicker();
+
+    auto params = collectParams();
+    params.importMode = mode;
+    audioProcessor.setLastUiParams(params);
+
+    if (file.existsAsFile())
+    {
+        importPath(file);
+        audioProcessor.generateMidi(collectParams());
+        statusLabel.setText("Generating from imported MIDI...", juce::dontSendNotification);
+    }
+    else
+    {
+        auto chooser = std::make_shared<juce::FileChooser>(
+            "Import MIDI file...",
+            juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+            "*.mid;*.midi");
+        chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                             [this, chooser, mode](const juce::FileChooser& fc)
+                             {
+                                 const auto chosen = fc.getResult();
+                                 if (!chosen.existsAsFile())
+                                     return;
+                                 auto imported = collectParams();
+                                 imported.importMode = mode;
+                                 audioProcessor.setLastUiParams(imported);
+                                 if (importPath(chosen))
+                                 {
+                                     audioProcessor.generateMidi(collectParams());
+                                     statusLabel.setText("Generating from imported MIDI...",
+                                                         juce::dontSendNotification);
+                                 }
+                             });
+    }
+}
+
+void SynthesiaAIEditor::openSettings()
+{
+    hideImportPicker();
+    if (settingsOverlay != nullptr)
+    {
+        settingsOverlay->refreshFromProcessor();
+        settingsOverlay->setVisible(true);
+        settingsOverlay->toFront(true);
+        settingsOpen = true;
+        resized();
+    }
+}
+
+void SynthesiaAIEditor::hideSettings()
+{
+    if (settingsOverlay != nullptr)
+        settingsOverlay->setVisible(false);
+    settingsOpen = false;
+}
+
+void SynthesiaAIEditor::applyEngineChoice()
+{
+    const int id = engineComboBox.getSelectedId();
+    if (id == 3)
+        audioProcessor.setGeneratorType(GeneratorType::Markov);
+    else if (id == 4)
+        audioProcessor.setGeneratorType(GeneratorType::LLM);
+    else if (id == 2)
+        audioProcessor.setGeneratorType(GeneratorType::Genre);
 }
 
 void SynthesiaAIEditor::paint(juce::Graphics& g)
 {
     g.fillAll(Theme::background);
-
-    auto header = getLocalBounds().removeFromTop(56);
-    g.setColour(Theme::header);
-    g.fillRect(header);
-    g.setColour(Theme::outline);
-    g.drawHorizontalLine(header.getBottom() - 1, 0.0f, static_cast<float>(getWidth()));
-
-    auto footer = getLocalBounds().removeFromBottom(250);
-    g.setColour(Theme::panel.withAlpha(0.35f));
-    g.fillRect(footer.removeFromTop(1).withHeight(1));
-
+    if (moreOpen && moreViewport.isVisible())
+    {
+        g.setColour(Theme::surface);
+        g.fillRoundedRectangle(moreViewport.getBounds().toFloat(), 12.0f);
+        g.setColour(Theme::outline);
+        g.drawRoundedRectangle(moreViewport.getBounds().toFloat().reduced(0.5f), 12.0f, 1.0f);
+    }
     if (draggingFiles)
     {
-        g.setColour(Theme::accent.withAlpha(0.18f));
-        g.fillRect(getLocalBounds());
+        g.setColour(Theme::accent.withAlpha(0.12f));
+        g.fillRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 16.0f);
         g.setColour(Theme::accent);
-        g.drawRect(getLocalBounds().reduced(6), 2);
+        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 16.0f, 2.0f);
         g.setFont(18.0f);
         g.setColour(juce::Colours::white);
-        g.drawText("Drop .mid files or a folder to import / learn a style",
-                   getLocalBounds(), juce::Justification::centred);
+        g.drawText("Drop MIDI to import", getLocalBounds(), juce::Justification::centred);
     }
 }
 
 void SynthesiaAIEditor::resized()
 {
-    auto area = getLocalBounds();
+    auto area = getLocalBounds().reduced(20, 16);
 
-    auto header = area.removeFromTop(56).reduced(16, 8);
-    settingsButton.setBounds(header.removeFromRight(92).withSizeKeepingCentre(92, 30));
+    auto header = area.removeFromTop(36);
+    titleLabel.setBounds(header.removeFromLeft(130));
+    settingsButton.setBounds(header.removeFromRight(36));
     header.removeFromRight(8);
-    savePresetButton.setBounds(header.removeFromRight(64).withSizeKeepingCentre(64, 30));
+    barsPill.setBounds(header.removeFromRight(78));
     header.removeFromRight(8);
-    presetComboBox.setBounds(header.removeFromRight(168).withSizeKeepingCentre(168, 30));
-    header.removeFromRight(6);
-    presetLabel.setBounds(header.removeFromRight(56).withSizeKeepingCentre(56, 24));
-    header.removeFromRight(10);
-    if (licenseBadge.isVisible())
-        licenseBadge.setBounds(header.removeFromRight(84).withSizeKeepingCentre(84, 24));
+    tempoPill.setBounds(header.removeFromRight(108));
+    header.removeFromRight(8);
+    keyPill.setBounds(header.removeFromRight(92));
+    if (audioProcessor.isAdvancedUi())
+    {
+        header.removeFromRight(8);
+        licenseBadge.setBounds(header.removeFromRight(64));
+        licenseBadge.setVisible(true);
+    }
     else
+    {
+        licenseBadge.setVisible(false);
         licenseBadge.setBounds({});
-
-    auto titleCol = header;
-    titleLabel.setBounds(titleCol.removeFromTop(22));
-    subtitleLabel.setBounds(titleCol);
-
-    auto footer = area.removeFromBottom(250);
-    footer.reduce(16, 8);
-    statusLabel.setBounds(footer.removeFromBottom(18));
-    footer.removeFromBottom(4);
-    auto transport = footer.removeFromBottom(32);
-    const int btnGap = 8;
-    const int btnW = (transport.getWidth() - btnGap * 2) / 3;
-    generateButton.setBounds(transport.removeFromLeft(btnW));
-    transport.removeFromLeft(btnGap);
-    previewButton.setBounds(transport.removeFromLeft(btnW));
-    transport.removeFromLeft(btnGap);
-    exportButton.setBounds(transport);
-    footer.removeFromBottom(6);
-
-    auto dragRow = footer.removeFromBottom(32);
-    dragHintLabel.setBounds(dragRow.removeFromLeft(86));
-    const int chipW = dragRow.getWidth() / juce::jmax(1, dragChips.size());
-    for (auto* chip : dragChips)
-        chip->setBounds(dragRow.removeFromLeft(chipW).reduced(3, 2));
-    footer.removeFromBottom(6);
-
-    auto mixRow = footer.removeFromBottom(26);
-    mixLabel.setBounds(mixRow.removeFromLeft(44));
-    const int mixSlot = mixRow.getWidth() / juce::jmax(1, muteButtons.size());
-    for (int i = 0; i < muteButtons.size(); ++i)
-    {
-        auto slot = mixRow.removeFromLeft(mixSlot);
-        mixPartLabels[i]->setBounds(slot.removeFromLeft(44));
-        muteButtons[i]->setBounds(slot.removeFromLeft(22).reduced(1));
-        slot.removeFromLeft(2);
-        soloButtons[i]->setBounds(slot.removeFromLeft(22).reduced(1));
-        slot.removeFromLeft(2);
-        regenButtons[i]->setBounds(slot.removeFromLeft(22).reduced(1));
-        slot.removeFromLeft(2);
-        variationButtons[i]->setBounds(slot.removeFromLeft(22).reduced(1));
-    }
-    footer.removeFromBottom(6);
-    clipView.setBounds(footer);
-
-    tabs.setBounds(area.reduced(12, 8));
-    layoutGeneratePage();
-    layoutPlanPage();
-    layoutImportPage();
-    layoutStylePage();
-    layoutSoundPage();
-}
-
-void SynthesiaAIEditor::layoutGeneratePage()
-{
-    auto area = generatePage.getLocalBounds().reduced(12, 10);
-    auto layoutCell = [](juce::Rectangle<int> cell, juce::Label& label, juce::Component& control)
-    {
-        label.setBounds(cell.removeFromLeft(labelWidth));
-        control.setBounds(cell);
-    };
-    const int columnGap = 20;
-    auto twoColumnRow = [&](juce::Label& leftLabel, juce::Component& left,
-                            juce::Label& rightLabel, juce::Component& right)
-    {
-        auto row = area.removeFromTop(28);
-        auto leftCell = row.removeFromLeft((row.getWidth() - columnGap) / 2);
-        row.removeFromLeft(columnGap);
-        layoutCell(leftCell, leftLabel, left);
-        layoutCell(row, rightLabel, right);
-        area.removeFromTop(8);
-    };
-
-    twoColumnRow(keyLabel, keyComboBox, scaleLabel, scaleComboBox);
-    twoColumnRow(genreLabel, genreComboBox, partLabel, partComboBox);
-    twoColumnRow(formLabel, formComboBox, lengthLabel, lengthSlider);
-    twoColumnRow(tempoLabel, tempoSlider, tempoSyncLabel, tempoSyncComboBox);
-
-    {
-        auto row = area.removeFromTop(24);
-        followHostTempoButton.setBounds(row.removeFromLeft((row.getWidth() - columnGap) / 2));
-        row.removeFromLeft(columnGap);
-        followHostKeyButton.setBounds(row);
-        area.removeFromTop(8);
     }
 
-    {
-        auto row = area.removeFromTop(28);
-        layoutCell(row, generatorLabel, generatorComboBox);
-        area.removeFromTop(8);
-    }
-
-    {
-        auto row = area.removeFromTop(28);
-        layoutCell(row.removeFromLeft((row.getWidth() - columnGap) / 2), chordsLabel, chordsEditor);
-        row.removeFromLeft(columnGap);
-        lockProgressionButton.setBounds(row);
-        area.removeFromTop(8);
-    }
-
-    {
-        auto row = area.removeFromTop(24);
-        locksLabel.setBounds(row.removeFromLeft(labelWidth));
-        const int lockW = row.getWidth() / juce::jmax(1, partLockButtons.size());
-        for (auto* button : partLockButtons)
-            button->setBounds(row.removeFromLeft(lockW));
-        area.removeFromTop(8);
-    }
-
-    styleLabel.setBounds(area.removeFromTop(20));
-    styleTextEditor.setBounds(area);
-}
-
-void SynthesiaAIEditor::layoutPlanPage()
-{
-    auto area = planPage.getLocalBounds().reduced(12, 10);
-    planLabel.setBounds(area.removeFromTop(22));
-    area.removeFromTop(6);
-    planButton.setBounds(area.removeFromBottom(36));
-    area.removeFromBottom(10);
-    planSummaryEditor.setBounds(area);
-}
-
-void SynthesiaAIEditor::layoutImportPage()
-{
-    auto area = importPage.getLocalBounds().reduced(12, 10);
-    auto row = area.removeFromTop(28);
-    importModeLabel.setBounds(row.removeFromLeft(labelWidth));
-    importModeComboBox.setBounds(row);
+    area.removeFromTop(16);
+    promptEditor.setBounds(area.removeFromTop(72));
     area.removeFromTop(12);
-    row = area.removeFromTop(36);
-    importButton.setBounds(row.removeFromLeft((row.getWidth() - 10) / 2));
-    row.removeFromLeft(10);
-    captureButton.setBounds(row);
-    area.removeFromTop(16);
-    importHintLabel.setBounds(area.removeFromTop(80));
-}
 
-void SynthesiaAIEditor::layoutStylePage()
-{
-    auto area = stylePage.getLocalBounds().reduced(12, 10);
-    auto row = area.removeFromTop(28);
-    styleProfileLabel.setBounds(row.removeFromLeft(labelWidth));
-    styleProfileComboBox.setBounds(row);
+    auto chipRow = area.removeFromTop(34);
+    const int chipW = chipRow.getWidth() / juce::jmax(1, genreChips.size());
+    for (auto* chip : genreChips)
+        chip->setBounds(chipRow.removeFromLeft(chipW).reduced(4, 1));
+
+    area.removeFromTop(14);
+    generateButton.setBounds(area.removeFromTop(48));
     area.removeFromTop(10);
-    const bool advanced = audioProcessor.isAdvancedUi();
-    blendLabel.setVisible(advanced);
-    blendSlider.setVisible(advanced);
-    if (advanced)
+
+    auto secondary = area.removeFromTop(34);
+    importButton.setBounds(secondary.removeFromLeft(130));
+    secondary.removeFromLeft(10);
+    moreButton.setBounds(secondary.removeFromLeft(150));
+
+    area.removeFromTop(14);
+    statusLabel.setBounds(area.removeFromBottom(20));
+    area.removeFromBottom(8);
+    auto transport = area.removeFromBottom(40);
+    dragAllButton.setBounds(transport.removeFromLeft(120));
+    transport.removeFromLeft(10);
+    previewButton.setBounds(transport.removeFromLeft(40));
+
+    area.removeFromBottom(12);
+    if (moreOpen)
     {
-        row = area.removeFromTop(28);
-        blendLabel.setBounds(row.removeFromLeft(labelWidth));
-        blendSlider.setBounds(row);
-        area.removeFromTop(12);
+        const int moreH = juce::jmin(260, area.getHeight() / 2);
+        moreViewport.setBounds(area.removeFromBottom(moreH));
+        morePage.setSize(moreViewport.getMaximumVisibleWidth() - 8, 980);
+        area.removeFromBottom(10);
+
+        auto box = morePage.getLocalBounds().reduced(8, 6);
+        auto section = [&box](juce::Label& label)
+        {
+            label.setBounds(box.removeFromTop(18));
+            box.removeFromTop(6);
+        };
+        auto rowOf = [&box](juce::Label& label, juce::Component& control)
+        {
+            auto row = box.removeFromTop(30);
+            label.setBounds(row.removeFromLeft(88));
+            control.setBounds(row);
+            box.removeFromTop(8);
+        };
+
+        section(moreArrangement);
+        rowOf(formLabel, formComboBox);
+        rowOf(gridLabel, gridComboBox);
+        rowOf(engineLabel, engineComboBox);
+        rowOf(partLabel, partComboBox);
+        planButton.setBounds(box.removeFromTop(32));
+        box.removeFromTop(8);
+        planSummaryEditor.setBounds(box.removeFromTop(64));
+        box.removeFromTop(12);
+
+        section(moreHarmony);
+        rowOf(scaleLabel, scaleComboBox);
+        {
+            auto row = box.removeFromTop(30);
+            chordsLabel.setBounds(row.removeFromLeft(88));
+            lockProgressionButton.setBounds(row.removeFromRight(110));
+            chordsEditor.setBounds(row.reduced(6, 0));
+            box.removeFromTop(8);
+        }
+        {
+            auto row = box.removeFromTop(26);
+            locksLabel.setBounds(row.removeFromLeft(88));
+            const int w = row.getWidth() / juce::jmax(1, partLockButtons.size());
+            for (auto* b : partLockButtons)
+                b->setBounds(row.removeFromLeft(w));
+            box.removeFromTop(12);
+        }
+
+        section(moreFeel);
+        rowOf(seedLabel, seedSlider);
+        rowOf(swingLabel, swingSlider);
+        rowOf(humanizeLabel, humanizeSlider);
+        rowOf(densityLabel, densitySlider);
+        followHostTempoButton.setBounds(box.removeFromTop(24));
+        box.removeFromTop(4);
+        followHostKeyButton.setBounds(box.removeFromTop(24));
+        box.removeFromTop(12);
+
+        section(moreStyle);
+        rowOf(styleProfileLabel, styleProfileComboBox);
+        const bool advanced = audioProcessor.isAdvancedUi();
+        blendLabel.setVisible(advanced);
+        blendSlider.setVisible(advanced);
+        if (advanced)
+            rowOf(blendLabel, blendSlider);
+        learnStyleButton.setBounds(box.removeFromTop(32));
+        box.removeFromTop(12);
+
+        section(moreLibrary);
+        rowOf(importModeLabel, importModeComboBox);
+        {
+            auto row = box.removeFromTop(32);
+            pianoLabel.setBounds(row.removeFromLeft(88));
+            pianoMute.setBounds(row.removeFromLeft(36));
+            row.removeFromLeft(6);
+            pianoRegen.setBounds(row.removeFromLeft(36));
+            row.removeFromLeft(6);
+            pianoDrag.setBounds(row.removeFromLeft(36));
+            box.removeFromTop(8);
+        }
+        captureButton.setBounds(box.removeFromTop(32));
+        box.removeFromTop(8);
+        exportButton.setBounds(box.removeFromTop(32));
+        box.removeFromTop(8);
+        {
+            auto row = box.removeFromTop(30);
+            presetLabel.setBounds(row.removeFromLeft(88));
+            savePresetButton.setBounds(row.removeFromRight(64));
+            row.removeFromRight(8);
+            presetComboBox.setBounds(row);
+            box.removeFromTop(8);
+        }
+        varyLabel.setBounds(box.removeFromTop(20));
+        box.removeFromTop(4);
+        {
+            auto row = box.removeFromTop(28);
+            const int w = row.getWidth() / juce::jmax(1, variationButtons.size());
+            for (auto* b : variationButtons)
+                b->setBounds(row.removeFromLeft(w).reduced(2, 0));
+        }
     }
-    else
-    {
-        blendLabel.setBounds({});
-        blendSlider.setBounds({});
-    }
-    learnStyleButton.setBounds(area.removeFromTop(36));
-    area.removeFromTop(16);
-    styleHintLabel.setBounds(area.removeFromTop(72));
+
+    trackLanes.setBounds(area);
+    importPicker.setBounds(getLocalBounds());
+    if (settingsOverlay != nullptr)
+        settingsOverlay->setBounds(getLocalBounds());
 }
 
-void SynthesiaAIEditor::applyAdvancedVisibility()
-{
-    const bool advanced = audioProcessor.isAdvancedUi();
-    licenseBadge.setVisible(advanced);
-    blendLabel.setVisible(advanced);
-    blendSlider.setVisible(advanced);
-    resized();
-}
-
-void SynthesiaAIEditor::onRegeneratePart(Part part, bool variation)
-{
-    snapshotParams();
-    statusLabel.setText(variation ? "Varying part..." : "Regenerating part...",
-                        juce::dontSendNotification);
-    audioProcessor.regeneratePart(part, variation);
-}
-
-void SynthesiaAIEditor::layoutSoundPage()
-{
-    auto area = soundPage.getLocalBounds().reduced(12, 10);
-    auto layoutCell = [](juce::Rectangle<int> cell, juce::Label& label, juce::Component& control)
-    {
-        label.setBounds(cell.removeFromLeft(labelWidth));
-        control.setBounds(cell);
-    };
-    const int columnGap = 20;
-    auto twoColumnRow = [&](juce::Label& leftLabel, juce::Component& left,
-                            juce::Label& rightLabel, juce::Component& right)
-    {
-        auto row = area.removeFromTop(28);
-        auto leftCell = row.removeFromLeft((row.getWidth() - columnGap) / 2);
-        row.removeFromLeft(columnGap);
-        layoutCell(leftCell, leftLabel, left);
-        layoutCell(row, rightLabel, right);
-        area.removeFromTop(8);
-    };
-
-    twoColumnRow(soundPartLabel, soundPartCombo, soundPatchLabel, soundPatchCombo);
-    twoColumnRow(attackLabel, attackSlider, decayLabel, decaySlider);
-    twoColumnRow(sustainLabel, sustainSlider, releaseLabel, releaseSlider);
-    twoColumnRow(cutoffLabel, cutoffSlider, resoLabel, resoSlider);
-    twoColumnRow(driveLabel, driveSlider, reverbSendLabel, reverbSendSlider);
-
-    auto row = area.removeFromTop(28);
-    layoutCell(row, delaySendLabel, delaySendSlider);
-    area.removeFromTop(10);
-    mixSectionLabel.setBounds(area.removeFromTop(20));
-    area.removeFromTop(4);
-    twoColumnRow(mixPresetLabel, mixPresetCombo, sidechainLabel, sidechainSlider);
-    row = area.removeFromTop(28);
-    layoutCell(row, mixCompLabel, mixCompSlider);
-    area.removeFromTop(10);
-    soundHintLabel.setBounds(area.removeFromTop(56));
-}
-
-Part SynthesiaAIEditor::selectedSoundPart() const
-{
-    switch (soundPartCombo.getSelectedId())
-    {
-        case 2: return Part::Bass;
-        case 3: return Part::Synth;
-        case 4: return Part::Piano;
-        default: return Part::Chords;
-    }
-}
-
-void SynthesiaAIEditor::refreshSoundPatchCombo()
-{
-    pullingSound = true;
-    const auto part = selectedSoundPart();
-    const auto names = PatchLibrary::namesFor(part);
-    const auto ids = PatchLibrary::idsFor(part);
-    const auto current = audioProcessor.getPreviewPatch(part);
-    soundPatchCombo.clear(juce::dontSendNotification);
-    int selected = 1;
-    for (int i = 0; i < names.size(); ++i)
-    {
-        soundPatchCombo.addItem(names[i], i + 1);
-        if (ids[i] == current.id || names[i] == current.name)
-            selected = i + 1;
-    }
-    if (names.size() > 0)
-        soundPatchCombo.setSelectedId(selected, juce::dontSendNotification);
-    pullingSound = false;
-}
-
-void SynthesiaAIEditor::pullSoundToUI()
-{
-    pullingSound = true;
-    const auto patch = audioProcessor.getPreviewPatch(selectedSoundPart());
-    refreshSoundPatchCombo();
-    attackSlider.setValue(patch.amp.attack, juce::dontSendNotification);
-    decaySlider.setValue(patch.amp.decay, juce::dontSendNotification);
-    sustainSlider.setValue(patch.amp.sustain, juce::dontSendNotification);
-    releaseSlider.setValue(patch.amp.release, juce::dontSendNotification);
-    cutoffSlider.setValue(patch.cutoff, juce::dontSendNotification);
-    resoSlider.setValue(patch.resonance, juce::dontSendNotification);
-    driveSlider.setValue(patch.drive, juce::dontSendNotification);
-    reverbSendSlider.setValue(patch.reverbSend, juce::dontSendNotification);
-    delaySendSlider.setValue(patch.delaySend, juce::dontSendNotification);
-
-    const auto mix = audioProcessor.getPreviewMix();
-    const auto mixIds = MixLibrary::ids();
-    int mixSelected = 1;
-    for (int i = 0; i < mixIds.size(); ++i)
-        if (mixIds[i] == mix.id || MixLibrary::names()[i] == mix.name)
-            mixSelected = i + 1;
-    mixPresetCombo.setSelectedId(mixSelected, juce::dontSendNotification);
-    sidechainSlider.setValue(mix.sidechainAmount, juce::dontSendNotification);
-    mixCompSlider.setValue(mix.compAmount, juce::dontSendNotification);
-
-    shownSoundVersion = audioProcessor.getSoundVersion();
-    pullingSound = false;
-}
-
-void SynthesiaAIEditor::pushSoundFromUI()
-{
-    if (pullingSound)
-        return;
-    auto patch = audioProcessor.getPreviewPatch(selectedSoundPart());
-    patch.amp.attack = (float) attackSlider.getValue();
-    patch.amp.decay = (float) decaySlider.getValue();
-    patch.amp.sustain = (float) sustainSlider.getValue();
-    patch.amp.release = (float) releaseSlider.getValue();
-    patch.cutoff = (float) cutoffSlider.getValue();
-    patch.resonance = (float) resoSlider.getValue();
-    patch.drive = (float) driveSlider.getValue();
-    patch.reverbSend = (float) reverbSendSlider.getValue();
-    patch.delaySend = (float) delaySendSlider.getValue();
-    audioProcessor.setPreviewPatch(selectedSoundPart(), patch);
-
-    auto mix = audioProcessor.getPreviewMix();
-    mix.sidechainAmount = (float) sidechainSlider.getValue();
-    mix.compAmount = (float) mixCompSlider.getValue();
-    audioProcessor.setPreviewMix(mix);
-    shownSoundVersion = audioProcessor.getSoundVersion();
-}
-
-void SynthesiaAIEditor::timerCallback()
-{
-    updateUIState();
-}
+void SynthesiaAIEditor::timerCallback() { updateUIState(); }
 
 MidiGenerationParams SynthesiaAIEditor::collectParams() const
 {
     MidiGenerationParams params;
-    params.rootNote = keyComboBox.getSelectedId() - 1;
-    params.scale = static_cast<ScaleType>(scaleComboBox.getSelectedId() - 1);
-    params.lengthInBars = static_cast<int>(lengthSlider.getValue());
-    params.quantization = static_cast<Quantization>(tempoSyncComboBox.getSelectedId() - 1);
-    params.stylePrompt = styleTextEditor.getText().toStdString();
-    params.tempo = (audioProcessor.getFollowHostTempo() && audioProcessor.getHostTempo() > 20.0)
-        ? audioProcessor.getHostTempo() : tempoSlider.getValue();
-    params.genre = static_cast<Genre>(juce::jmax(0, genreComboBox.getSelectedId() - 1));
+    params.rootNote = keyIndex;
+    params.scale = selectedScale();
+    params.lengthInBars = barsValue;
+    params.quantization = static_cast<Quantization>(juce::jmax(0, gridComboBox.getSelectedId() - 1));
+    params.stylePrompt = promptEditor.getText().toStdString();
+    params.tempo = (followHostTempoButton.getToggleState() && audioProcessor.getHostTempo() > 20.0)
+        ? audioProcessor.getHostTempo() : tempoValue;
+    params.genre = genreValue;
     params.part = static_cast<Part>(juce::jmax(0, partComboBox.getSelectedId() - 1));
     params.form = formComboBox.getSelectedId() == 2 ? ArrangementForm::Song : ArrangementForm::Loop;
     params.chordText = chordsEditor.getText().toStdString();
@@ -1307,15 +1385,12 @@ MidiGenerationParams SynthesiaAIEditor::collectParams() const
     for (int i = 0; i < partLockButtons.size(); ++i)
         if (partLockButtons[i]->getToggleState())
             params.lockedParts |= partLockBit(allParts[static_cast<size_t>(i)]);
-    switch (importModeComboBox.getSelectedId())
-    {
-        case 2: params.importMode = ImportMode::Accompany; break;
-        case 3: params.importMode = ImportMode::Extend; break;
-        case 4: params.importMode = ImportMode::Rewrite; break;
-        case 5: params.importMode = ImportMode::Restyle; break;
-        default: params.importMode = ImportMode::None; break;
-    }
+    params.importMode = static_cast<ImportMode>(juce::jmax(0, importModeComboBox.getSelectedId() - 1));
     params.styleBlend = blendSlider.getValue() / 100.0;
+    params.swing = swingSlider.getValue();
+    params.humanizeMs = humanizeSlider.getValue();
+    params.density = (float) (densitySlider.getValue() / 100.0);
+    params.seed = static_cast<unsigned int>(seedSlider.getValue());
     if (styleProfileComboBox.getSelectedId() > 1)
     {
         params.styleProfileName = styleProfileComboBox.getText().toStdString();
@@ -1332,33 +1407,35 @@ void SynthesiaAIEditor::snapshotParams()
 void SynthesiaAIEditor::applyParamsToUI(const MidiGenerationParams& params)
 {
     applyingPreset = true;
-    keyComboBox.setSelectedId(params.rootNote + 1, juce::dontSendNotification);
+    keyIndex = juce::jlimit(0, 11, params.rootNote);
     scaleComboBox.setSelectedId(static_cast<int>(params.scale) + 1, juce::dontSendNotification);
-    genreComboBox.setSelectedId(static_cast<int>(params.genre) + 1, juce::dontSendNotification);
+    chooseGenre(params.genre);
     partComboBox.setSelectedId(static_cast<int>(params.part) + 1, juce::dontSendNotification);
     formComboBox.setSelectedId(params.form == ArrangementForm::Song ? 2 : 1, juce::dontSendNotification);
-    lengthSlider.setValue(params.lengthInBars, juce::dontSendNotification);
-    tempoSlider.setValue(params.tempo, juce::dontSendNotification);
-    tempoSyncComboBox.setSelectedId(static_cast<int>(params.quantization) + 1, juce::dontSendNotification);
-    styleTextEditor.setText(params.stylePrompt);
+    barsValue = juce::jlimit(1, 32, params.lengthInBars);
+    tempoValue = params.tempo;
+    gridComboBox.setSelectedId(static_cast<int>(params.quantization) + 1, juce::dontSendNotification);
+    promptEditor.setText(params.stylePrompt);
     chordsEditor.setText(params.chordText);
     lockProgressionButton.setToggleState(params.lockProgression, juce::dontSendNotification);
     for (int i = 0; i < partLockButtons.size(); ++i)
         partLockButtons[i]->setToggleState(isPartLocked(params.lockedParts, allParts[static_cast<size_t>(i)]),
                                            juce::dontSendNotification);
-    importModeComboBox.setSelectedId(static_cast<int>(params.importMode) + 1, juce::dontSendNotification);
     blendSlider.setValue(params.styleBlend * 100.0, juce::dontSendNotification);
-    generatorComboBox.setSelectedId(generatorComboId(audioProcessor.getCurrentGeneratorType()),
-                                    juce::dontSendNotification);
+    swingSlider.setValue(params.swing > 0.0 ? params.swing : 0.5, juce::dontSendNotification);
+    humanizeSlider.setValue(params.humanizeMs, juce::dontSendNotification);
+    densitySlider.setValue(params.density > 0.0f ? params.density * 100.0 : 0.0, juce::dontSendNotification);
+    seedSlider.setValue((double) params.seed, juce::dontSendNotification);
+    importModeComboBox.setSelectedId(static_cast<int>(params.importMode) + 1, juce::dontSendNotification);
     applyingPreset = false;
+    refreshPills();
 }
 
 void SynthesiaAIEditor::refreshPresetCombo()
 {
     const auto current = audioProcessor.getCurrentPresetName();
     presetComboBox.clear(juce::dontSendNotification);
-    int id = 1;
-    int selected = 0;
+    int id = 1, selected = 0;
     presetComboBox.addSectionHeading("Factory");
     for (const auto& preset : PresetStore::factoryPresets())
     {
@@ -1388,24 +1465,20 @@ void SynthesiaAIEditor::applyPresetFromCombo()
     if (applyingPreset)
         return;
     const auto name = presetComboBox.getText();
-    if (name.isEmpty())
-        return;
-    if (!audioProcessor.applyPreset(name))
+    if (name.isEmpty() || !audioProcessor.applyPreset(name))
         return;
     shownPresetVersion = audioProcessor.getPresetVersion();
     shownUiParamsVersion = audioProcessor.getUiParamsVersion();
     applyParamsToUI(audioProcessor.getLastUiParams());
-    statusLabel.setText("Loaded preset " + name, juce::dontSendNotification);
+    statusLabel.setText("Loaded " + name, juce::dontSendNotification);
 }
 
 void SynthesiaAIEditor::onSavePresetClicked()
 {
     snapshotParams();
-    auto* window = new juce::AlertWindow(
-        "Save preset",
-        "Stores the current generator settings (key, genre, form, chords, prompt, style blend).",
-        juce::AlertWindow::NoIcon);
-    window->addTextEditor("name", audioProcessor.getCurrentPresetName(), "Preset name");
+    auto* window = new juce::AlertWindow("Save preset", "Stores the current generator settings.",
+                                         juce::AlertWindow::NoIcon);
+    window->addTextEditor("name", audioProcessor.getCurrentPresetName(), "Name");
     window->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
     window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     window->enterModalState(true, juce::ModalCallbackFunction::create(
@@ -1415,13 +1488,13 @@ void SynthesiaAIEditor::onSavePresetClicked()
                 return;
             const auto name = window->getTextEditorContents("name");
             if (!audioProcessor.saveUserPreset(name))
-            {
                 statusLabel.setText("Could not save preset", juce::dontSendNotification);
-                return;
+            else
+            {
+                shownPresetVersion = audioProcessor.getPresetVersion();
+                refreshPresetCombo();
+                statusLabel.setText("Saved " + name, juce::dontSendNotification);
             }
-            shownPresetVersion = audioProcessor.getPresetVersion();
-            refreshPresetCombo();
-            statusLabel.setText("Saved preset " + name, juce::dontSendNotification);
         }), true);
 }
 
@@ -1429,47 +1502,34 @@ void SynthesiaAIEditor::startExternalMidiDrag(Part part)
 {
     if (audioProcessor.getGeneratedMidi().isEmpty())
         return;
-
     const auto file = audioProcessor.writeTempMidi(part);
     if (!file.existsAsFile())
     {
         statusLabel.setText("Could not write a temp MIDI file", juce::dontSendNotification);
         return;
     }
-
     juce::StringArray files;
     files.add(file.getFullPathName());
     performExternalDragDropOfFiles(files, false, this);
 }
 
-void SynthesiaAIEditor::updateLicenseBadge()
-{
-    licenseBadge.setVisible(audioProcessor.isAdvancedUi());
-    if (!licenseBadge.isVisible())
-        return;
-    const bool licensed = audioProcessor.isLicensed();
-    licenseBadge.setText(licensed ? "LICENSED" : "TRIAL", juce::dontSendNotification);
-    licenseBadge.setColour(juce::Label::backgroundColourId,
-                           licensed ? Theme::licensed : Theme::trial);
-    licenseBadge.setColour(juce::Label::textColourId, juce::Colours::black);
-}
-
 void SynthesiaAIEditor::applyPlanToUI(const ArrangementPlan& plan)
 {
-    genreComboBox.setSelectedId(static_cast<int>(plan.genre) + 1, juce::dontSendNotification);
     if (!audioProcessor.getFollowHostKey())
     {
-        keyComboBox.setSelectedId(plan.rootNote + 1, juce::dontSendNotification);
+        keyIndex = juce::jlimit(0, 11, plan.rootNote);
         scaleComboBox.setSelectedId(static_cast<int>(plan.scale) + 1, juce::dontSendNotification);
     }
-    if (!audioProcessor.getFollowHostTempo())
-        tempoSlider.setValue(plan.tempo, juce::dontSendNotification);
-    lengthSlider.setValue(plan.lengthInBars, juce::dontSendNotification);
+    if (!followHostTempoButton.getToggleState())
+        tempoValue = plan.tempo;
+    barsValue = plan.lengthInBars;
     formComboBox.setSelectedId(plan.sections.size() > 1 ? 2 : 1, juce::dontSendNotification);
-    chordsEditor.setText(plan.chordChart(), juce::dontSendNotification);
-    chordsEditor.setCaretPosition(0);
+    chordsEditor.setText(plan.chordChart());
     lockProgressionButton.setToggleState(true, juce::dontSendNotification);
     planSummaryEditor.setText(plan.summary());
+    if (!audioProcessor.getFollowHostKey())
+        chooseGenre(plan.genre);
+    refreshPills();
 }
 
 void SynthesiaAIEditor::applyImportToUI(const MidiAnalysis& analysis)
@@ -1480,37 +1540,50 @@ void SynthesiaAIEditor::applyImportToUI(const MidiAnalysis& analysis)
                             juce::dontSendNotification);
         return;
     }
-
-    keyComboBox.setSelectedId(analysis.rootNote + 1, juce::dontSendNotification);
+    keyIndex = juce::jlimit(0, 11, analysis.rootNote);
     scaleComboBox.setSelectedId(static_cast<int>(analysis.scale) + 1, juce::dontSendNotification);
-    tempoSlider.setValue(analysis.tempo, juce::dontSendNotification);
-    if (importModeComboBox.getSelectedId() != 3)
-        lengthSlider.setValue(analysis.lengthInBars, juce::dontSendNotification);
-    chordsEditor.setText(analysis.chordChart, juce::dontSendNotification);
-    chordsEditor.setCaretPosition(0);
+    tempoValue = analysis.tempo;
+    if (audioProcessor.getLastUiParams().importMode != ImportMode::Extend)
+        barsValue = analysis.lengthInBars;
+    chordsEditor.setText(analysis.chordChart);
     lockProgressionButton.setToggleState(true, juce::dontSendNotification);
-
     for (int i = 0; i < partLockButtons.size(); ++i)
         partLockButtons[i]->setToggleState(allParts[static_cast<size_t>(i)] == analysis.primaryPart,
                                            juce::dontSendNotification);
-
     planSummaryEditor.setText(analysis.summary);
-    statusLabel.setText("Imported " + analysis.sourceName + " · "
-                            + juce::String(partName(analysis.primaryPart)) + " · "
-                            + juce::String(analysis.lengthInBars) + " bars",
-                        juce::dontSendNotification);
+    refreshPills();
+    statusLabel.setText("Imported " + analysis.sourceName, juce::dontSendNotification);
 }
 
 void SynthesiaAIEditor::onPlanClicked()
 {
+    applyEngineChoice();
     audioProcessor.planArrangement(collectParams());
     statusLabel.setText("Planning...", juce::dontSendNotification);
 }
 
 void SynthesiaAIEditor::onGenerateClicked()
 {
+    const int engine = engineComboBox.getSelectedId();
+    if (engine <= 1)
+    {
+        audioProcessor.setGeneratorType(promptEditor.getText().trim().isEmpty()
+                                            ? GeneratorType::Genre : GeneratorType::LLM);
+    }
+    else
+    {
+        applyEngineChoice();
+    }
     audioProcessor.generateMidi(collectParams());
     statusLabel.setText("Generating...", juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::onRegeneratePart(Part part, bool variation)
+{
+    snapshotParams();
+    statusLabel.setText(variation ? "Varying part..." : "Regenerating part...",
+                        juce::dontSendNotification);
+    audioProcessor.regeneratePart(part, variation);
 }
 
 bool SynthesiaAIEditor::importPath(const juce::File& file)
@@ -1523,26 +1596,16 @@ bool SynthesiaAIEditor::importPath(const juce::File& file)
     applyImportToUI(audioProcessor.getLastImport());
     shownImportVersion = audioProcessor.getImportVersion();
     shownClipVersion = audioProcessor.getClipVersion();
-    clipView.setClip(audioProcessor.getGeneratedMidi(),
-                     audioProcessor.getClipLengthInBeats(),
-                     audioProcessor.getProgression(),
-                     audioProcessor.getSections());
+    trackLanes.setClip(audioProcessor.getGeneratedMidi(),
+                       audioProcessor.getClipLengthInBeats(),
+                       audioProcessor.getProgression(),
+                       audioProcessor.getSections());
     return true;
 }
 
 void SynthesiaAIEditor::onImportClicked()
 {
-    auto chooser = std::make_shared<juce::FileChooser>(
-        "Import MIDI file...",
-        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
-        "*.mid;*.midi");
-    const auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-    {
-        const auto file = fc.getResult();
-        if (file != juce::File{})
-            importPath(file);
-    });
+    showImportPicker({});
 }
 
 void SynthesiaAIEditor::onCaptureClicked()
@@ -1556,19 +1619,17 @@ void SynthesiaAIEditor::onCaptureClicked()
             applyImportToUI(audioProcessor.getLastImport());
             shownImportVersion = audioProcessor.getImportVersion();
             shownClipVersion = audioProcessor.getClipVersion();
-            clipView.setClip(audioProcessor.getGeneratedMidi(),
-                             audioProcessor.getClipLengthInBeats(),
-                             audioProcessor.getProgression(),
-                             audioProcessor.getSections());
+            trackLanes.setClip(audioProcessor.getGeneratedMidi(),
+                               audioProcessor.getClipLengthInBeats(),
+                               audioProcessor.getProgression(),
+                               audioProcessor.getSections());
         }
         else
         {
-            statusLabel.setText("Capture was empty - play MIDI into the plugin first",
-                                juce::dontSendNotification);
+            statusLabel.setText("Capture was empty", juce::dontSendNotification);
         }
         return;
     }
-
     audioProcessor.setMidiCapture(true);
     captureButton.setButtonText("Stop capture");
     statusLabel.setText("Capturing host MIDI...", juce::dontSendNotification);
@@ -1600,6 +1661,7 @@ void SynthesiaAIEditor::fileDragExit(const juce::StringArray&)
 void SynthesiaAIEditor::filesDropped(const juce::StringArray& files, int, int)
 {
     draggingFiles = false;
+    hideSettings();
     repaint();
 
     juce::Array<juce::File> mids;
@@ -1624,7 +1686,7 @@ void SynthesiaAIEditor::filesDropped(const juce::StringArray& files, int, int)
         return;
     }
     if (mids.size() == 1)
-        importPath(mids.getFirst());
+        showImportPicker(mids.getFirst());
 }
 
 void SynthesiaAIEditor::refreshStyleCombo()
@@ -1645,10 +1707,9 @@ void SynthesiaAIEditor::refreshStyleCombo()
 
 void SynthesiaAIEditor::learnFromFiles(const juce::Array<juce::File>& files, const juce::String& suggestedName)
 {
-    auto* window = new juce::AlertWindow(
-        "Learn style profile",
-        "Extract chord vocabulary, voicings, rhythm, bass approaches and swing from the selected MIDI.",
-        juce::AlertWindow::NoIcon);
+    auto* window = new juce::AlertWindow("Learn style",
+                                         "Extract chords, voicings, rhythm and swing from MIDI.",
+                                         juce::AlertWindow::NoIcon);
     window->addTextEditor("name", StyleProfile::sanitiseName(suggestedName), "Profile name");
     window->addButton("Learn", 1, juce::KeyPress(juce::KeyPress::returnKey));
     window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
@@ -1657,18 +1718,15 @@ void SynthesiaAIEditor::learnFromFiles(const juce::Array<juce::File>& files, con
         {
             if (result != 1)
                 return;
-            const auto name = window->getTextEditorContents("name");
-            if (!audioProcessor.learnStyle(files, name))
+            if (!audioProcessor.learnStyle(files, window->getTextEditorContents("name")))
             {
-                statusLabel.setText("Could not learn a style from those files",
-                                    juce::dontSendNotification);
+                statusLabel.setText("Could not learn a style", juce::dontSendNotification);
                 return;
             }
             shownStyleVersion = audioProcessor.getStyleVersion();
             refreshStyleCombo();
-            blendSlider.setValue(audioProcessor.getStyleBlend() * 100.0, juce::dontSendNotification);
             planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
-            statusLabel.setText("Learned style " + audioProcessor.getCurrentStyleName(),
+            statusLabel.setText("Learned " + audioProcessor.getCurrentStyleName(),
                                 juce::dontSendNotification);
         }), true);
 }
@@ -1676,52 +1734,34 @@ void SynthesiaAIEditor::learnFromFiles(const juce::Array<juce::File>& files, con
 void SynthesiaAIEditor::onLearnStyleClicked()
 {
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Learn style from MIDI files or a folder...",
+        "Learn style from MIDI...",
         juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
         "*.mid;*.midi");
-    const auto chooserFlags = juce::FileBrowserComponent::openMode
-                            | juce::FileBrowserComponent::canSelectFiles
-                            | juce::FileBrowserComponent::canSelectDirectories
-                            | juce::FileBrowserComponent::canSelectMultipleItems;
-    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-    {
-        auto results = fc.getResults();
-        if (results.isEmpty())
-        {
-            const auto single = fc.getResult();
-            if (single != juce::File{})
-                results.add(single);
-        }
-        if (results.isEmpty())
-            return;
-        juce::String suggested = results.getFirst().isDirectory()
-            ? results.getFirst().getFileName()
-            : results.getFirst().getParentDirectory().getFileName();
-        learnFromFiles(results, suggested);
-    });
+    chooser->launchAsync(juce::FileBrowserComponent::openMode
+                             | juce::FileBrowserComponent::canSelectFiles
+                             | juce::FileBrowserComponent::canSelectDirectories
+                             | juce::FileBrowserComponent::canSelectMultipleItems,
+                         [this, chooser](const juce::FileChooser& fc)
+                         {
+                             auto results = fc.getResults();
+                             if (results.isEmpty() && fc.getResult() != juce::File{})
+                                 results.add(fc.getResult());
+                             if (results.isEmpty())
+                                 return;
+                             learnFromFiles(results, results.getFirst().getFileName());
+                         });
 }
 
 void SynthesiaAIEditor::onExportMidi()
 {
     const auto present = MidiExporter::partsIn(audioProcessor.getGeneratedMidi());
-
     juce::PopupMenu menu;
     menu.addItem(1, "Export multi-track .mid");
     menu.addItem(2, "Export separate files per part", present.size() > 1);
-    if (!present.empty())
-    {
-        menu.addSeparator();
-        for (auto part : present)
-            menu.addItem(10 + static_cast<int>(part),
-                         "Export " + juce::String(partName(part)) + " only");
-    }
-
+    for (auto part : present)
+        menu.addItem(10 + static_cast<int>(part), juce::String("Export ") + laneName(part));
     menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&exportButton),
-                       [this](int result)
-                       {
-                           if (result != 0)
-                               exportToChooser(result);
-                       });
+                       [this](int result) { if (result != 0) exportToChooser(result); });
 }
 
 void SynthesiaAIEditor::exportToChooser(int menuId)
@@ -1730,86 +1770,63 @@ void SynthesiaAIEditor::exportToChooser(int menuId)
         "Save MIDI file...",
         juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
         "*.mid");
-
-    auto chooserFlags = juce::FileBrowserComponent::saveMode
-                      | juce::FileBrowserComponent::canSelectFiles;
-
-    chooser->launchAsync(chooserFlags, [this, chooser, menuId](const juce::FileChooser& fc)
-    {
-        auto file = fc.getResult();
-        if (file == juce::File{})
-            return;
-
-        if (!file.hasFileExtension(".mid"))
-            file = file.withFileExtension(".mid");
-
-        const auto& midi = audioProcessor.getGeneratedMidi();
-        const double tempo = audioProcessor.getFollowHostTempo() && audioProcessor.getHostTempo() > 20.0
-            ? audioProcessor.getHostTempo() : audioProcessor.getClipTempo();
-        const int num = audioProcessor.getHostTimeSigNumerator();
-        const int den = audioProcessor.getHostTimeSigDenominator();
-        bool ok = false;
-        juce::String message;
-
-        if (menuId == 1)
-        {
-            ok = MidiExporter::exportToFile(midi, file, tempo, num, den);
-            message = "Exported " + file.getFileName();
-        }
-        else if (menuId == 2)
-        {
-            const auto written = MidiExporter::exportSeparateParts(midi, file, tempo);
-            ok = !written.isEmpty();
-            message = "Exported " + juce::String(written.size()) + " part files";
-        }
-        else
-        {
-            const auto part = static_cast<Part>(menuId - 10);
-            ok = MidiExporter::exportToFile(MidiExporter::filterPart(midi, part), file, tempo, num, den);
-            message = "Exported " + juce::String(partName(part)) + " to " + file.getFileName();
-        }
-
-        statusLabel.setText(ok ? message : "Export failed!", juce::dontSendNotification);
-    });
+    chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                         [this, chooser, menuId](const juce::FileChooser& fc)
+                         {
+                             auto file = fc.getResult();
+                             if (file == juce::File{})
+                                 return;
+                             if (!file.hasFileExtension(".mid"))
+                                 file = file.withFileExtension(".mid");
+                             const auto& midi = audioProcessor.getGeneratedMidi();
+                             const double tempo = collectParams().tempo;
+                             const int num = audioProcessor.getHostTimeSigNumerator();
+                             const int den = audioProcessor.getHostTimeSigDenominator();
+                             bool ok = false;
+                             juce::String message;
+                             if (menuId == 1)
+                             {
+                                 ok = MidiExporter::exportToFile(midi, file, tempo, num, den);
+                                 message = "Exported " + file.getFileName();
+                             }
+                             else if (menuId == 2)
+                             {
+                                 ok = !MidiExporter::exportSeparateParts(midi, file, tempo).isEmpty();
+                                 message = "Exported parts";
+                             }
+                             else
+                             {
+                                 const auto part = static_cast<Part>(menuId - 10);
+                                 ok = MidiExporter::exportToFile(MidiExporter::filterPart(midi, part),
+                                                                file, tempo, num, den);
+                                 message = "Exported " + juce::String(laneName(part));
+                             }
+                             statusLabel.setText(ok ? message : "Export failed", juce::dontSendNotification);
+                         });
 }
 
 void SynthesiaAIEditor::updateUIState()
 {
-    bool isGenerating = audioProcessor.isGenerating();
-    generateButton.setEnabled(!isGenerating);
-    planButton.setEnabled(!isGenerating);
-
-    bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
-    exportButton.setEnabled(hasMidi && !isGenerating);
-    previewButton.setEnabled(hasMidi && !isGenerating);
-    previewButton.setButtonText(audioProcessor.isPreviewPlaying() ? "Stop Preview" : "Play Preview");
-    for (auto* chip : dragChips)
-        chip->setEnabledLook(hasMidi && !isGenerating);
-    for (int i = 0; i < regenButtons.size(); ++i)
-    {
-        regenButtons[i]->setEnabled(hasMidi && !isGenerating);
-        variationButtons[i]->setEnabled(hasMidi && !isGenerating);
-    }
-
-    followHostTempoButton.setToggleState(audioProcessor.getFollowHostTempo(), juce::dontSendNotification);
-    followHostKeyButton.setToggleState(audioProcessor.getFollowHostKey(), juce::dontSendNotification);
-    tempoSlider.setEnabled(!audioProcessor.getFollowHostTempo());
-    if (audioProcessor.getFollowHostTempo() && audioProcessor.getHostTempo() > 20.0)
-        tempoSlider.setValue(audioProcessor.getHostTempo(), juce::dontSendNotification);
-
-    if (licenseBadge.isVisible() != audioProcessor.isAdvancedUi())
-        applyAdvancedVisibility();
-
+    const bool busy = audioProcessor.isGenerating();
+    generateButton.setEnabled(!busy);
+    const bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
+    dragAllButton.setReady(hasMidi && !busy);
+    previewButton.setEnabled(hasMidi && !busy);
+    previewButton.setKind(audioProcessor.isPreviewPlaying() ? IconKind::Stop : IconKind::Play);
+    exportButton.setEnabled(hasMidi && !busy);
+    trackLanes.setReady(hasMidi);
+    pianoDrag.setReady(hasMidi);
     captureButton.setButtonText(audioProcessor.isCapturingMidi() ? "Stop capture" : "Capture MIDI");
-    updateLicenseBadge();
+    trackLanes.setMuteMask(audioProcessor.getMuteMask());
+    pianoMute.setToggleState(audioProcessor.isPartMuted(Part::Piano), juce::dontSendNotification);
+    pianoMute.setKind(audioProcessor.isPartMuted(Part::Piano) ? IconKind::Mute : IconKind::Unmute);
 
-    clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
-    for (int i = 0; i < muteButtons.size(); ++i)
+    if (audioProcessor.isAdvancedUi())
     {
-        muteButtons[i]->setToggleState(audioProcessor.isPartMuted(allParts[static_cast<size_t>(i)]),
-                                       juce::dontSendNotification);
-        soloButtons[i]->setToggleState(audioProcessor.isPartSoloed(allParts[static_cast<size_t>(i)]),
-                                       juce::dontSendNotification);
+        const bool licensed = audioProcessor.isLicensed();
+        licenseBadge.setText(licensed ? "PRO" : "TRIAL", juce::dontSendNotification);
+        licenseBadge.setColour(juce::Label::backgroundColourId, licensed ? Theme::licensed : Theme::trial);
+        licenseBadge.setColour(juce::Label::textColourId, juce::Colours::black);
     }
 
     if (shownPresetVersion != audioProcessor.getPresetVersion())
@@ -1818,32 +1835,22 @@ void SynthesiaAIEditor::updateUIState()
         refreshPresetCombo();
         applyParamsToUI(audioProcessor.getLastUiParams());
         shownUiParamsVersion = audioProcessor.getUiParamsVersion();
-        pullSoundToUI();
     }
-
-    if (shownSoundVersion != audioProcessor.getSoundVersion())
-        pullSoundToUI();
-
-    if (shownUiParamsVersion != audioProcessor.getUiParamsVersion() && !isGenerating)
+    if (shownUiParamsVersion != audioProcessor.getUiParamsVersion() && !busy)
     {
         shownUiParamsVersion = audioProcessor.getUiParamsVersion();
+        applyParamsToUI(audioProcessor.getLastUiParams());
     }
-
     if (shownStyleVersion != audioProcessor.getStyleVersion())
     {
         shownStyleVersion = audioProcessor.getStyleVersion();
         refreshStyleCombo();
-        blendSlider.setValue(audioProcessor.getStyleBlend() * 100.0, juce::dontSendNotification);
-        if (!audioProcessor.getCurrentStyle().empty())
-            planSummaryEditor.setText(audioProcessor.getCurrentStyle().summary);
     }
-
     if (shownImportVersion != audioProcessor.getImportVersion())
     {
         shownImportVersion = audioProcessor.getImportVersion();
         applyImportToUI(audioProcessor.getLastImport());
     }
-
     if (shownPlanVersion != audioProcessor.getPlanVersion())
     {
         shownPlanVersion = audioProcessor.getPlanVersion();
@@ -1851,39 +1858,39 @@ void SynthesiaAIEditor::updateUIState()
         if (!plan.sections.empty())
             applyPlanToUI(plan);
     }
-
     if (shownClipVersion != audioProcessor.getClipVersion())
     {
         shownClipVersion = audioProcessor.getClipVersion();
-        clipView.setClip(audioProcessor.getGeneratedMidi(),
-                         audioProcessor.getClipLengthInBeats(),
-                         audioProcessor.getProgression(),
-                         audioProcessor.getSections());
-        clipView.setMuteSolo(audioProcessor.getMuteMask(), audioProcessor.getSoloMask());
+        trackLanes.setClip(audioProcessor.getGeneratedMidi(),
+                           audioProcessor.getClipLengthInBeats(),
+                           audioProcessor.getProgression(),
+                           audioProcessor.getSections());
     }
-    clipView.setPlaybackBeat(audioProcessor.getPlaybackBeat());
+    trackLanes.setPlaybackBeat(audioProcessor.getPlaybackBeat());
+    refreshPills();
 
-    if (!isGenerating && statusLabel.getText() == "Generating...")
-        statusLabel.setText(hasMidi ? "Generation complete - drag a part into your DAW"
-                                    : "Generation failed (check generator settings)",
+    if (!busy && statusLabel.getText() == "Generating...")
+        statusLabel.setText(hasMidi ? "Ready  ·  drag a part into your DAW" : "Generation failed",
                             juce::dontSendNotification);
-    if (!isGenerating && statusLabel.getText() == "Planning...")
+    if (!busy && statusLabel.getText() == "Planning...")
     {
         const auto& plan = audioProcessor.getLastPlan();
-        juce::String text = "Planned (" + juce::String(plan.source) + ")";
-        if (plan.usage.totalTokens > 0)
-            text << " · " << plan.usage.promptTokens << " prompt / "
-                 << plan.usage.completionTokens << " completion tokens";
-        else
-            text << " · offline heuristic (no API key)";
-        statusLabel.setText(text, juce::dontSendNotification);
-        tabs.setCurrentTabIndex(1);
+        statusLabel.setText("Planned (" + juce::String(plan.source) + ")", juce::dontSendNotification);
+        setMoreOpen(true);
     }
 }
 
-SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
+SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     : processor(p)
 {
+    title.setText("Settings", juce::dontSendNotification);
+    title.setFont(juce::Font(20.0f, juce::Font::bold));
+    title.setColour(juce::Label::textColourId, Theme::label);
+    addAndMakeVisible(title);
+
+    closeButton.onClick = [this]() { if (onClose) onClose(); };
+    addAndMakeVisible(closeButton);
+
     auto styleEditor = [](juce::TextEditor& editor)
     {
         editor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground);
@@ -1893,118 +1900,106 @@ SettingsDialog::SettingsDialog(SynthesiaAIProcessor& p)
         editor.setFont(juce::Font(15.0f));
     };
 
-    setUpLabel(providerLabel, "Provider");
+    setupLabel(providerLabel, "Provider");
     addAndMakeVisible(providerLabel);
     providerComboBox.addItem("OpenAI", 1);
     providerComboBox.addItem("Groq", 2);
     providerComboBox.addItem("Custom", 3);
-    const auto provider = processor.getApiProvider();
-    if (provider.equalsIgnoreCase("Groq"))
-        providerComboBox.setSelectedId(2, juce::dontSendNotification);
-    else if (provider.equalsIgnoreCase("Custom"))
-        providerComboBox.setSelectedId(3, juce::dontSendNotification);
-    else
-        providerComboBox.setSelectedId(1, juce::dontSendNotification);
     providerComboBox.onChange = [this]() { applyProviderDefaults(); };
     addAndMakeVisible(providerComboBox);
 
-    setUpLabel(apiKeyLabel, "API key");
+    setupLabel(apiKeyLabel, "API key");
     addAndMakeVisible(apiKeyLabel);
-
-    apiKeyEditor.setText(processor.getApiKey());
     apiKeyEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
-    apiKeyEditor.setTextToShowWhenEmpty("sk-... or gsk-... (leave empty for offline heuristic)", Theme::dimText);
+    apiKeyEditor.setTextToShowWhenEmpty("sk-... or gsk-...", Theme::dimText);
     styleEditor(apiKeyEditor);
     addAndMakeVisible(apiKeyEditor);
 
-    setUpLabel(endpointLabel, "API base URL");
+    setupLabel(endpointLabel, "Endpoint");
     addAndMakeVisible(endpointLabel);
-    endpointEditor.setText(processor.getApiEndpoint());
-    endpointEditor.setTextToShowWhenEmpty("https://api.openai.com/v1/chat/completions", Theme::dimText);
     styleEditor(endpointEditor);
     addAndMakeVisible(endpointEditor);
 
-    setUpLabel(modelLabel, "Model");
+    setupLabel(modelLabel, "Model");
     addAndMakeVisible(modelLabel);
-    modelEditor.setText(processor.getApiModel());
-    modelEditor.setTextToShowWhenEmpty("gpt-4o-mini", Theme::dimText);
     styleEditor(modelEditor);
     addAndMakeVisible(modelEditor);
 
-    advancedToggle.setButtonText("Advanced UI (Trial badge, style Blend, license stub)");
-    advancedToggle.setToggleState(processor.isAdvancedUi(), juce::dontSendNotification);
+    advancedToggle.setButtonText("Advanced UI");
     addAndMakeVisible(advancedToggle);
 
-    setUpLabel(licenseLabel, "License key");
+    setupLabel(licenseLabel, "License");
     addAndMakeVisible(licenseLabel);
     licenseEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
-    licenseEditor.setText(processor.getLicenseKey());
-    licenseEditor.setTextToShowWhenEmpty("SYN-... (optional, offline stub)", Theme::dimText);
     styleEditor(licenseEditor);
     addAndMakeVisible(licenseEditor);
-    const bool showLicense = processor.isAdvancedUi();
-    licenseLabel.setVisible(showLicense);
-    licenseEditor.setVisible(showLicense);
     advancedToggle.onClick = [this]()
     {
-        const bool on = advancedToggle.getToggleState();
-        licenseLabel.setVisible(on);
-        licenseEditor.setVisible(on);
+        licenseLabel.setVisible(advancedToggle.getToggleState());
+        licenseEditor.setVisible(advancedToggle.getToggleState());
         resized();
     };
 
-    const auto last = processor.getLastTokenUsage();
-    const auto session = processor.getSessionTokenUsage();
-    juce::String usage;
-    usage << "Last request: " << last.promptTokens << " prompt / "
-          << last.completionTokens << " completion (" << last.totalTokens << " total)\n"
-          << "Session: " << session.promptTokens << " prompt / "
-          << session.completionTokens << " completion · " << session.requests << " calls";
-    usageLabel.setText(usage, juce::dontSendNotification);
     usageLabel.setFont(juce::Font(13.0f));
-    usageLabel.setColour(juce::Label::textColourId, Theme::label);
-    usageLabel.setJustificationType(juce::Justification::topLeft);
+    usageLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(usageLabel);
 
-    hintLabel.setText("Keys stay on this machine (user app data) and are never logged. "
-                      "Without a key, Plan maps prompt keywords offline. Groq uses "
-                      "https://api.groq.com/openai/v1 and model openai/gpt-oss-120b. "
-                      "Advanced UI (or SYNTHESIA_ADVANCED=1) shows the Trial badge, Blend slider, "
-                      "and license stub. Preview audio is a sketch — drag MIDI into the DAW.",
+    hintLabel.setText("Keys stay on this machine. Without a key, Plan uses an offline heuristic.",
                       juce::dontSendNotification);
     hintLabel.setFont(juce::Font(13.0f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    hintLabel.setJustificationType(juce::Justification::topLeft);
-    hintLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(hintLabel);
 
     saveButton.setButtonText("Save");
     saveButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     saveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    saveButton.onClick = [this]()
-    {
-        const auto providerId = providerComboBox.getSelectedId();
-        processor.setApiProvider(providerId == 2 ? "Groq" : (providerId == 3 ? "Custom" : "OpenAI"));
-        processor.setApiKey(apiKeyEditor.getText());
-        processor.setApiEndpoint(endpointEditor.getText());
-        processor.setApiModel(modelEditor.getText());
-        processor.setAdvancedUi(advancedToggle.getToggleState());
-        processor.setLicenseKey(licenseEditor.getText());
-        if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
-            dw->exitModalState(1);
-    };
+    saveButton.onClick = [this]() { save(); };
     addAndMakeVisible(saveButton);
 
     cancelButton.setButtonText("Cancel");
-    cancelButton.onClick = [this]()
-    {
-        if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
-            dw->exitModalState(0);
-    };
+    cancelButton.onClick = [this]() { if (onClose) onClose(); };
     addAndMakeVisible(cancelButton);
+
+    refreshFromProcessor();
 }
 
-void SettingsDialog::applyProviderDefaults()
+void SettingsOverlay::refreshFromProcessor()
+{
+    const auto provider = processor.getApiProvider();
+    providerComboBox.setSelectedId(provider.equalsIgnoreCase("Groq") ? 2
+                                   : provider.equalsIgnoreCase("Custom") ? 3 : 1,
+                                   juce::dontSendNotification);
+    apiKeyEditor.setText(processor.getApiKey(), juce::dontSendNotification);
+    endpointEditor.setText(processor.getApiEndpoint(), juce::dontSendNotification);
+    modelEditor.setText(processor.getApiModel(), juce::dontSendNotification);
+    advancedToggle.setToggleState(processor.isAdvancedUi(), juce::dontSendNotification);
+    licenseEditor.setText(processor.getLicenseKey(), juce::dontSendNotification);
+    licenseLabel.setVisible(advancedToggle.getToggleState());
+    licenseEditor.setVisible(advancedToggle.getToggleState());
+
+    const auto last = processor.getLastTokenUsage();
+    const auto session = processor.getSessionTokenUsage();
+    juce::String usage;
+    usage << "Last: " << last.promptTokens << " / " << last.completionTokens
+          << "   Session: " << session.totalTokens << " tokens";
+    usageLabel.setText(usage, juce::dontSendNotification);
+    resized();
+}
+
+void SettingsOverlay::save()
+{
+    const auto id = providerComboBox.getSelectedId();
+    processor.setApiProvider(id == 2 ? "Groq" : (id == 3 ? "Custom" : "OpenAI"));
+    processor.setApiKey(apiKeyEditor.getText());
+    processor.setApiEndpoint(endpointEditor.getText());
+    processor.setApiModel(modelEditor.getText());
+    processor.setAdvancedUi(advancedToggle.getToggleState());
+    processor.setLicenseKey(licenseEditor.getText());
+    if (onClose)
+        onClose();
+}
+
+void SettingsOverlay::applyProviderDefaults()
 {
     const int id = providerComboBox.getSelectedId();
     if (id == 2)
@@ -2019,43 +2014,56 @@ void SettingsDialog::applyProviderDefaults()
     }
 }
 
-void SettingsDialog::paint(juce::Graphics& g)
+juce::Rectangle<int> SettingsOverlay::cardBounds() const
 {
-    g.fillAll(Theme::background);
+    return getLocalBounds().withSizeKeepingCentre(440, advancedToggle.getToggleState() ? 560 : 500);
 }
 
-void SettingsDialog::resized()
+void SettingsOverlay::paint(juce::Graphics& g)
 {
-    auto area = getLocalBounds().reduced(20);
+    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.fillRect(getLocalBounds());
+    auto card = cardBounds().toFloat();
+    g.setColour(Theme::surface);
+    g.fillRoundedRectangle(card, 16.0f);
+    g.setColour(Theme::outline);
+    g.drawRoundedRectangle(card.reduced(0.5f), 16.0f, 1.0f);
+}
 
-    providerLabel.setBounds(area.removeFromTop(20));
-    area.removeFromTop(2);
-    providerComboBox.setBounds(area.removeFromTop(28));
-    area.removeFromTop(8);
+void SettingsOverlay::mouseUp(const juce::MouseEvent& e)
+{
+    if (!cardBounds().contains(e.getPosition()) && onClose)
+        onClose();
+}
 
-    auto field = [&area](juce::Label& label, juce::TextEditor& editor)
+void SettingsOverlay::resized()
+{
+    auto area = cardBounds().reduced(22);
+    auto header = area.removeFromTop(28);
+    closeButton.setBounds(header.removeFromRight(28));
+    title.setBounds(header);
+    area.removeFromTop(12);
+
+    auto field = [&area](juce::Label& label, juce::Component& editor)
     {
-        label.setBounds(area.removeFromTop(20));
-        area.removeFromTop(2);
-        editor.setBounds(area.removeFromTop(28));
-        area.removeFromTop(8);
+        label.setBounds(area.removeFromTop(16));
+        area.removeFromTop(4);
+        editor.setBounds(area.removeFromTop(30));
+        area.removeFromTop(10);
     };
-
+    field(providerLabel, providerComboBox);
     field(apiKeyLabel, apiKeyEditor);
     field(endpointLabel, endpointEditor);
     field(modelLabel, modelEditor);
-
     advancedToggle.setBounds(area.removeFromTop(24));
     area.removeFromTop(8);
     if (licenseEditor.isVisible())
         field(licenseLabel, licenseEditor);
-
-    usageLabel.setBounds(area.removeFromTop(40));
+    usageLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(6);
-    hintLabel.setBounds(area.removeFromTop(72));
-
-    auto buttonRow = area.removeFromBottom(32);
-    saveButton.setBounds(buttonRow.removeFromRight(96));
-    buttonRow.removeFromRight(10);
-    cancelButton.setBounds(buttonRow.removeFromRight(96));
+    hintLabel.setBounds(area.removeFromTop(36));
+    auto buttons = area.removeFromBottom(36);
+    saveButton.setBounds(buttons.removeFromRight(96));
+    buttons.removeFromRight(10);
+    cancelButton.setBounds(buttons.removeFromRight(96));
 }

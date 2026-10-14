@@ -4,42 +4,132 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 #include <functional>
+#include <memory>
+#include <vector>
 
 namespace Theme
 {
-    inline const juce::Colour background{0xff12151c};
-    inline const juce::Colour header{0xff1a1f2b};
-    inline const juce::Colour panel{0xff1c2230};
-    inline const juce::Colour outline{0xff2c3448};
-    inline const juce::Colour clipBackground{0xff0e1218};
-    inline const juce::Colour accent{0xff5b8def};
+    inline const juce::Colour background{0xff0b0d12};
+    inline const juce::Colour header{0xff12151c};
+    inline const juce::Colour surface{0xff151821};
+    inline const juce::Colour panel{0xff1b2030};
+    inline const juce::Colour outline{0xff2a3144};
+    inline const juce::Colour clipBackground{0xff0e1118};
+    inline const juce::Colour accent{0xff6e8bff};
+    inline const juce::Colour accentHover{0xff8aa3ff};
     inline const juce::Colour accentAlt{0xff7dcea0};
-    inline const juce::Colour label{0xffd5dbe8};
-    inline const juce::Colour dimText{0xff8b95a8};
+    inline const juce::Colour label{0xffeef1f7};
+    inline const juce::Colour dimText{0xff8b93a5};
     inline const juce::Colour trial{0xffe0a14a};
     inline const juce::Colour licensed{0xff5fbf8a};
 }
+
+enum class IconKind
+{
+    Mute, Unmute, Regen, Drag, Play, Stop, Settings, Chevron, Import, Close
+};
+
+void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> bounds, juce::Colour colour);
 
 class SynthesiaLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
     SynthesiaLookAndFeel();
+    void drawButtonBackground(juce::Graphics&, juce::Button&, const juce::Colour&,
+                              bool, bool) override;
+    void drawComboBox(juce::Graphics&, int, int, bool, int, int, int, int, juce::ComboBox&) override;
+    void fillTextEditorBackground(juce::Graphics&, int, int, juce::TextEditor&) override;
+    void drawTextEditorOutline(juce::Graphics&, int, int, juce::TextEditor&) override;
     juce::Font getTextButtonFont(juce::TextButton&, int) override;
     juce::Font getLabelFont(juce::Label&) override;
     juce::Font getComboBoxFont(juce::ComboBox&) override;
     juce::Font getPopupMenuFont() override;
 };
 
-class ClipView : public juce::Component
+class IconButton : public juce::Button
 {
 public:
+    IconButton(IconKind kind, juce::String tooltip);
+    void setKind(IconKind kind);
+    void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    IconKind kind;
+};
+
+class GenreChip : public juce::Button
+{
+public:
+    GenreChip(juce::String text);
+    void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+};
+
+class ParamPill : public juce::Component
+{
+public:
+    std::function<void()> onClick;
+    void setText(juce::String text);
+    void paint(juce::Graphics&) override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void mouseEnter(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+
+private:
+    juce::String text;
+    bool hovered{false};
+};
+
+class DragHandle : public juce::Component
+{
+public:
+    std::function<void()> onDrag;
+    void setReady(bool ready);
+    void paint(juce::Graphics&) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseEnter(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+
+private:
+    bool ready{false};
+    bool dragging{false};
+    bool hovered{false};
+};
+
+class LabeledDrag : public juce::Component
+{
+public:
+    std::function<void()> onDrag;
+    void setReady(bool ready);
+    void paint(juce::Graphics&) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseEnter(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+
+private:
+    bool ready{false};
+    bool dragging{false};
+    bool hovered{false};
+};
+
+class TrackLanes : public juce::Component
+{
+public:
+    std::function<void(Part)> onMute;
+    std::function<void(Part)> onRegen;
+    std::function<void(Part)> onDrag;
+
+    TrackLanes();
     void setClip(const juce::MidiBuffer& midi, double lengthInBeats,
                  const std::vector<ChordInfo>& chords,
                  const std::vector<SectionInfo>& sections = {});
     void setPlaybackBeat(double beat);
-    void setMuteSolo(int muteMask, int soloMask);
+    void setMuteMask(int mask);
+    void setReady(bool hasMidi);
 
     void paint(juce::Graphics&) override;
+    void resized() override;
 
 private:
     struct DisplayNote
@@ -51,34 +141,50 @@ private:
         int channel;
     };
 
-    bool noteAudible(int channel) const;
+    struct Lane
+    {
+        Part part;
+        juce::String name;
+        juce::Colour colour;
+        IconButton mute { IconKind::Unmute, "Mute" };
+        IconButton regen { IconKind::Regen, "Regenerate this part" };
+        DragHandle drag;
+    };
 
+    void paintLaneRoll(juce::Graphics& g, const Lane& lane, juce::Rectangle<float> area) const;
+
+    std::vector<std::unique_ptr<Lane>> lanes;
     std::vector<DisplayNote> notes;
     std::vector<ChordInfo> progression;
     std::vector<SectionInfo> sections;
     double clipLength{0.0};
     double playbackBeat{-1.0};
-    int lowestPitch{60};
-    int highestPitch{72};
     int muteMask{0};
-    int soloMask{0};
+    bool hasMidi{false};
 };
 
-class MidiDragChip : public juce::Component
+class ImportModePicker : public juce::Component
 {
 public:
-    MidiDragChip(std::function<void()> onDrag, juce::String label);
+    std::function<void(ImportMode)> onPick;
+    std::function<void()> onCancel;
+
+    ImportModePicker();
+    void setFileName(const juce::String& name);
     void paint(juce::Graphics&) override;
-    void mouseDown(const juce::MouseEvent&) override;
-    void mouseDrag(const juce::MouseEvent&) override;
-    void setEnabledLook(bool hasMidi);
+    void resized() override;
 
 private:
-    std::function<void()> onDrag;
-    juce::String label;
-    bool hasMidi{false};
-    bool dragging{false};
+    juce::Label title;
+    juce::Label subtitle;
+    juce::TextButton accompany { "Accompany" };
+    juce::TextButton extend { "Extend" };
+    juce::TextButton rewrite { "Rewrite" };
+    juce::TextButton restyle { "Restyle" };
+    juce::TextButton cancel { "Cancel" };
 };
+
+class SettingsOverlay;
 
 class SynthesiaAIEditor : public juce::AudioProcessorEditor,
                           public juce::Timer,
@@ -120,129 +226,111 @@ private:
     MidiGenerationParams collectParams() const;
     void snapshotParams();
     void updateUIState();
-    void updateLicenseBadge();
     void exportToChooser(int menuId);
-    void layoutGeneratePage();
-    void layoutPlanPage();
-    void layoutImportPage();
-    void layoutStylePage();
-    void layoutSoundPage();
-    void refreshSoundPatchCombo();
-    void pullSoundToUI();
-    void pushSoundFromUI();
-    Part selectedSoundPart() const;
-    void styleControl(juce::Component& c);
-    void styleSlider(juce::Slider& slider);
-    void applyAdvancedVisibility();
     void onRegeneratePart(Part part, bool variation);
+    void chooseGenre(Genre genre);
+    void showKeyMenu();
+    void showTempoMenu();
+    void showBarsMenu();
+    void refreshPills();
+    void setMoreOpen(bool open);
+    void showImportPicker(const juce::File& file);
+    void hideImportPicker();
+    void applyImportMode(ImportMode mode);
+    void openSettings();
+    void hideSettings();
+    void styleSlider(juce::Slider& slider);
+    void applyEngineChoice();
+    void setupSectionLabel(juce::Label& label, const juce::String& text);
+    Genre selectedGenre() const;
+    ScaleType selectedScale() const;
 
     SynthesiaAIProcessor& audioProcessor;
     SynthesiaLookAndFeel lookAndFeel;
 
     juce::Label titleLabel;
-    juce::Label subtitleLabel;
     juce::Label licenseBadge;
-    juce::Label presetLabel;
-    juce::ComboBox presetComboBox;
-    juce::TextButton savePresetButton;
-    juce::TextButton settingsButton;
+    ParamPill keyPill;
+    ParamPill tempoPill;
+    ParamPill barsPill;
+    IconButton settingsButton { IconKind::Settings, "Settings" };
 
-    juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
-    juce::Component generatePage;
-    juce::Component planPage;
-    juce::Component importPage;
-    juce::Component stylePage;
-    juce::Component soundPage;
+    juce::TextEditor promptEditor;
+    juce::OwnedArray<GenreChip> genreChips;
+    juce::TextButton generateButton;
+    juce::TextButton importButton;
+    juce::TextButton moreButton;
 
-    juce::Label keyLabel;
-    juce::ComboBox keyComboBox;
+    TrackLanes trackLanes;
+    LabeledDrag dragAllButton;
+    IconButton previewButton { IconKind::Play, "Play / stop preview" };
+    juce::Label statusLabel;
+
+    juce::Viewport moreViewport;
+    juce::Component morePage;
+    juce::Label moreArrangement;
+    juce::Label moreHarmony;
+    juce::Label moreFeel;
+    juce::Label moreStyle;
+    juce::Label moreLibrary;
+
     juce::Label scaleLabel;
     juce::ComboBox scaleComboBox;
-    juce::Label genreLabel;
-    juce::ComboBox genreComboBox;
-    juce::Label partLabel;
-    juce::ComboBox partComboBox;
     juce::Label formLabel;
     juce::ComboBox formComboBox;
-    juce::Label lengthLabel;
-    juce::Slider lengthSlider;
-    juce::Label tempoLabel;
-    juce::Slider tempoSlider;
-    juce::Label tempoSyncLabel;
-    juce::ComboBox tempoSyncComboBox;
-    juce::ToggleButton followHostTempoButton;
-    juce::ToggleButton followHostKeyButton;
-    juce::Label generatorLabel;
-    juce::ComboBox generatorComboBox;
+    juce::Label gridLabel;
+    juce::ComboBox gridComboBox;
+    juce::Label engineLabel;
+    juce::ComboBox engineComboBox;
+    juce::Label partLabel;
+    juce::ComboBox partComboBox;
     juce::Label chordsLabel;
     juce::TextEditor chordsEditor;
     juce::ToggleButton lockProgressionButton;
     juce::Label locksLabel;
     juce::OwnedArray<juce::ToggleButton> partLockButtons;
-    juce::Label styleLabel;
-    juce::TextEditor styleTextEditor;
-    juce::TextButton generateButton;
-    juce::OwnedArray<juce::Label> mixPartLabels;
-
-    juce::Label planLabel;
-    juce::TextEditor planSummaryEditor;
     juce::TextButton planButton;
-
+    juce::TextEditor planSummaryEditor;
+    juce::Label pianoLabel;
+    IconButton pianoMute { IconKind::Unmute, "Mute piano" };
+    IconButton pianoRegen { IconKind::Regen, "Regenerate piano" };
+    DragHandle pianoDrag;
+    juce::Label seedLabel;
+    juce::Slider seedSlider;
+    juce::Label swingLabel;
+    juce::Slider swingSlider;
+    juce::Label humanizeLabel;
+    juce::Slider humanizeSlider;
+    juce::Label densityLabel;
+    juce::Slider densitySlider;
     juce::Label importModeLabel;
     juce::ComboBox importModeComboBox;
-    juce::TextButton importButton;
-    juce::TextButton captureButton;
-    juce::Label importHintLabel;
-
+    juce::ToggleButton followHostTempoButton;
+    juce::ToggleButton followHostKeyButton;
     juce::Label styleProfileLabel;
     juce::ComboBox styleProfileComboBox;
     juce::Label blendLabel;
     juce::Slider blendSlider;
     juce::TextButton learnStyleButton;
-    juce::Label styleHintLabel;
-
-    juce::Label soundPartLabel;
-    juce::ComboBox soundPartCombo;
-    juce::Label soundPatchLabel;
-    juce::ComboBox soundPatchCombo;
-    juce::Label attackLabel;
-    juce::Slider attackSlider;
-    juce::Label decayLabel;
-    juce::Slider decaySlider;
-    juce::Label sustainLabel;
-    juce::Slider sustainSlider;
-    juce::Label releaseLabel;
-    juce::Slider releaseSlider;
-    juce::Label cutoffLabel;
-    juce::Slider cutoffSlider;
-    juce::Label resoLabel;
-    juce::Slider resoSlider;
-    juce::Label driveLabel;
-    juce::Slider driveSlider;
-    juce::Label reverbSendLabel;
-    juce::Slider reverbSendSlider;
-    juce::Label delaySendLabel;
-    juce::Slider delaySendSlider;
-    juce::Label mixSectionLabel;
-    juce::Label mixPresetLabel;
-    juce::ComboBox mixPresetCombo;
-    juce::Label sidechainLabel;
-    juce::Slider sidechainSlider;
-    juce::Label mixCompLabel;
-    juce::Slider mixCompSlider;
-    juce::Label soundHintLabel;
-
-    ClipView clipView;
-    juce::Label mixLabel;
-    juce::OwnedArray<juce::TextButton> muteButtons;
-    juce::OwnedArray<juce::TextButton> soloButtons;
-    juce::OwnedArray<juce::TextButton> regenButtons;
-    juce::OwnedArray<juce::TextButton> variationButtons;
-    juce::Label dragHintLabel;
-    juce::OwnedArray<MidiDragChip> dragChips;
-    juce::TextButton previewButton;
+    juce::TextButton captureButton;
     juce::TextButton exportButton;
-    juce::Label statusLabel;
+    juce::Label presetLabel;
+    juce::ComboBox presetComboBox;
+    juce::TextButton savePresetButton;
+    juce::Label varyLabel;
+    juce::OwnedArray<juce::TextButton> variationButtons;
+
+    ImportModePicker importPicker;
+    std::unique_ptr<SettingsOverlay> settingsOverlay;
+    juce::TooltipWindow tooltipWindow { this, 450 };
+    juce::File pendingImportFile;
+    bool importPickerOpen{false};
+    bool settingsOpen{false};
+
+    int keyIndex{0};
+    int barsValue{8};
+    double tempoValue{110.0};
+    Genre genreValue{Genre::Pop};
 
     int shownClipVersion{0};
     int shownPlanVersion{0};
@@ -250,27 +338,34 @@ private:
     int shownStyleVersion{0};
     int shownPresetVersion{0};
     int shownUiParamsVersion{0};
-    int shownSoundVersion{-1};
     bool draggingFiles{false};
-    bool pullingSound{false};
     bool applyingPreset{false};
+    bool moreOpen{false};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIEditor)
 };
 
-class SettingsDialog : public juce::Component
+class SettingsOverlay : public juce::Component
 {
 public:
-    SettingsDialog(SynthesiaAIProcessor& p);
+    std::function<void()> onClose;
+
+    SettingsOverlay(SynthesiaAIProcessor& p);
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void refreshFromProcessor();
 
 private:
     void applyProviderDefaults();
+    void save();
+    juce::Rectangle<int> cardBounds() const;
 
     SynthesiaAIProcessor& processor;
 
+    juce::Label title;
+    IconButton closeButton { IconKind::Close, "Close" };
     juce::Label providerLabel;
     juce::ComboBox providerComboBox;
     juce::Label apiKeyLabel;
@@ -287,5 +382,5 @@ private:
     juce::TextButton saveButton;
     juce::TextButton cancelButton;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsDialog)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsOverlay)
 };
