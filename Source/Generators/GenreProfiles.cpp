@@ -163,7 +163,7 @@ namespace
                                 { "1 2h 67 5D 1 47 2h 5D" }, { "67 2h 5D 19 1 47 67 5D" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X---x---X---x---", "X-------x-------", "X---x---X-------", "X-----------x---" };
+        p.chordPatterns = { "X---x---X---x---", "X---x---X---x-x-", "x---X---x---X---", "X-x-X---x---X---" };
         p.chordVoicing = { 60, 76, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;

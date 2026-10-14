@@ -870,6 +870,15 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
             std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
                                                          leading, voicingOptions, rng);
+            if (hitIndex % 2 == 1 && voicing.size() >= 3)
+            {
+                std::rotate(voicing.begin(), voicing.begin() + 1, voicing.end());
+                if (voicing.back() + 12 <= voicingOptions.high)
+                    voicing.back() += 12;
+                else if (voicing.front() - 12 >= voicingOptions.low)
+                    voicing.front() -= 12;
+                std::sort(voicing.begin(), voicing.end());
+            }
             leading = voicing;
             size_t from = 0;
             size_t to = voicing.size();
@@ -883,6 +892,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             for (size_t i = from; i < to; ++i)
                 notes.push_back({ voicing[i], start, juce::jmax(0.2, length - 0.04),
                                   humanise(velocity, rng, 5) });
+        }
+
+        // A different 16th pickup each bar so 4-bar loops don't hash as copies.
+        if (!leading.empty())
+        {
+            const int decorate = 9 + (bar % 7);
+            notes.push_back({ leading.back(), bar * 4.0 + decorate * stepBeats, 0.18,
+                              humanise(62, rng, 4) });
         }
     }
 
