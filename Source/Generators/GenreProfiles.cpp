@@ -126,7 +126,7 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 62, 74, 0.50, 0.22, 0.18, 0.22, 1, false, false, 86 };
+        p.leadMelody = { 62, 74, 0.50, 0.22, 0.18, 0.22, 2, false, false, 86 };
         p.leadMelody.intervalWeights = { 0.0, 0.05, 0.1, 0.3, 0.8, 1.6, 2.6, 1.6, 0.8, 0.3, 0.1, 0.05, 0.0 };
 
         p.pianoStyle = PianoStyle::Comp;
@@ -173,7 +173,7 @@ namespace
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 58, 70, 0.70, 0.20, 0.12, 0.18, 1, false, false, 88 };
+        p.leadMelody = { 62, 74, 0.70, 0.20, 0.12, 0.18, 1, false, false, 88 };
         p.leadMelody.intervalWeights = { 0.15, 0.2, 0.35, 0.6, 1.1, 1.8, 1.8, 1.8, 1.1, 0.6, 0.35, 0.2, 0.15 };
 
         p.pianoStyle = PianoStyle::Broken;

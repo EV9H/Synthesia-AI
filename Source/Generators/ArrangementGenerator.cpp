@@ -189,54 +189,77 @@ namespace
 
     void resolveUnisons(std::map<Part, Notes>& parts)
     {
-        auto bumpAway = [](ArrangementGenerator::PartNote& note, int occupied, int lo, int hi)
-        {
-            if (note.pitch != occupied)
-                return;
-            // Prefer a third/fourth so the part stays in its register (octave jumps
-            // push leads above the range the pro-likeness refs live in). Stay
-            // below the register mean when the occupied note is already high.
-            const std::initializer_list<int> downFirst{ -3, -4, -5, 3, 4, -7, 5, 7, -12, 12 };
-            const std::initializer_list<int> upFirst{ 3, 4, 5, -3, -4, 7, -7, 12, -12 };
-            for (int delta : note.pitch >= 68 ? downFirst : upFirst)
-            {
-                const int candidate = note.pitch + delta;
-                if (candidate >= lo && candidate <= hi && candidate != occupied)
-                {
-                    note.pitch = candidate;
-                    return;
-                }
-            }
-        };
-
-        auto collide = [&](Part moving, Part held, int lo, int hi, int midLo, int midHi)
+        auto collide = [&](Part moving, int lo, int hi, int midLo, int midHi)
         {
             auto mit = parts.find(moving);
-            auto hit = parts.find(held);
-            if (mit == parts.end() || hit == parts.end())
+            if (mit == parts.end())
                 return;
             for (auto& a : mit->second)
             {
                 if (a.pitch < midLo || a.pitch > midHi)
                     continue;
-                for (const auto& b : hit->second)
+                auto occupied = [&](int pitch)
                 {
-                    if (a.pitch != b.pitch || !notesOverlap(a, b))
-                        continue;
-                    bumpAway(a, b.pitch, lo, hi);
-                    break;
+                    for (const auto& [part, notes] : parts)
+                    {
+                        if (part == moving || part == Part::Drums)
+                            continue;
+                        // Piano doubling a chord stab is expected (lint skips it).
+                        if ((moving == Part::Piano && part == Part::Chords)
+                            || (moving == Part::Chords && part == Part::Piano))
+                            continue;
+                        for (const auto& b : notes)
+                            if (b.pitch == pitch && notesOverlap(a, b))
+                                return true;
+                    }
+                    return false;
+                };
+                if (!occupied(a.pitch))
+                    continue;
+                const std::initializer_list<int> downFirst{ -3, -4, -5, 3, 4, -7, 5, 7, -12, 12 };
+                const std::initializer_list<int> upFirst{ 3, 4, 5, -3, -4, 7, -7, 12, -12 };
+                bool moved = false;
+                for (int delta : a.pitch >= 68 ? downFirst : upFirst)
+                {
+                    const int candidate = a.pitch + delta;
+                    if (candidate >= lo && candidate <= hi && !occupied(candidate))
+                    {
+                        a.pitch = candidate;
+                        moved = true;
+                        break;
+                    }
                 }
+                if (!moved)
+                {
+                    for (int d = 1; d <= 11 && !moved; ++d)
+                    {
+                        for (int sign : { -1, 1 })
+                        {
+                            const int candidate = a.pitch + sign * d;
+                            if (candidate >= lo && candidate <= hi && !occupied(candidate))
+                            {
+                                a.pitch = candidate;
+                                moved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!moved)
+                    a.length = 0.0; // drop the doubling rather than leave a unison
             }
+            mit->second.erase(std::remove_if(mit->second.begin(), mit->second.end(),
+                                             [](const ArrangementGenerator::PartNote& n)
+                                             { return n.length < 0.02; }),
+                              mit->second.end());
         };
 
-        for (int pass = 0; pass < 3; ++pass)
+        for (int pass = 0; pass < 4; ++pass)
         {
-            collide(Part::Synth, Part::Chords, 60, 96, 40, 90);
-            collide(Part::Synth, Part::Piano, 60, 96, 52, 96);
-            collide(Part::Piano, Part::Chords, 55, 96, 48, 88);
-            collide(Part::Chords, Part::Bass, 48, 76, 26, 60);
-            collide(Part::Piano, Part::Bass, 52, 96, 26, 60);
-            collide(Part::Synth, Part::Bass, 60, 96, 26, 60);
+            // Move the lead off pads/piano/bass. Piano doubling chords is allowed.
+            collide(Part::Synth, 60, 84, 40, 90);
+            collide(Part::Chords, 48, 88, 36, 60); // only vs bass in the low mid
+            collide(Part::Piano, 52, 96, 26, 55);  // only vs bass
         }
     }
 
@@ -274,7 +297,7 @@ namespace
             double hold = notes[stack.front()].length;
             for (size_t idx : stack)
                 hold = juce::jmin(hold, notes[idx].length);
-            if (hold < 1.0)
+            if (hold < 1.45)
                 continue;
 
             const size_t innerIdx = stack[stack.size() - 2];
@@ -285,9 +308,9 @@ namespace
             bool first = true;
             for (double motionAt = start + 1.0; motionAt < tail - 0.35; motionAt += 1.0)
             {
-                int moved = scaleMove(scale, currentPitch, dir * 2);
+                int moved = scaleMove(scale, currentPitch, dir);
                 if (moved == currentPitch)
-                    moved = scaleMove(scale, currentPitch, -dir * 2);
+                    moved = scaleMove(scale, currentPitch, -dir);
                 dir = -dir;
 
                 bool clash = false;
@@ -731,9 +754,6 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
     if (auto it = generated.find(Part::Bass); it != generated.end())
         snapBassToHarmony(it->second, result.progression, profile.bassLow, profile.bassHigh);
     resolveUnisons(generated);
-    if (auto synth = generated.find(Part::Synth); synth != generated.end())
-        for (auto& note : synth->second)
-            note.pitch = foldIntoRange(note.pitch, 60, 76);
 
     for (const auto part : allParts)
     {
@@ -880,6 +900,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
             std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
                                                          leading, voicingOptions, rng);
+            leading = voicing;
             if (ctx.profile.genre == Genre::Trap
                 && hitIndex % 2 == 1 && voicing.size() >= 3)
             {
@@ -898,11 +919,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 if (!clash)
                     voicing = std::move(alt);
             }
-            if ((ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::LoFiJazz)
+            if (ctx.profile.genre == Genre::House
                 && voicing.size() >= 3 && hitIndex % 2 == 1)
             {
-                // Shift the whole stack a fifth so consecutive stabs actually
-                // move (~7 semitones), matching performance voice-leading.
+                // Transpose a fifth for playback only; keep `leading` on the
+                // close voicing so the next stab can fall back and actually move.
                 for (int& p : voicing)
                 {
                     if (p + 7 <= voicingOptions.high)
@@ -912,7 +933,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 }
                 std::sort(voicing.begin(), voicing.end());
             }
-            leading = voicing;
             size_t from = 0;
             size_t to = voicing.size();
             if (hit.symbol == 'g' && to > 3)
@@ -1439,7 +1459,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
         const double end = chordEnd(chord);
         const bool trapPiano = ctx.profile.genre == Genre::Trap;
         const double rate = trapPiano ? 0.25 : 0.5;
-        const double gate = trapPiano ? 0.42 : juce::jmin(1.1, rate + 0.18);
+        const double gate = trapPiano ? 0.22 : juce::jmin(1.1, rate + 0.18);
         int index = 0;
         for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += rate, ++index)
         {
@@ -1451,26 +1471,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
             notes.push_back({ pitch, beat, noteLen, humanise(velocity, rng, trapPiano ? 12 : 5) });
-            // Downbeat crushed neighbor off the pad so a real m2 survives
-            // unison repair and 16th-grid humanize.
-            if (trapPiano && bar % 3 == 2 && index % 16 == 0)
-            {
-                auto pcInVoicing = [&](int p)
-                {
-                    const int pc = (p % 12 + 12) % 12;
-                    for (int tone : voicing)
-                        if ((tone % 12 + 12) % 12 == pc)
-                            return true;
-                    return false;
-                };
-                int a = pitch + 1;
-                int b = pitch + 2;
-                int shift = 0;
-                while (shift < 8 && (pcInVoicing(a + shift) || pcInVoicing(b + shift)))
-                    ++shift;
-                notes.push_back({ a + shift, beat, noteLen, humanise(54, rng, 8) });
-                notes.push_back({ b + shift, beat, noteLen, humanise(58, rng, 8) });
-            }
         }
         if (trapPiano && !voicing.empty())
         {
@@ -1710,14 +1710,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         return contour;
     };
 
-    const bool syncPluck = part == Part::Synth
-        && (ctx.profile.genre == Genre::Trap || ctx.profile.genre == Genre::House
-            || ctx.profile.genre == Genre::Pop);
-    const Rhythm rhythmA = syncPluck
-        ? makeSyncPluck(ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 6 : 4,
-                        ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 3 : 2,
-                        ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 3 : 2)
-        : makeRhythm();
+    const bool syncPluck = part == Part::Synth && ctx.profile.genre == Genre::Trap;
+    const Rhythm rhythmA = syncPluck ? makeSyncPluck(4, 2, 2) : makeRhythm();
     auto contourA = makeContour(rhythmA.size());
     if (contourA.size() >= 4)
     {
@@ -1728,11 +1722,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         contourA[3] = -contourA[1];
     }
     const auto contourA2 = varyEnding(contourA);
-    const Rhythm rhythmB = syncPluck
-        ? makeSyncPluck(ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 6 : 4,
-                        ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 3 : 2,
-                        ctx.profile.genre == Genre::House || ctx.profile.genre == Genre::Pop ? 3 : 2)
-        : mutateRhythm(rhythmA);
+    const Rhythm rhythmB = syncPluck ? makeSyncPluck(4, 2, 2) : mutateRhythm(rhythmA);
     auto contourB = makeContour(rhythmB.size());
     if (contourB.size() >= 4)
     {
