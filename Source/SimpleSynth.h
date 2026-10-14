@@ -65,7 +65,13 @@ private:
     double fmPhase{0.0};
 
     const InstrumentLibrary::Sample* instSample{nullptr};
+    const InstrumentLibrary::Sample* instRelease{nullptr};
     double instPos{0.0};
+    double relPos{0.0};
+    bool playingRelease{false};
+
+    static void lerpSample(const InstrumentLibrary::Sample* sample, double pos,
+                           double transpose, float& left, float& right);
 };
 
 class DrumSound : public juce::SynthesiserSound

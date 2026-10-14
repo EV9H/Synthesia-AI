@@ -240,11 +240,15 @@ void PartVoice::startNote(int midiNoteNumber, float vel,
     }
 
     instSample = nullptr;
+    instRelease = nullptr;
     instPos = 0.0;
+    relPos = 0.0;
+    playingRelease = false;
     if (patch->sampleKind != SampleKind::Off)
     {
         InstrumentLibrary::get().ensureLoaded();
         instSample = InstrumentLibrary::get().find(patch->sampleKind, midiNoteNumber, vel);
+        instRelease = InstrumentLibrary::get().findRelease(patch->sampleKind, midiNoteNumber, vel);
     }
 
     ampEnvelope.reset();
@@ -257,11 +261,17 @@ void PartVoice::stopNote(float, bool allowTailOff)
 {
     if (allowTailOff)
     {
+        if (instRelease != nullptr)
+        {
+            playingRelease = true;
+            relPos = 0.0;
+        }
         ampEnvelope.noteOff();
         filtEnvelope.noteOff();
     }
     else
     {
+        playingRelease = false;
         ampEnvelope.reset();
         filtEnvelope.reset();
         clearCurrentNote();
@@ -301,6 +311,26 @@ double PartVoice::oscSample(const OscSettings& osc, double* phases, double hz, d
         phases[i] = wrap(phases[i] + dt);
     }
     return (sum / static_cast<double>(n)) * osc.mix;
+}
+
+void PartVoice::lerpSample(const InstrumentLibrary::Sample* sample, double pos,
+                           double transpose, float& left, float& right)
+{
+    left = right = 0.0f;
+    if (sample == nullptr)
+        return;
+    const auto& buf = sample->data;
+    const int n = buf.getNumSamples();
+    if (n < 2 || pos < 0.0 || pos >= n - 1)
+        return;
+    const int chans = buf.getNumChannels();
+    const float* dL = buf.getReadPointer(0);
+    const float* dR = chans > 1 ? buf.getReadPointer(1) : dL;
+    juce::ignoreUnused(transpose);
+    const int i0 = (int) pos;
+    const float frac = (float) (pos - i0);
+    left = dL[i0] + frac * (dL[i0 + 1] - dL[i0]);
+    right = dR[i0] + frac * (dR[i0 + 1] - dR[i0]);
 }
 
 void PartVoice::readInstSample(double hz, float& left, float& right)
@@ -360,6 +390,17 @@ void PartVoice::readInstSample(double hz, float& left, float& right)
     }
 
     instPos = pos + inc;
+
+    if (playingRelease && instRelease != nullptr)
+    {
+        const double relInc = (instRelease->sourceRate / juce::jmax(1.0, sr))
+                            * std::pow(2.0, (midiNote - instRelease->rootNote) / 12.0);
+        float relL = 0.0f, relR = 0.0f;
+        lerpSample(instRelease, relPos, 1.0, relL, relR);
+        left += relL * 0.85f;
+        right += relR * 0.85f;
+        relPos += relInc;
+    }
 }
 
 void PartVoice::nextStereo(float& left, float& right)
