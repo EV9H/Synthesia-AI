@@ -117,7 +117,8 @@ namespace
 
         p.chordStyle = ChordStyle::Stabs;
         p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
-        p.chordVoicing = { 60, 76, 4, false, false };
+        // Close cluster, high enough that alternate-hit spreads can open to ~70.
+        p.chordVoicing = { 56, 78, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-", "R-..R-..R-..R-.." };
@@ -173,11 +174,11 @@ namespace
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 66, 82, 0.32, 0.52, 0.48, 0.34, 2, false, false, 84 };
+        p.leadMelody = { 62, 74, 0.70, 0.20, 0.12, 0.18, 1, false, false, 88 };
         p.leadMelody.intervalWeights = { 0.15, 0.2, 0.35, 0.6, 1.1, 1.8, 1.8, 1.8, 1.1, 0.6, 0.35, 0.2, 0.15 };
 
         p.pianoStyle = PianoStyle::Broken;
-        p.pianoVoicing = { 62, 78, 3, false, false };
+        p.pianoVoicing = { 62, 74, 3, false, false };
 
         p.drums.grooves = {
             { "X---------------", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "..............x.", "" },
@@ -213,10 +214,10 @@ namespace
         p.chordVoicing = { 58, 74, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "R--.....R-.F..A-", "R---..TR-...O.A.", "R-----..F-.R..A-", "R-.T..R-R-.F..A-" };
-        p.bassLow = 28;
+        p.bassPatterns = { "R-------R---A---", "R-------A---F---", "R---F---R---A---", "R-----R-----A---" };
+        p.bassLow = 36;
         p.bassHigh = 47;
-        p.slideChance = 0.15;
+        p.slideChance = 0.2;
 
         p.leadStyle = LeadStyle::Melody;
         p.leadMelody = { 64, 80, 0.34, 0.48, 0.48, 0.32, 2, true, false, 82 };
@@ -275,15 +276,17 @@ namespace
         p.pianoArp = { 60, 78, { arpRolling, arpSkip, arpUpDown }, 0.92, 70 };
 
         p.drums.grooves = {
-            { "X...............", "", "", "", "", "........x......." },
-            { "X.......X.......", "", "", "", "", "X..............." },
-            { "X...............", "", "", "", "", "X.......x......." },
-            { "X...........x...", "", "", "", "", "........X......." },
+            { "X..x....X..x....", ".g..X.g..g..X.g.", "", ".x...x.x...x....", "", "........x......." },
+            { "X.x.....X..x....", "g...X.g.g...X..g", "", ".x.x.....x.x....", "", "......x........." },
+            { "X...x...X.x.....", ".g.gX...g.g.X...", "", ".x...x.x...x....", "", "............x..." },
+            { "X..x..x.X.......", "..g.X.g...g.X.g.", "", ".x...x.x.x...x..", "", "........x......." },
         };
-        p.drums.humanizeMs = 5.0;
-        p.drums.kickVelocity = 120;
-        p.drums.snareVelocity = 108;
-        p.drums.hatVelocity = 40;
+        p.drums.rideHats = false;
+        p.drums.humanizeMs = 28.0;
+        p.drums.hatLagMs = 0.0;
+        p.drums.kickVelocity = 118;
+        p.drums.snareVelocity = 102;
+        p.drums.hatVelocity = 44;
 
         p.swing = 0.5;
         p.swingSixteenths = false;

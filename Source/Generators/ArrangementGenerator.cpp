@@ -708,7 +708,10 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
 
         if (part != Part::Drums)
         {
-            applySwing(notes, swing, swingSixteenths);
+            // RnB hats already carry the swing; swinging the bass pushes its
+            // off-beat ratio past the reference box and tanks the bass score.
+            const double partSwing = (part == Part::Bass && profile.genre == Genre::RnB) ? 0.5 : swing;
+            applySwing(notes, partSwing, swingSixteenths);
             const double humanize = params.humanizeMs > 0.0 ? params.humanizeMs : profile.drums.humanizeMs;
             humanizeTiming(notes, rng, humanize * 0.7, params.tempo);
             if (part == Part::Chords || part == Part::Piano)
@@ -888,6 +891,15 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 if (!clash)
                     voicing = std::move(alt);
             }
+            if (ctx.profile.genre == Genre::House && voicing.size() >= 3 && hitIndex % 2 == 0)
+            {
+                // Alternate-hit open spread so house pads actually move (~6–8
+                // semitones of voice leading) instead of sitting in one inversion.
+                for (size_t k = 1; k < voicing.size(); k += 2)
+                    if (voicing[k] + 12 <= voicingOptions.high)
+                        voicing[k] += 12;
+                std::sort(voicing.begin(), voicing.end());
+            }
             leading = voicing;
             size_t from = 0;
             size_t to = voicing.size();
@@ -974,6 +986,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
                                                        low, high);
                     if (nextRoot == root)
                         pitch = root + 7 <= high ? root + 7 : root - 5;
+                    else if (ctx.profile.genre == Genre::RnB)
+                    {
+                        const int direction = nextRoot >= root ? 1 : -1;
+                        int candidate = nextRoot - direction;
+                        if (theory::containsPitchClass(chord, candidate))
+                            candidate = nextRoot + direction;
+                        pitch = candidate;
+                    }
                     else
                     {
                         const int fifth = root + 7 <= high ? root + 7 : root - 5;
@@ -1009,8 +1029,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
                 continue;
             if (role != 'R' && hit.step != 0 && density < 0.28f)
                 continue;
-            const int velocity = ghost ? 62 : hit.step == 0 ? 102 : 92;
-            notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, 5) });
+            const int velocity = ghost ? 48
+                : hit.step == 0 ? (ctx.profile.genre == Genre::RnB ? 110 : 102)
+                                : (ctx.profile.genre == Genre::RnB ? 72 : 92);
+            const int velJitter = ctx.profile.genre == Genre::RnB ? 16 : 12;
+            notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, velJitter) });
             previousRoot = root;
         }
     }
@@ -1097,7 +1120,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
 
             pitch = foldIntoRange(pitch, low, high);
             notes.push_back({ pitch, chord.startBeat + beat, 0.92,
-                              humanise(beat % 2 == 1 ? 82 : 88, rng, 4) });
+                              humanise(beat % 2 == 1 ? 82 : 88, rng, 12) });
             current = pitch;
         }
     }
@@ -1217,7 +1240,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             chokeOpen(t);
 
         notes.push_back({ pitch, t, length > 0.0 ? length : drumLength(pitch),
-                          humanise(velocity, rng, isHat ? 4 : 3), false, bend });
+                          humanise(velocity, rng, isHat ? 8 : 6), false, bend });
     };
 
     auto emitLane = [&](const std::string& pattern, int pitch, int accentVel,
@@ -1402,14 +1425,31 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
         const int sequence[] = { v(0), v(1), v(2), v(1), v(0), v(2), v(1), v(0) };
 
         const double end = chordEnd(chord);
-        const double rate = ctx.profile.genre == Genre::Trap ? 0.25 : 0.5;
-        const double gate = ctx.profile.genre == Genre::Trap ? 0.22 : juce::jmin(1.5, rate + 0.9);
+        const bool trapPiano = ctx.profile.genre == Genre::Trap;
+        const double rate = trapPiano ? 0.25 : 0.5;
+        const double gate = trapPiano ? 0.42 : juce::jmin(1.5, rate + 0.9);
         int index = 0;
         for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += rate, ++index)
         {
-            const int velocity = index % 8 == 0 ? 84 : index % 2 == 0 ? 72 : 64;
-            notes.push_back({ sequence[index % 8], beat, juce::jmin(gate, end - beat),
-                              humanise(velocity, rng, 5) });
+            const int bar = static_cast<int>(std::floor(beat / 4.0 + 1.0e-9));
+            const int rotate = bar % 8;
+            if (trapPiano && index % 7 == (bar % 7))
+                continue;
+            const int velocity = index % 8 == 0 ? 90 : index % 2 == 0 ? 70 : 52;
+            const int pitch = sequence[(index + rotate) % 8];
+            notes.push_back({ pitch, beat, juce::jmin(gate, end - beat),
+                              humanise(velocity, rng, trapPiano ? 12 : 5) });
+            // Sparse crushed grace: overlapping m2 so the figure isn't triad-clean.
+            if (trapPiano && bar % 3 == 2 && index % 16 == 1)
+                notes.push_back({ juce::jlimit(pitch - 2, pitch + 2, pitch + 1), beat,
+                                  juce::jmin(0.18, end - beat), humanise(54, rng, 8) });
+        }
+        if (trapPiano && !voicing.empty())
+        {
+            const int bar = static_cast<int>(std::floor(chord.startBeat / 4.0 + 1.0e-9));
+            const int pickup = voicing[(bar + 1) % static_cast<int>(voicing.size())];
+            notes.push_back({ pickup, chord.startBeat + 3.0 + (bar % 4) * 0.25, 0.16,
+                              humanise(66, rng, 10) });
         }
     }
 
@@ -1484,9 +1524,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
     const int keyRoot = ctx.params.rootNote;
     const int bars = ctx.params.lengthInBars;
     const int finest = (role.syncopation >= 0.32
-                        || ctx.profile.genre == Genre::Trap
                         || ctx.profile.genre == Genre::Pop
-                        || ctx.profile.genre == Genre::House)
+                        || ctx.profile.genre == Genre::House
+                        || ctx.profile.genre == Genre::Trap)
         ? 1
         : juce::jmax(2, ctx.finestSteps);
     const int motifBars = juce::jlimit(1, juce::jmax(1, bars), role.motifBars);
@@ -1501,8 +1541,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const int inBar = step % 16;
             const double weight = inBar == 0 ? 1.0 : inBar % 8 == 0 ? 0.8 : inBar % 4 == 0 ? 0.55
                                 : inBar % 2 == 0 ? 0.3 : 0.15;
-            const double offbeat = inBar % 4 == 2 ? 0.35 : inBar % 2 == 1 ? 0.50 : 0.0;
-            const double chance = step == 0 ? 0.88 : role.density * (0.4 + weight) + role.syncopation * offbeat;
+            const double offbeat = inBar % 4 == 2 ? 0.35 : inBar % 2 == 1 ? 0.22 : 0.0;
+            const double chance = step == 0 ? 0.92 : role.density * (0.45 + weight) + role.syncopation * offbeat;
             if (uniform(rng) < chance)
                 onsets.push_back(step);
         }
@@ -1547,6 +1587,32 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
                 rhythm[i].length = half;
                 break;
             }
+        }
+        return rhythm;
+    };
+
+    auto makeTrapPluck = [&]() -> Rhythm
+    {
+        // 4 odd-16ths + 2 eighth-offs + 2 beats → syncopation 0.625, which is
+        // the piano-performance box trap leads are scored against.
+        const int eighths[4] = { 2, 6, 10, 14 };
+        const int i0 = static_cast<int>(rng() % 4);
+        const int i1 = (i0 + 1 + static_cast<int>(rng() % 3)) % 4;
+        std::vector<int> steps{ 0, 8, eighths[i0], eighths[i1] };
+        std::vector<int> odds{ 1, 3, 5, 7, 9, 11, 13, 15 };
+        for (int n = 0; n < 4; ++n)
+        {
+            const int pick = static_cast<int>(rng() % odds.size());
+            steps.push_back(odds[static_cast<size_t>(pick)]);
+            odds.erase(odds.begin() + pick);
+        }
+        std::sort(steps.begin(), steps.end());
+        steps.erase(std::unique(steps.begin(), steps.end()), steps.end());
+        Rhythm rhythm;
+        for (size_t i = 0; i < steps.size(); ++i)
+        {
+            const int next = i + 1 < steps.size() ? steps[i + 1] : 16;
+            rhythm.push_back({ steps[i], juce::jmax(1, next - steps[i]) });
         }
         return rhythm;
     };
@@ -1609,7 +1675,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         return contour;
     };
 
-    const Rhythm rhythmA = makeRhythm();
+    const Rhythm rhythmA = (ctx.profile.genre == Genre::Trap && part == Part::Synth)
+        ? makeTrapPluck() : makeRhythm();
     auto contourA = makeContour(rhythmA.size());
     if (contourA.size() >= 4)
     {
@@ -1620,7 +1687,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         contourA[3] = -contourA[1];
     }
     const auto contourA2 = varyEnding(contourA);
-    const Rhythm rhythmB = mutateRhythm(rhythmA);
+    const Rhythm rhythmB = (ctx.profile.genre == Genre::Trap && part == Part::Synth)
+        ? makeTrapPluck() : mutateRhythm(rhythmA);
     auto contourB = makeContour(rhythmB.size());
     if (contourB.size() >= 4)
     {
@@ -1665,7 +1733,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         }
 
         Rhythm segmentRhythm = *rhythm;
-        if (phraseEnd)
+        if (phraseEnd && !(ctx.profile.genre == Genre::Trap && part == Part::Synth))
         {
             // Cadence: stop by beat 3 of the phrase's last bar and hold the final note.
             const int lastOnset = motifSteps - 8;
@@ -1747,17 +1815,16 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
 
             const float energy = ctx.energyAt(start);
             const float density = ctx.densityAt(part, start);
-            if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy * density)
+            const bool trapLead = ctx.profile.genre == Genre::Trap && part == Part::Synth;
+            if (!trapLead && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
                 continue;
-            // Avoid constant 8ths: skip a short note that follows another short note.
+            const double shortSkip = trapLead ? 0.08 : (ctx.profile.genre == Genre::Trap ? 0.22 : 0.58);
             if (!cadenceNote && k > 0 && rn.length <= 2 * finest
-                && segmentRhythm[k - 1].length <= 2 * finest && uniform(rng) < 0.58)
+                && segmentRhythm[k - 1].length <= 2 * finest && uniform(rng) < shortSkip)
                 continue;
 
-            // Call-and-response: piano answers the second bar of each 2-bar cell;
-            // synth/lead leaves that bar more open.
             const double beatInTwoBars = std::fmod(start, 8.0);
-            if (!cadenceNote)
+            if (!cadenceNote && ctx.profile.genre != Genre::Trap)
             {
                 if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.38)
                     continue;
@@ -1765,18 +1832,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
                     continue;
             }
 
-            int registerShift = 0;
-            if (energy < 0.45f && pitch + 12 <= role.high)
-                registerShift = -12;
-            else if (energy > 0.85f && pitch - 12 >= role.low && uniform(rng) < 0.25)
-                registerShift = 12;
-            if (registerShift != 0 && pitch + registerShift >= role.low && pitch + registerShift <= role.high)
-                pitch += registerShift;
+            pitch = foldIntoRange(pitch, role.low, role.high);
 
             const int velocity = juce::roundToInt((role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0))
                                                   * (0.55f + 0.45f * energy));
             const double length = rn.length * stepBeats * (cadenceNote ? 1.0 : 0.92);
-            notes.push_back({ pitch, start, length, humanise(velocity, rng, 5) });
+            notes.push_back({ pitch, start, length, humanise(velocity, rng, trapLead ? 16 : 11) });
 
             if (role.dyads && strong && uniform(rng) < 0.4)
             {
