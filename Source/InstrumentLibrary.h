@@ -12,7 +12,11 @@ enum class SampleKind
     Ep,
     Strings,
     Organ,
-    Pluck
+    Pluck,
+    Bass,
+    Brass,
+    Woodwind,
+    Steel
 };
 
 class InstrumentLibrary
@@ -23,7 +27,9 @@ public:
         juce::AudioBuffer<float> data;
         double sourceRate{44100.0};
         int rootNote{60};
-        bool hard{true};
+        int velLayer{2};   // 0 soft, 1 mid, 2 hard
+        int rr{0};
+        bool isRelease{false};
         bool loopable{false};
         int loopStart{0};
         int loopEnd{0};
@@ -33,13 +39,16 @@ public:
     void ensureLoaded();
 
     const Sample* find(SampleKind kind, int midiNote, float velocity) const;
+    const Sample* findRelease(SampleKind kind, int midiNote, float velocity) const;
 
 private:
     void load();
-    void loadOne(const char* key, SampleKind kind, int rootNote, bool hard, bool loopable,
-                 const char* data, int size);
+    void loadOne(const char* key, SampleKind kind, int rootNote, int velLayer, int rr,
+                 bool isRelease, bool loopable, const char* data, int size);
 
+    static constexpr int kKindCount = 10;
     bool loaded{false};
+    mutable unsigned roundRobin{0};
     std::map<std::string, Sample> table;
-    std::vector<const Sample*> byKind[6];
+    std::vector<const Sample*> byKind[kKindCount];
 };
