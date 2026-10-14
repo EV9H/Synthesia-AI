@@ -10,6 +10,7 @@
 #include "StyleProfile.h"
 #include "PresetStore.h"
 #include "Music/MusicTheory.h"
+#include "Inspire.h"
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <iostream>
 #include <optional>
@@ -79,6 +80,8 @@ namespace
             "  --quant <1/16|1/8|1/4|1/2>  finest melodic grid (default: genre's)\n"
             "  --tempo <bpm>           host tempo (default: genre's)\n"
             "  --seed <n>              generator seed, 0 = random (default 1)\n"
+            "  --inspire               roll like the Inspire button (genre engine)\n"
+            "  --mood <name>           chill|dark|happy|epic|dreamy (locks mood with --inspire)\n"
             "  --style <text>          style prompt (LLM planner / keyword fallback)\n"
             "  --plan <file.json>      arrangement plan JSON (realised by the arranger)\n"
             "  --plan-json <json>      arrangement plan as a JSON string\n"
@@ -400,6 +403,38 @@ int main(int argc, char* argv[])
         }
         params.motifContour = imported.motifContour;
         params.motifRhythm = imported.motifRhythm;
+    }
+
+    if (args.contains("--inspire"))
+    {
+        InspireIdea previous;
+        previous.params = params;
+        InspireLocks locks;
+        locks.genre = args.contains("--genre");
+        locks.key = args.contains("--key") || args.contains("--scale");
+        locks.tempo = args.contains("--tempo");
+        const auto moodArg = option("--mood", {}).toLowerCase();
+        if (moodArg.isNotEmpty())
+        {
+            locks.mood = true;
+            if (moodArg == "dark")
+                previous.mood = InspireMood::Dark;
+            else if (moodArg == "happy")
+                previous.mood = InspireMood::Happy;
+            else if (moodArg == "epic")
+                previous.mood = InspireMood::Epic;
+            else if (moodArg == "dreamy")
+                previous.mood = InspireMood::Dreamy;
+            else
+                previous.mood = InspireMood::Chill;
+        }
+        juce::Random rng;
+        if (args.contains("--seed"))
+            rng.setSeed((juce::int64) params.seed);
+        const auto idea = rollInspire(&previous, locks, rng);
+        params = idea.params;
+        std::cout << idea.caption << "\n";
+        synthesia->setGeneratorType(GeneratorType::Genre);
     }
 
     const bool importOnly = importPath.isNotEmpty() && params.importMode == ImportMode::None;
