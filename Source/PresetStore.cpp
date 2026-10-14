@@ -219,6 +219,7 @@ void PresetStore::writeParams(juce::XmlElement& xml, const MidiGenerationParams&
     xml.setAttribute("importMode", static_cast<int>(params.importMode));
     xml.setAttribute("styleProfileName", juce::String(params.styleProfileName));
     xml.setAttribute("styleBlend", params.styleBlend);
+    xml.setAttribute("grooveIndex", params.grooveIndex);
 }
 
 MidiGenerationParams PresetStore::readParams(const juce::XmlElement& xml)
@@ -247,6 +248,7 @@ MidiGenerationParams PresetStore::readParams(const juce::XmlElement& xml)
     params.importMode = static_cast<ImportMode>(juce::jlimit(0, 4, xml.getIntAttribute("importMode", 0)));
     params.styleProfileName = xml.getStringAttribute("styleProfileName").toStdString();
     params.styleBlend = juce::jlimit(0.0, 1.0, xml.getDoubleAttribute("styleBlend", 0.0));
+    params.grooveIndex = xml.getIntAttribute("grooveIndex", -1);
     return params;
 }
 
@@ -275,6 +277,7 @@ juce::var PresetStore::paramsToVar(const MidiGenerationParams& params)
     obj->setProperty("importMode", juce::String(importModeName(params.importMode)));
     obj->setProperty("styleProfileName", juce::String(params.styleProfileName));
     obj->setProperty("styleBlend", params.styleBlend);
+    obj->setProperty("grooveIndex", params.grooveIndex);
     return juce::var(obj);
 }
 
@@ -330,6 +333,8 @@ MidiGenerationParams PresetStore::paramsFromVar(const juce::var& value)
         else if (importStr.equalsIgnoreCase("restyle")) params.importMode = ImportMode::Restyle;
         params.styleProfileName = obj->getProperty("styleProfileName").toString().toStdString();
         params.styleBlend = juce::jlimit(0.0, 1.0, static_cast<double>(obj->getProperty("styleBlend")));
+        if (obj->hasProperty("grooveIndex"))
+            params.grooveIndex = static_cast<int>(obj->getProperty("grooveIndex"));
     }
     return params;
 }

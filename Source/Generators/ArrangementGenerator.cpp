@@ -996,8 +996,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
     };
 
     const int bars = ctx.params.lengthInBars;
-    const int nGrooves = static_cast<int>(drums.grooves.size());
-    int grooveIndex = static_cast<int>(rng() % static_cast<unsigned>(nGrooves));
+    const int nGrooves = juce::jmax(1, static_cast<int>(drums.grooves.size()));
+    int grooveIndex = ctx.params.grooveIndex;
+    if (grooveIndex < 0 || grooveIndex >= nGrooves)
+        grooveIndex = static_cast<int>(rng() % static_cast<unsigned>(nGrooves));
 
     for (int bar = 0; bar < bars; ++bar)
     {

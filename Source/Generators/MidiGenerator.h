@@ -228,6 +228,8 @@ struct MidiGenerationParams
     std::string styleProfileName;
     std::string styleProfileJson;
     double styleBlend{0.0};
+    // -1 = pick from the genre kit with the part RNG. Otherwise an index into drums.grooves.
+    int grooveIndex{-1};
 };
 
 struct Note
