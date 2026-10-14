@@ -4,6 +4,7 @@
 #include "Generators/GenreProfiles.h"
 #include "PresetStore.h"
 #include "LicenseStub.h"
+#include "Inspire.h"
 #include "FontBinaryData.h"
 #include <cmath>
 #include <map>
@@ -246,10 +247,37 @@ void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> b, juce::
             p.startNewSubPath(x + w, y);
             p.lineTo(x, y + h);
             break;
+        case IconKind::Dice:
+            p.addRoundedRectangle(x, y, w, h, 2.4f);
+            p.addEllipse(x + w * 0.18f, y + h * 0.18f, w * 0.18f, h * 0.18f);
+            p.addEllipse(x + w * 0.41f, y + h * 0.41f, w * 0.18f, h * 0.18f);
+            p.addEllipse(x + w * 0.64f, y + h * 0.64f, w * 0.18f, h * 0.18f);
+            break;
+        case IconKind::Sparkle:
+            p.addTriangle(x + w * 0.5f, y, x + w * 0.62f, y + h * 0.38f, x + w * 0.38f, y + h * 0.38f);
+            p.addTriangle(x + w * 0.5f, y + h, x + w * 0.62f, y + h * 0.62f, x + w * 0.38f, y + h * 0.62f);
+            p.addTriangle(x, y + h * 0.5f, x + w * 0.38f, y + h * 0.38f, x + w * 0.38f, y + h * 0.62f);
+            p.addTriangle(x + w, y + h * 0.5f, x + w * 0.62f, y + h * 0.38f, x + w * 0.62f, y + h * 0.62f);
+            break;
+        case IconKind::Back:
+            p.startNewSubPath(x + w * 0.68f, y + h * 0.12f);
+            p.lineTo(x + w * 0.28f, y + h * 0.5f);
+            p.lineTo(x + w * 0.68f, y + h * 0.88f);
+            break;
+        case IconKind::Forward:
+            p.startNewSubPath(x + w * 0.32f, y + h * 0.12f);
+            p.lineTo(x + w * 0.72f, y + h * 0.5f);
+            p.lineTo(x + w * 0.32f, y + h * 0.88f);
+            break;
+        case IconKind::Lock:
+            p.addRoundedRectangle(x + w * 0.18f, y + h * 0.42f, w * 0.64f, h * 0.48f, 1.8f);
+            p.addCentredArc(x + w * 0.5f, y + h * 0.42f, w * 0.22f, h * 0.28f, 0.0f, juce::MathConstants<float>::pi, 0.0f, true);
+            break;
     }
 
     g.setColour(colour);
-    if (kind == IconKind::Play || kind == IconKind::Stop || kind == IconKind::Drag || kind == IconKind::Settings)
+    if (kind == IconKind::Play || kind == IconKind::Stop || kind == IconKind::Drag
+        || kind == IconKind::Settings || kind == IconKind::Sparkle)
         g.fillPath(p);
     else
         g.strokePath(p, juce::PathStrokeType(1.7f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
@@ -513,6 +541,133 @@ void GenerateButton::paintButton(juce::Graphics& g, bool, bool down)
     g.setColour(juce::Colours::white);
     g.drawText(busy ? "Generating" : "Generate", getLocalBounds(), juce::Justification::centred, false);
 }
+
+InspireButton::InspireButton() : juce::Button("Inspire") {}
+
+void InspireButton::setBusy(bool shouldBusy)
+{
+    if (busy == shouldBusy)
+        return;
+    busy = shouldBusy;
+    repaint();
+}
+
+void InspireButton::tick()
+{
+    const float previousHover = hover;
+    tickToward(hover, isMouseOver() || isDown() ? 1.0f : 0.0f, 0.28f);
+    if (busy)
+        pulse += 0.13f;
+    if (busy || std::abs(hover - previousHover) > 0.01f)
+        repaint();
+}
+
+void InspireButton::paintButton(juce::Graphics& g, bool, bool down)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(0.5f);
+    const float glow = busy ? 0.45f + 0.4f * (0.5f + 0.5f * std::sin(pulse)) : 0.22f + 0.28f * hover;
+    g.setColour(Theme::accentCoral.withAlpha(0.14f * glow));
+    g.fillRoundedRectangle(bounds.expanded(3.0f, 2.0f), 16.0f);
+    Theme::fillGlass(g, bounds, 12.0f);
+    g.setColour(Theme::accentViolet.interpolatedWith(Theme::accentCoral, 0.45f).withAlpha(0.55f + 0.35f * hover));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 12.0f, down ? 1.8f : 1.2f);
+    auto icon = bounds.removeFromLeft(36.0f).reduced(8.0f, 12.0f);
+    drawIcon(g, IconKind::Dice, icon, juce::Colours::white);
+    g.setFont(Theme::medium(15.5f));
+    g.setColour(juce::Colours::white);
+    g.drawText(busy ? "Rolling" : "Inspire", bounds.withTrimmedRight(8.0f), juce::Justification::centred, false);
+}
+
+MoodChip::MoodChip(InspireMood m) : juce::Button(moodName(m)), mood(m)
+{
+    setClickingTogglesState(false);
+}
+
+void MoodChip::tick()
+{
+    const float previous = hover;
+    tickToward(hover, isMouseOver() || getToggleState() ? 1.0f : 0.0f);
+    if (std::abs(hover - previous) > 0.01f)
+        repaint();
+}
+
+void MoodChip::paintButton(juce::Graphics& g, bool, bool down)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    const bool on = getToggleState();
+    if (on)
+        Theme::fillAccentGradient(g, bounds, down ? 0.88f : 1.0f);
+    else
+    {
+        g.setColour(Theme::panel.brighter(0.10f * hover));
+        g.fillRoundedRectangle(bounds, 13.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.08f + 0.10f * hover));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 13.0f, 1.0f);
+    }
+    g.setFont(Theme::medium(12.0f));
+    g.setColour(on ? juce::Colours::white : Theme::label);
+    g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred, false);
+}
+
+void CaptionPill::setText(juce::String t)
+{
+    if (text == t)
+        return;
+    text = std::move(t);
+    repaint();
+}
+
+void CaptionPill::setLocked(bool shouldLock)
+{
+    if (locked == shouldLock)
+        return;
+    locked = shouldLock;
+    repaint();
+}
+
+void CaptionPill::tick()
+{
+    const float previous = hover;
+    tickToward(hover, hovered ? 1.0f : 0.0f);
+    if (std::abs(hover - previous) > 0.01f)
+        repaint();
+}
+
+void CaptionPill::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(0.5f);
+    Theme::fillGlass(g, bounds, 11.0f);
+    if (locked)
+    {
+        g.setColour(Theme::accentViolet.withAlpha(0.22f + 0.12f * hover));
+        g.fillRoundedRectangle(bounds, 11.0f);
+        g.setColour(Theme::accentViolet.withAlpha(0.7f));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 11.0f, 1.0f);
+    }
+    else
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.06f + 0.08f * hover));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 11.0f, 1.0f);
+    }
+    auto textArea = getLocalBounds().reduced(8, 0);
+    if (locked)
+    {
+        auto lock = textArea.removeFromRight(14).toFloat().reduced(1.0f, 6.0f);
+        drawIcon(g, IconKind::Lock, lock, Theme::accentHover);
+    }
+    g.setFont(Theme::medium(11.5f));
+    g.setColour(Theme::label);
+    g.drawText(text, textArea, juce::Justification::centred, false);
+}
+
+void CaptionPill::mouseUp(const juce::MouseEvent& e)
+{
+    if (e.mouseWasClicked() && onClick)
+        onClick();
+}
+
+void CaptionPill::mouseEnter(const juce::MouseEvent&) { hovered = true; repaint(); }
+void CaptionPill::mouseExit(const juce::MouseEvent&) { hovered = false; repaint(); }
 
 void ParamPill::setText(juce::String t)
 {
@@ -931,7 +1086,29 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     for (int i = 0; i < numGenres; ++i)
     {
         auto* chip = genreChips.add(new GenreChip(static_cast<Genre>(i)));
-        chip->onClick = [this, i]() { chooseGenre(static_cast<Genre>(i)); };
+        chip->onClick = [this, i]()
+        {
+            inspireLocks.genre = true;
+            captionGenre.setLocked(true);
+            chooseGenre(static_cast<Genre>(i));
+        };
+        addAndMakeVisible(chip);
+    }
+
+    for (int i = 0; i < numMoods; ++i)
+    {
+        const auto mood = static_cast<InspireMood>(i);
+        auto* chip = moodChips.add(new MoodChip(mood));
+        chip->onClick = [this, chip]()
+        {
+            const bool already = chip->getToggleState();
+            inspireLocks.mood = !already;
+            captionMood.setLocked(inspireLocks.mood);
+            for (auto* other : moodChips)
+                other->setToggleState(false, juce::dontSendNotification);
+            if (inspireLocks.mood)
+                chip->setToggleState(true, juce::dontSendNotification);
+        };
         addAndMakeVisible(chip);
     }
 
@@ -941,6 +1118,68 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
             onGenerateClicked();
     };
     addAndMakeVisible(generateButton);
+
+    inspireButton.onClick = [this]()
+    {
+        if (!audioProcessor.isGenerating())
+            onInspireClicked();
+    };
+    addAndMakeVisible(inspireButton);
+
+    captionGenre.onClick = [this]()
+    {
+        inspireLocks.genre = !inspireLocks.genre;
+        captionGenre.setLocked(inspireLocks.genre);
+    };
+    captionKey.onClick = [this]()
+    {
+        inspireLocks.key = !inspireLocks.key;
+        captionKey.setLocked(inspireLocks.key);
+    };
+    captionTempo.onClick = [this]()
+    {
+        inspireLocks.tempo = !inspireLocks.tempo;
+        captionTempo.setLocked(inspireLocks.tempo);
+        if (inspireLocks.tempo)
+        {
+            followHostTempoButton.setToggleState(false, juce::dontSendNotification);
+            audioProcessor.setFollowHostTempo(false);
+        }
+    };
+    captionMood.onClick = [this]()
+    {
+        inspireLocks.mood = !inspireLocks.mood;
+        captionMood.setLocked(inspireLocks.mood);
+        if (!inspireLocks.mood)
+            refreshMoodChips();
+    };
+    addAndMakeVisible(captionGenre);
+    addAndMakeVisible(captionKey);
+    addAndMakeVisible(captionTempo);
+    addAndMakeVisible(captionMood);
+
+    inspireBack.onClick = [this]() { showInspireHistory(inspireIndex - 1); };
+    inspireForward.onClick = [this]() { showInspireHistory(inspireIndex + 1); };
+    addAndMakeVisible(inspireBack);
+    addAndMakeVisible(inspireForward);
+
+    againButton.setButtonText("Again");
+    againButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.06f));
+    againButton.setColour(juce::TextButton::textColourOffId, Theme::label);
+    againButton.setTooltip("Roll another idea (keeps locked pills)");
+    againButton.onClick = [this]()
+    {
+        if (!audioProcessor.isGenerating())
+            onInspireAgain();
+    };
+    addAndMakeVisible(againButton);
+    inspireBack.setVisible(false);
+    inspireForward.setVisible(false);
+    againButton.setVisible(false);
+    captionGenre.setVisible(false);
+    captionKey.setVisible(false);
+    captionTempo.setVisible(false);
+    captionMood.setVisible(false);
 
     importButton.setButtonText("Import MIDI");
     importButton.onClick = [this]() { onImportClicked(); };
@@ -1193,8 +1432,8 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     refreshPills();
 
     setResizable(true, true);
-    setResizeLimits(680, 580, 1280, 1100);
-    setSize(800, 780);
+    setResizeLimits(680, 640, 1280, 1100);
+    setSize(800, 840);
     rebuildBackdrop();
     startTimerHz(30);
 }
@@ -1536,8 +1775,46 @@ void SynthesiaAIEditor::resized()
     for (auto* chip : genreChips)
         chip->setBounds(chipRow.removeFromLeft(chipW).reduced(4, 1));
 
-    area.removeFromTop(14);
-    generateButton.setBounds(area.removeFromTop(48));
+    area.removeFromTop(8);
+    auto moodRow = area.removeFromTop(26);
+    const int moodW = moodRow.getWidth() / juce::jmax(1, moodChips.size());
+    for (auto* chip : moodChips)
+        chip->setBounds(moodRow.removeFromLeft(moodW).reduced(4, 1));
+
+    area.removeFromTop(12);
+    auto actionRow = area.removeFromTop(48);
+    const int actionGap = 10;
+    const int inspireW = juce::jmax(168, actionRow.getWidth() * 38 / 100);
+    generateButton.setBounds(actionRow.removeFromLeft(actionRow.getWidth() - inspireW - actionGap));
+    actionRow.removeFromLeft(actionGap);
+    inspireButton.setBounds(actionRow);
+
+    if (inspireIndex >= 0)
+    {
+        area.removeFromTop(8);
+        auto captionRow = area.removeFromTop(26);
+        inspireBack.setBounds(captionRow.removeFromLeft(28));
+        captionRow.removeFromLeft(4);
+        againButton.setBounds(captionRow.removeFromRight(70));
+        captionRow.removeFromRight(4);
+        inspireForward.setBounds(captionRow.removeFromRight(28));
+        captionRow.removeFromRight(6);
+        const int pillW = captionRow.getWidth() / 4;
+        captionGenre.setBounds(captionRow.removeFromLeft(pillW).reduced(3, 1));
+        captionKey.setBounds(captionRow.removeFromLeft(pillW).reduced(3, 1));
+        captionTempo.setBounds(captionRow.removeFromLeft(pillW).reduced(3, 1));
+        captionMood.setBounds(captionRow.reduced(3, 1));
+    }
+    else
+    {
+        inspireBack.setBounds({});
+        inspireForward.setBounds({});
+        againButton.setBounds({});
+        captionGenre.setBounds({});
+        captionKey.setBounds({});
+        captionTempo.setBounds({});
+        captionMood.setBounds({});
+    }
     area.removeFromTop(10);
 
     auto secondary = area.removeFromTop(34);
@@ -1669,13 +1946,22 @@ void SynthesiaAIEditor::resized()
 void SynthesiaAIEditor::timerCallback()
 {
     updateUIState();
-    generateButton.setBusy(audioProcessor.isGenerating());
+    const bool busy = audioProcessor.isGenerating();
+    generateButton.setBusy(busy);
     generateButton.tick();
+    inspireButton.setBusy(busy);
+    inspireButton.tick();
     previewOrb.setLevel(audioProcessor.getPreviewLevel());
     previewOrb.setPlaying(audioProcessor.isPreviewPlaying() || audioProcessor.getPlaybackBeat() >= 0.0);
     previewOrb.tick();
     for (auto* chip : genreChips)
         chip->tick();
+    for (auto* chip : moodChips)
+        chip->tick();
+    captionGenre.tick();
+    captionKey.tick();
+    captionTempo.tick();
+    captionMood.tick();
     keyPill.tick();
     tempoPill.tick();
     barsPill.tick();
@@ -1706,6 +1992,8 @@ MidiGenerationParams SynthesiaAIEditor::collectParams() const
     params.humanizeMs = humanizeSlider.getValue();
     params.density = (float) (densitySlider.getValue() / 100.0);
     params.seed = static_cast<unsigned int>(seedSlider.getValue());
+    if (inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
+        params.grooveIndex = inspireHistory[(size_t) inspireIndex].params.grooveIndex;
     if (styleProfileComboBox.getSelectedId() > 1)
     {
         params.styleProfileName = styleProfileComboBox.getText().toStdString();
@@ -1891,6 +2179,129 @@ void SynthesiaAIEditor::onGenerateClicked()
     }
     audioProcessor.generateMidi(collectParams());
     statusLabel.setText("Generating...", juce::dontSendNotification);
+}
+
+void SynthesiaAIEditor::onInspireClicked()
+{
+    InspireIdea base;
+    if (inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
+        base = inspireHistory[(size_t) inspireIndex];
+    else
+        base.params = collectParams();
+
+    if (inspireLocks.genre)
+        base.params.genre = genreValue;
+    if (inspireLocks.key)
+    {
+        base.params.rootNote = keyIndex;
+        base.params.scale = selectedScale();
+    }
+    if (inspireLocks.tempo)
+        base.params.tempo = tempoValue;
+    if (inspireLocks.mood)
+    {
+        for (auto* chip : moodChips)
+            if (chip->getToggleState())
+                base.mood = chip->getMood();
+    }
+
+    auto idea = rollInspire(&base, inspireLocks, inspireRng);
+    pushInspireHistory(std::move(idea));
+    applyInspireIdea(inspireHistory[(size_t) inspireIndex], true);
+}
+
+void SynthesiaAIEditor::onInspireAgain()
+{
+    onInspireClicked();
+}
+
+void SynthesiaAIEditor::applyInspireIdea(const InspireIdea& idea, bool generate)
+{
+    if (!inspireLocks.tempo)
+    {
+        followHostTempoButton.setToggleState(false, juce::dontSendNotification);
+        audioProcessor.setFollowHostTempo(false);
+    }
+    applyParamsToUI(idea.params);
+    audioProcessor.loadGenreSounds(idea.params.genre);
+    refreshInspireCaption();
+    refreshMoodChips();
+    resized();
+    if (generate)
+    {
+        audioProcessor.setGeneratorType(GeneratorType::Genre);
+        audioProcessor.generateMidi(idea.params);
+        statusLabel.setText("Generating...", juce::dontSendNotification);
+    }
+}
+
+void SynthesiaAIEditor::pushInspireHistory(InspireIdea idea)
+{
+    if (inspireIndex + 1 < (int) inspireHistory.size())
+        inspireHistory.resize((size_t) inspireIndex + 1);
+    inspireHistory.push_back(std::move(idea));
+    while (inspireHistory.size() > 10)
+        inspireHistory.erase(inspireHistory.begin());
+    inspireIndex = (int) inspireHistory.size() - 1;
+}
+
+void SynthesiaAIEditor::showInspireHistory(int index)
+{
+    if (inspireHistory.empty())
+        return;
+    index = juce::jlimit(0, (int) inspireHistory.size() - 1, index);
+    inspireIndex = index;
+    applyInspireIdea(inspireHistory[(size_t) index], true);
+}
+
+void SynthesiaAIEditor::refreshInspireCaption()
+{
+    const bool has = inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size();
+    captionGenre.setVisible(has);
+    captionKey.setVisible(has);
+    captionTempo.setVisible(has);
+    captionMood.setVisible(has);
+    inspireBack.setVisible(has);
+    inspireForward.setVisible(has);
+    againButton.setVisible(has);
+    if (!has)
+        return;
+
+    const auto& idea = inspireHistory[(size_t) inspireIndex];
+    captionGenre.setText(idea.genreLabel);
+    captionKey.setText(idea.keyLabel);
+    captionTempo.setText(idea.tempoLabel);
+    captionMood.setText(idea.moodLabel);
+    captionGenre.setLocked(inspireLocks.genre);
+    captionKey.setLocked(inspireLocks.key);
+    captionTempo.setLocked(inspireLocks.tempo);
+    captionMood.setLocked(inspireLocks.mood);
+    inspireBack.setEnabled(inspireIndex > 0);
+    inspireForward.setEnabled(inspireIndex + 1 < (int) inspireHistory.size());
+}
+
+void SynthesiaAIEditor::refreshMoodChips()
+{
+    InspireMood current = InspireMood::Chill;
+    bool show = false;
+    if (inspireLocks.mood)
+    {
+        for (auto* chip : moodChips)
+        {
+            if (chip->getToggleState())
+            {
+                current = chip->getMood();
+                show = true;
+            }
+        }
+        if (!show && inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
+        {
+            current = inspireHistory[(size_t) inspireIndex].mood;
+            show = true;
+        }
+    }
+    for (auto* chip : moodChips)
+        chip->setToggleState(show && chip->getMood() == current, juce::dontSendNotification);
 }
 
 void SynthesiaAIEditor::onRegeneratePart(Part part, bool variation)
@@ -2125,6 +2536,9 @@ void SynthesiaAIEditor::updateUIState()
     const bool busy = audioProcessor.isGenerating();
     const bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     dragAllButton.setReady(hasMidi && !busy);
+    generateButton.setEnabled(!busy);
+    inspireButton.setEnabled(!busy);
+    againButton.setEnabled(!busy);
     previewButton.setEnabled(hasMidi && !busy);
     previewButton.setKind(audioProcessor.isPreviewPlaying() ? IconKind::Stop : IconKind::Play);
     exportButton.setEnabled(hasMidi && !busy);
@@ -2184,8 +2598,12 @@ void SynthesiaAIEditor::updateUIState()
     refreshPills();
 
     if (!busy && statusLabel.getText() == "Generating...")
-        statusLabel.setText(hasMidi ? "Ready  ·  drag a part into your DAW" : "Generation failed",
-                            juce::dontSendNotification);
+    {
+        juce::String ready = "Ready  ·  drag a part into your DAW";
+        if (hasMidi && inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
+            ready = inspireHistory[(size_t) inspireIndex].caption;
+        statusLabel.setText(hasMidi ? ready : "Generation failed", juce::dontSendNotification);
+    }
     if (!busy && statusLabel.getText() == "Planning...")
     {
         const auto& plan = audioProcessor.getLastPlan();

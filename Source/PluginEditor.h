@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
+#include "Inspire.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -33,7 +34,8 @@ namespace Theme
 
 enum class IconKind
 {
-    Mute, Unmute, Regen, Drag, Play, Stop, Settings, Chevron, Import, Close
+    Mute, Unmute, Regen, Drag, Play, Stop, Settings, Chevron, Import, Close,
+    Dice, Sparkle, Back, Forward, Lock
 };
 
 void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> bounds, juce::Colour colour);
@@ -96,6 +98,53 @@ public:
 private:
     bool busy{false};
     float pulse{0.0f};
+    float hover{0.0f};
+};
+
+class InspireButton : public juce::Button
+{
+public:
+    InspireButton();
+    void setBusy(bool busy);
+    void tick();
+    void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    bool busy{false};
+    float pulse{0.0f};
+    float hover{0.0f};
+};
+
+class MoodChip : public juce::Button
+{
+public:
+    MoodChip(InspireMood mood);
+    InspireMood getMood() const { return mood; }
+    void tick();
+    void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    InspireMood mood;
+    float hover{0.0f};
+};
+
+class CaptionPill : public juce::Component
+{
+public:
+    std::function<void()> onClick;
+    void setText(juce::String text);
+    void setLocked(bool locked);
+    bool isLocked() const { return locked; }
+    void tick();
+    void paint(juce::Graphics&) override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void mouseEnter(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+
+private:
+    juce::String text;
+    bool locked{false};
+    bool hovered{false};
     float hover{0.0f};
 };
 
@@ -292,6 +341,13 @@ private:
     void applyEngineChoice();
     void setupSectionLabel(juce::Label& label, const juce::String& text);
     void rebuildBackdrop();
+    void onInspireClicked();
+    void onInspireAgain();
+    void applyInspireIdea(const InspireIdea& idea, bool generate);
+    void pushInspireHistory(InspireIdea idea);
+    void showInspireHistory(int index);
+    void refreshInspireCaption();
+    void refreshMoodChips();
     Genre selectedGenre() const;
     ScaleType selectedScale() const;
 
@@ -308,8 +364,18 @@ private:
     juce::TextEditor promptEditor;
     PreviewOrb previewOrb;
     juce::OwnedArray<GenreChip> genreChips;
+    juce::OwnedArray<MoodChip> moodChips;
     GenerateButton generateButton;
+    InspireButton inspireButton;
+    CaptionPill captionGenre;
+    CaptionPill captionKey;
+    CaptionPill captionTempo;
+    CaptionPill captionMood;
+    IconButton inspireBack { IconKind::Back, "Previous idea" };
+    IconButton inspireForward { IconKind::Forward, "Next idea" };
+    juce::TextButton againButton;
     juce::Image backdrop;
+    juce::Random inspireRng;
     juce::TextButton importButton;
     juce::TextButton moreButton;
 
@@ -393,6 +459,9 @@ private:
     bool draggingFiles{false};
     bool applyingPreset{false};
     bool moreOpen{false};
+    InspireLocks inspireLocks;
+    std::vector<InspireIdea> inspireHistory;
+    int inspireIndex{-1};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthesiaAIEditor)
 };
