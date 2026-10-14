@@ -14,12 +14,14 @@ namespace
         p.defaultTempo = 110.0;
         p.defaultGrid = Quantization::Eighth;
         p.defaultExtension = 3;
-        p.majorProgressions = { { "1 5 6 4a9" }, { "6 4 1 5s4" }, { "1 6 4 5" }, { "4 1 5 6" } };
-        p.minorProgressions = { { "1 6 3 7" }, { "6 7 1 1" }, { "1 7 6 7" } };
+        p.majorProgressions = { { "1 5 67 4a9" }, { "67 4 1 5s4" }, { "1 67 4 5" }, { "4 1 5 67" },
+                                { "1 5s4 6 4a9" }, { "1a9 5 67 4s4" } };
+        p.minorProgressions = { { "1 67 3 7" }, { "67 7 1 5D" }, { "1 7 67 5D" }, { "1 67 4 5D" },
+                                { "1 47 67 5D" } };
 
         p.chordStyle = ChordStyle::Pulse;
         p.chordPatterns = { "X-------x-------", "X-----x-------x-", "X-------x---x---", "X---x---X-------" };
-        p.chordVoicing = { 52, 74, 4, false, false };
+        p.chordVoicing = { 48, 64, 4, true, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-R-R-R-R-R-F-A-", "R---..R-R---..A-", "R-.RR-.RR-.RF-A-", "R---R---R---F-A-" };
@@ -28,10 +30,11 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 67, 86, 0.48, 0.3, 0.32, 0.22, 2, false, false, 90 };
+        p.leadMelody = { 71, 90, 0.42, 0.50, 0.44, 0.36, 2, false, false, 92 };
+        p.leadMelody.intervalWeights = { 0.05, 0.1, 0.25, 0.7, 1.6, 2.8, 1.1, 2.8, 1.6, 0.7, 0.25, 0.1, 0.05 };
 
         p.pianoStyle = PianoStyle::Broken;
-        p.pianoVoicing = { 58, 78, 3, false, false };
+        p.pianoVoicing = { 67, 86, 3, false, false };
 
         p.drums.grooves = {
             { "X.......X.......", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "............x...", "" },
@@ -58,12 +61,14 @@ namespace
         p.defaultTempo = 84.0;
         p.defaultGrid = Quantization::Eighth;
         p.defaultExtension = 9;
-        p.majorProgressions = { { "2 5 1 1" }, { "1 6 2 5" }, { "4 3 6 2" }, { "2 5 1 6" } };
-        p.minorProgressions = { { "1 4 7 3" }, { "2 5D 1 1" }, { "1 6 2 5D" } };
+        p.majorProgressions = { { "27 5 19 67 47 37 27 5" }, { "19 67 27 5 19 47 27 5" },
+                                { "4 3 67 27" }, { "27 5 19 67" } };
+        p.minorProgressions = { { "2h 5D 19 67 47 37 2h 5D" }, { "27 5D 19 67" },
+                                { "67 2h 5D 19 47 1 2h 5D" }, { "1 47 7 3 27 5D 19 67" } };
 
         p.chordStyle = ChordStyle::Comping;
         p.chordPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....", "X---------..x---" };
-        p.chordVoicing = { 52, 71, 4, true, false };
+        p.chordVoicing = { 50, 64, 4, true, false };
 
         p.bassStyle = BassStyle::Walking;
         p.bassPatterns = { "R-------R-------", "R---F---R---A---", "R-T-F-A-R-T-F-A-" };
@@ -72,10 +77,11 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 67, 84, 0.28, 0.45, 0.48, 0.28, 2, true, false, 80 };
+        p.leadMelody = { 72, 90, 0.28, 0.46, 0.52, 0.42, 2, true, false, 80 };
+        p.leadMelody.intervalWeights = { 0.1, 0.2, 0.4, 0.9, 1.6, 2.4, 1.4, 2.4, 1.6, 0.9, 0.4, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 58, 78, 0.26, 0.4, 0.5, 0.22, 1, true, true, 76 };
+        p.pianoMelody = { 70, 86, 0.26, 0.42, 0.50, 0.32, 1, true, true, 76 };
 
         p.drums.grooves = {
             { "X.......x.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
@@ -105,12 +111,12 @@ namespace
         p.defaultTempo = 124.0;
         p.defaultGrid = Quantization::Sixteenth;
         p.defaultExtension = 7;
-        p.majorProgressions = { { "6 4 1 5" }, { "1 5 6 4" }, { "4 5 6 6" } };
-        p.minorProgressions = { { "1 6 3 7" }, { "1 7 6 7" }, { "1 4 1 4" }, { "1 6 7 1" } };
+        p.majorProgressions = { { "1 5 6 4s4" }, { "67 4 1 5D" }, { "1 5s4 67 4" }, { "1 5 67 4" } };
+        p.minorProgressions = { { "1 67 3 7" }, { "1 5D 67 4" }, { "1 4 1 4s4" }, { "67 4 1 5D" } };
 
         p.chordStyle = ChordStyle::Stabs;
         p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
-        p.chordVoicing = { 55, 76, 4, false, false };
+        p.chordVoicing = { 48, 64, 4, true, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "..R-..R-..R-..R-", "..R-..O-..R-..R-", "..R-..R-..R-.RA-", "R-..R-..R-..R-.." };
@@ -118,12 +124,13 @@ namespace
         p.bassHigh = 46;
         p.slideChance = 0.0;
 
-        p.leadStyle = LeadStyle::Arp;
-        p.leadArp = { 67, 91, { arpUpDown, arpUp, arpSkip }, 0.50, 84 };
+        p.leadStyle = LeadStyle::Melody;
+        p.leadMelody = { 67, 84, 0.34, 0.38, 0.50, 0.40, 2, false, false, 86 };
+        p.leadMelody.intervalWeights = { 0.0, 0.05, 0.1, 0.3, 0.8, 1.6, 2.6, 1.6, 0.8, 0.3, 0.1, 0.05, 0.0 };
 
         p.pianoStyle = PianoStyle::Comp;
         p.pianoPatterns = { "X--x--x---------", "X--x--x---x-----", "........x--x--x-", "x--x------------" };
-        p.pianoVoicing = { 64, 86, 3, false, false };
+        p.pianoVoicing = { 71, 88, 3, false, false };
 
         p.drums.grooves = {
             { "X...X...X...X...", "", "....X.......X...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", "" },
@@ -149,13 +156,14 @@ namespace
         p.genre = Genre::Trap;
         p.defaultTempo = 140.0;
         p.defaultGrid = Quantization::Sixteenth;
-        p.defaultExtension = 3;
-        p.majorProgressions = { { "6 4 1 5" }, { "1 5 6 4", 2.0 }, { "6 3 4 4" } };
-        p.minorProgressions = { { "1 6", 2.0 }, { "1 6 3 7" }, { "1 4 6 5D" }, { "1 b2 1 6" } };
+        p.defaultExtension = 7;
+        p.majorProgressions = { { "67 4 1 5 67 2h 1 5" }, { "67 2h 5D 1 47 67 1 5" }, { "1 67 4 5D" } };
+        p.minorProgressions = { { "2h 5D 1 67 47 3 2h 5D" }, { "1 47 67 5D 2h 1 67 4" },
+                                { "1 2h 67 5D 1 47 2h 5D" }, { "67 2h 5D 19 1 47 67 5D" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X---x---X---x---", "X-----x---x-----", "X-..x-----x-....", "X-------x-x-----" };
-        p.chordVoicing = { 55, 74, 4, false, false };
+        p.chordPatterns = { "X-----------x---", "X-------x-------", "X-----------....", "X-----.........." };
+        p.chordVoicing = { 58, 74, 4, true, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-------..R---R-", "R-----R-----O---", "R---------R-.R--", "R-------R---..A-" };
@@ -164,10 +172,11 @@ namespace
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 74, 93, 0.36, 0.55, 0.42, 0.18, 1, false, false, 84 };
+        p.leadMelody = { 79, 98, 0.30, 0.52, 0.50, 0.34, 2, false, false, 84 };
+        p.leadMelody.intervalWeights = { 0.15, 0.2, 0.35, 0.6, 1.1, 1.8, 1.8, 1.8, 1.1, 0.6, 0.35, 0.2, 0.15 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 55, 70, 0.22, 0.3, 0.55, 0.38, 2, false, true, 74 };
+        p.pianoMelody = { 76, 93, 0.22, 0.34, 0.58, 0.40, 2, false, true, 74 };
 
         p.drums.grooves = {
             { "X---------------", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "..............x.", "" },
@@ -195,12 +204,12 @@ namespace
         p.defaultTempo = 88.0;
         p.defaultGrid = Quantization::Sixteenth;
         p.defaultExtension = 9;
-        p.majorProgressions = { { "4 3 2 1" }, { "211 5 1 4" }, { "4 3 6 2" } };
-        p.minorProgressions = { { "111 4 111 4" }, { "1 4 7 3" }, { "6 7 1 1" } };
+        p.majorProgressions = { { "4 3 27 1" }, { "211 5 19 4" }, { "4 3 67 27" } };
+        p.minorProgressions = { { "111 4 67 4" }, { "1 47 7 3" }, { "67 27 5D 19" } };
 
         p.chordStyle = ChordStyle::Comping;
         p.chordPatterns = { "X-----------..x-", "X---------..x---", "X-------..x-x---", "..x-----..x-----" };
-        p.chordVoicing = { 53, 73, 5, true, false };
+        p.chordVoicing = { 50, 64, 4, true, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R--.....R-.F..A-", "R---..TR-...O.A.", "R-----..F-.R..A-", "R-.T..R-R-.F..A-" };
@@ -209,10 +218,11 @@ namespace
         p.slideChance = 0.15;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 65, 84, 0.38, 0.5, 0.42, 0.28, 2, true, false, 82 };
+        p.leadMelody = { 72, 90, 0.34, 0.48, 0.48, 0.32, 2, true, false, 82 };
+        p.leadMelody.intervalWeights = { 0.1, 0.2, 0.35, 0.8, 1.5, 2.2, 1.3, 2.2, 1.5, 0.8, 0.35, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Melodic;
-        p.pianoMelody = { 57, 76, 0.26, 0.5, 0.5, 0.22, 1, true, true, 74 };
+        p.pianoMelody = { 70, 86, 0.24, 0.45, 0.50, 0.30, 1, true, true, 74 };
 
         p.drums.grooves = {
             { "X.......X.......", "....X.......X...", "", "x...x...x...x...", "............x...", "" },
@@ -240,13 +250,15 @@ namespace
         p.genre = Genre::Cinematic;
         p.defaultTempo = 80.0;
         p.defaultGrid = Quantization::Eighth;
-        p.defaultExtension = 3;
-        p.majorProgressions = { { "1 5 6 3 4 1 4 5" }, { "1 b6 b7 1" }, { "6 4 1 5s4" } };
-        p.minorProgressions = { { "1 6 3 7" }, { "1 6 4 5D" }, { "1 3 7 4" } };
+        p.defaultExtension = 7;
+        p.majorProgressions = { { "1s4 5 6a9 4 1 5s4 67 4a9" }, { "1 5s4 67 4a9" },
+                                { "1 b6 b7 1s4 4 5 6a9 1" }, { "1 5 6 3" } };
+        p.minorProgressions = { { "1s4 67 3 7 4a9 5D 1 7" }, { "1 67 4a9 5D" },
+                                { "1 3s4 7 4 1s4 67 3 7" }, { "1 b6 b7 4a9 1s4 67 3 1" } };
 
         p.chordStyle = ChordStyle::Sustained;
         p.chordPatterns = { "X---------------", "X-------x-------", "X-----------x---" };
-        p.chordVoicing = { 52, 76, 4, false, true };
+        p.chordVoicing = { 48, 64, 4, false, true };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R---------------", "R-------F-------", "R-------R-------", "R-----------F---" };
@@ -255,10 +267,11 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 69, 90, 0.26, 0.15, 0.38, 0.5, 2, false, false, 80 };
+        p.leadMelody = { 74, 94, 0.24, 0.18, 0.50, 0.55, 2, false, false, 80 };
+        p.leadMelody.intervalWeights = { 0.2, 0.3, 0.5, 0.9, 1.5, 2.0, 1.2, 2.0, 1.5, 0.9, 0.5, 0.3, 0.2 };
 
         p.pianoStyle = PianoStyle::Arpeggio;
-        p.pianoArp = { 48, 74, { arpRolling, arpSkip, arpUpDown }, 0.92, 70 };
+        p.pianoArp = { 70, 90, { arpRolling, arpSkip, arpUpDown }, 0.92, 70 };
 
         p.drums.grooves = {
             { "X...............", "", "", "", "", "........x......." },
