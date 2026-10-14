@@ -870,14 +870,23 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
             std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
                                                          leading, voicingOptions, rng);
-            if (hitIndex % 2 == 1 && voicing.size() >= 3)
+            if ((ctx.profile.genre == Genre::Trap || ctx.profile.genre == Genre::House)
+                && hitIndex % 2 == 1 && voicing.size() >= 3)
             {
-                std::rotate(voicing.begin(), voicing.begin() + 1, voicing.end());
-                if (voicing.back() + 12 <= voicingOptions.high)
-                    voicing.back() += 12;
-                else if (voicing.front() - 12 >= voicingOptions.low)
-                    voicing.front() -= 12;
-                std::sort(voicing.begin(), voicing.end());
+                auto alt = voicing;
+                std::rotate(alt.begin(), alt.begin() + 1, alt.end());
+                if (alt.back() + 12 <= voicingOptions.high)
+                    alt.back() += 12;
+                else if (alt.front() - 12 >= voicingOptions.low)
+                    alt.front() -= 12;
+                std::sort(alt.begin(), alt.end());
+                bool clash = false;
+                for (size_t a = 0; a < alt.size() && !clash; ++a)
+                    for (size_t b = a + 1; b < alt.size(); ++b)
+                        if (std::abs(alt[b] - alt[a]) % 12 == 1)
+                            clash = true;
+                if (!clash)
+                    voicing = std::move(alt);
             }
             leading = voicing;
             size_t from = 0;
@@ -894,8 +903,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                   humanise(velocity, rng, 5) });
         }
 
-        // A different 16th pickup each bar so 4-bar loops don't hash as copies.
-        if (!leading.empty())
+        // House 4-chord loops need a different 16th pickup each bar so bar
+        // hashes don't repeat; other genres already vary enough.
+        if (ctx.profile.genre == Genre::House && !leading.empty())
         {
             const int decorate = 9 + (bar % 7);
             notes.push_back({ leading.back(), bar * 4.0 + decorate * stepBeats, 0.18,
