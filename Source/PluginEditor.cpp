@@ -248,11 +248,17 @@ void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> b, juce::
             p.lineTo(x, y + h);
             break;
         case IconKind::Dice:
-            p.addRoundedRectangle(x, y, w, h, 2.4f);
-            p.addEllipse(x + w * 0.18f, y + h * 0.18f, w * 0.18f, h * 0.18f);
-            p.addEllipse(x + w * 0.41f, y + h * 0.41f, w * 0.18f, h * 0.18f);
-            p.addEllipse(x + w * 0.64f, y + h * 0.64f, w * 0.18f, h * 0.18f);
-            break;
+        {
+            juce::Path box;
+            box.addRoundedRectangle(x, y, w, h, 2.6f);
+            g.setColour(colour);
+            g.strokePath(box, juce::PathStrokeType(1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            const float pip = juce::jmax(2.2f, w * 0.16f);
+            g.fillEllipse(x + w * 0.18f, y + h * 0.18f, pip, pip);
+            g.fillEllipse(x + w * 0.42f, y + h * 0.42f, pip, pip);
+            g.fillEllipse(x + w * 0.66f, y + h * 0.66f, pip, pip);
+            return;
+        }
         case IconKind::Sparkle:
             p.addTriangle(x + w * 0.5f, y, x + w * 0.62f, y + h * 0.38f, x + w * 0.38f, y + h * 0.38f);
             p.addTriangle(x + w * 0.5f, y + h, x + w * 0.62f, y + h * 0.62f, x + w * 0.38f, y + h * 0.62f);
@@ -1078,7 +1084,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     promptEditor.setMultiLine(true);
     promptEditor.setReturnKeyStartsNewLine(true);
     promptEditor.setFont(Theme::regular(16.0f));
-    promptEditor.setTextToShowWhenEmpty("Describe your track  ·  optional", Theme::dimText);
+    promptEditor.setTextToShowWhenEmpty("Describe your track  -  optional", Theme::dimText);
     promptEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground.withAlpha(0.55f));
     addAndMakeVisible(promptEditor);
     addAndMakeVisible(previewOrb);
