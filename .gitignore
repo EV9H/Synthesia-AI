@@ -49,3 +49,11 @@ UserSettings.txt
 
 # JUCE
 JuceLibraryCode/
+
+# Eval harness caches (reference MIDI, pluginval, venv)
+.cache/
+__pycache__/
+*.pyc
+
+# Generated eval clips may be large; keep report.md/json
+eval-reports/**/clips/

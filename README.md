@@ -290,6 +290,24 @@ cd build
 ctest --output-on-failure
 ```
 
+### Self-evaluation harness
+
+Offline quality checks (no feature changes). Plugin validation plus MIDI
+pro-likeness vs public reference subsets (Groove MIDI drums, MAESTRO / in-repo
+harmony). Optional Groq critic if `GROQ_API_KEY` is set.
+
+```bash
+# Full run: build VST3, pluginval (strictness 5+), N clips/genre, lint, score, 3 MP3s
+Tools/eval/run_eval.sh
+
+N=3 SKIP_PLUGINVAL=1 Tools/eval/run_eval.sh   # MIDI scoring only
+Tools/validate_plugin.sh                      # VST3 + pluginval / Steinberg validator
+```
+
+Reports: `eval-reports/<date>/report.md` and `report.json`. Reference MIDI and
+pluginval land in `.cache/eval/` (gitignored). Steinberg’s `validator` is used
+when `VST3_SDK_DIR` or `validator` is on `PATH`; otherwise it is skipped.
+
 ## CI/CD
 
 GitHub Actions automatically builds and tests on:
@@ -324,6 +342,9 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │       └── LLMGenerator.{h,cpp}    # LLM planner (JSON plan only)
 ├── Tools/plans/                    # Example arrangement-plan JSON files
 ├── Tools/midi/                     # Small MIDI fixtures for import / style-learning demos
+├── Tools/validate_plugin.sh        # Build VST3, pluginval, optional Steinberg validator
+├── Tools/eval/                     # MIDI pro-likeness, lint, optional Groq critic
+├── eval-reports/                   # Dated markdown/JSON eval reports
 ├── Samples/                        # CC0 preview drums + pitched instruments + licenses
 ├── Tests/                          # Unit tests
 ├── CMakeLists.txt                  # Build configuration
