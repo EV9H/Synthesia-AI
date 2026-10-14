@@ -85,6 +85,7 @@ def critic_clip(clip: Clip, genre: str) -> dict[str, Any] | None:
         headers={
             "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; SynthesiaEval/1.0)",
         },
         method="POST",
     )

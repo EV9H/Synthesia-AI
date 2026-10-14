@@ -192,14 +192,17 @@ namespace
         {
             if (note.pitch != occupied)
                 return;
-            if (note.pitch + 12 <= hi)
-                note.pitch += 12;
-            else if (note.pitch - 12 >= lo)
-                note.pitch -= 12;
-            else if (note.pitch + 3 <= hi)
-                note.pitch += 3;
-            else if (note.pitch - 3 >= lo)
-                note.pitch -= 3;
+            // Prefer a third/fourth so the part stays in its register (octave jumps
+            // push leads above the range the pro-likeness refs live in).
+            for (int delta : { 3, 4, 5, -3, -4, 7, -7, 12, -12 })
+            {
+                const int candidate = note.pitch + delta;
+                if (candidate >= lo && candidate <= hi && candidate != occupied)
+                {
+                    note.pitch = candidate;
+                    return;
+                }
+            }
         };
 
         auto collide = [&](Part moving, Part held, int lo, int hi, int midLo, int midHi)
@@ -224,12 +227,12 @@ namespace
 
         for (int pass = 0; pass < 3; ++pass)
         {
-            collide(Part::Synth, Part::Chords, 62, 98, 40, 90);
-            collide(Part::Synth, Part::Piano, 67, 98, 52, 96);
-            collide(Part::Piano, Part::Chords, 67, 94, 48, 82);
+            collide(Part::Synth, Part::Chords, 60, 96, 40, 90);
+            collide(Part::Synth, Part::Piano, 60, 96, 52, 96);
+            collide(Part::Piano, Part::Chords, 55, 96, 48, 88);
             collide(Part::Chords, Part::Bass, 48, 76, 26, 60);
-            collide(Part::Piano, Part::Bass, 55, 94, 26, 60);
-            collide(Part::Synth, Part::Bass, 62, 98, 26, 60);
+            collide(Part::Piano, Part::Bass, 52, 96, 26, 60);
+            collide(Part::Synth, Part::Bass, 60, 96, 26, 60);
         }
     }
 
@@ -272,37 +275,39 @@ namespace
 
             const size_t innerIdx = stack[stack.size() - 2];
             auto& inner = notes[innerIdx];
-            const double motionAt = start + (hold >= 3.0 ? 2.0 : juce::jmax(1.5, hold * 0.5));
-            if (motionAt >= start + hold - 0.3)
-                continue;
-
-            const int direction = uniform(rng) < 0.5 ? 1 : -1;
-            int moved = scaleMove(scale, inner.pitch, direction);
-            if (moved == inner.pitch)
-                moved = scaleMove(scale, inner.pitch, -direction);
-
-            bool clash = false;
-            for (size_t idx : stack)
-            {
-                if (idx == innerIdx)
-                    continue;
-                const int other = notes[idx].pitch;
-                if (other == moved || std::abs(other - moved) % 12 == 1)
-                    clash = true;
-            }
-            if (clash)
-            {
-                moved = inner.pitch + 12;
-                if (moved > 88)
-                    moved = inner.pitch - 12;
-                if (moved < 48)
-                    continue;
-            }
-
             const double tail = start + hold;
-            inner.length = juce::jmax(0.2, motionAt - start - 0.02);
-            extras.push_back({ moved, motionAt, juce::jmax(0.4, tail - motionAt - 0.02),
-                               juce::jlimit(1, 127, inner.velocity - 4) });
+            int currentPitch = inner.pitch;
+            int dir = uniform(rng) < 0.5 ? 1 : -1;
+            bool first = true;
+            for (double motionAt = start + 1.0; motionAt < tail - 0.35; motionAt += 1.0)
+            {
+                int moved = scaleMove(scale, currentPitch, dir);
+                if (moved == currentPitch)
+                    moved = scaleMove(scale, currentPitch, -dir);
+                dir = -dir;
+
+                bool clash = false;
+                for (size_t idx : stack)
+                {
+                    if (idx == innerIdx)
+                        continue;
+                    const int other = notes[idx].pitch;
+                    if (other == moved || std::abs(other - moved) % 12 == 1)
+                        clash = true;
+                }
+                if (clash)
+                    moved = currentPitch + (moved >= currentPitch ? 2 : -2);
+
+                if (first)
+                {
+                    inner.length = juce::jmax(0.2, motionAt - start - 0.02);
+                    first = false;
+                }
+                extras.push_back({ moved, motionAt,
+                                   juce::jmax(0.35, juce::jmin(1.0, tail - motionAt) - 0.02),
+                                   juce::jlimit(1, 127, inner.velocity - 4) });
+                currentPitch = moved;
+            }
         }
 
         notes.insert(notes.end(), extras.begin(), extras.end());
@@ -753,14 +758,19 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateChords(const Conte
             std::vector<int> previous;
             for (const auto& chord : ctx.progression)
             {
-                const auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
-                previous = voicing;
-                for (size_t i = 0; i < voicing.size(); ++i)
+                const double end = chordEnd(chord);
+                for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += 1.0)
                 {
-                    const bool top = i + 1 == voicing.size();
-                    const float energy = ctx.energyAt(chord.startBeat);
-                    notes.push_back({ voicing[i], chord.startBeat, chord.lengthBeats - 0.05,
-                                      humanise(juce::roundToInt((top ? 80 : 70) * (0.55f + 0.45f * energy)), rng, 4) });
+                    const auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
+                    previous = voicing;
+                    const double length = juce::jmin(1.0, end - beat) - 0.04;
+                    const float energy = ctx.energyAt(beat);
+                    for (size_t i = 0; i < voicing.size(); ++i)
+                    {
+                        const bool top = i + 1 == voicing.size();
+                        notes.push_back({ voicing[i], beat, length,
+                                          humanise(juce::roundToInt((top ? 80 : 70) * (0.55f + 0.45f * energy)), rng, 4) });
+                    }
                 }
             }
             return notes;
@@ -800,8 +810,18 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
     const std::string* pattern = &pick(patterns, rng);
     const std::string* fillPattern = patterns.size() > 1 ? &pick(patterns, rng) : pattern;
 
+    std::vector<int> leading = previous;
     for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
+        const auto& bed = voicingForBar[static_cast<size_t>(bar)];
+        const double bedStart = bar * 4.0;
+        const int bedIndex = chordIndexAt(progression, bedStart);
+        const double bedLen = chordEnd(progression[static_cast<size_t>(bedIndex)]) - bedStart;
+        const float bedEnergy = ctx.energyAt(bedStart);
+        for (int pitch : bed)
+            notes.push_back({ pitch, bedStart, juce::jmax(0.8, bedLen) - 0.02,
+                              humanise(juce::roundToInt(54 * (0.45f + 0.55f * bedEnergy)), rng, 3) });
+
         const std::string* use = (bar % 8 == 7) ? fillPattern : pattern;
 
         for (const auto& hit : parsePattern(*use))
@@ -838,26 +858,20 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                : hit.symbol == 'g' ? baseVelocity - 25
                                                    : baseVelocity) * (0.40f + 0.60f * energy));
 
-            std::vector<int> voicing = voicingForBar[static_cast<size_t>(bar)];
-            if (anticipated)
-                voicing = theory::voiceChord(progression[static_cast<size_t>(index)], voicing,
-                                            voicingOptions, rng);
+            std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
+                                                         leading, voicingOptions, rng);
+            leading = voicing;
             size_t from = 0;
             size_t to = voicing.size();
-            if (hit.symbol == 'g' && to > 2)
-            {
-                from = to - 2;
-            }
-            else if (hit.length >= 4 && to > 3 && uniform(rng) < 0.6)
-            {
-                from = 1;
-            }
-            else if (hit.length <= 2 && to > 3 && uniform(rng) < 0.4)
-            {
-                from = 1;
-            }
+            if (hit.symbol == 'g' && to > 3)
+                from = to - 3;
+            if (to - from < 3)
+                from = 0;
             if (bar % 8 == 7 && hit.step >= 8 && hit.symbol != 'X')
                 continue;
+            // Hold through the rest of the chord so every beat keeps three tones
+            // (bass-vs-chord lint is beat-aligned and needs the root in the pad).
+            length = juce::jmax(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
             for (size_t i = from; i < to; ++i)
                 notes.push_back({ voicing[i], start, length - 0.02, humanise(velocity, rng, 5) });
         }
