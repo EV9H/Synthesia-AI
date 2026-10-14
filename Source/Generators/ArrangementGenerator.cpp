@@ -163,6 +163,151 @@ namespace
         return adjusted;
     }
 
+    bool notesOverlap(const ArrangementGenerator::PartNote& a, const ArrangementGenerator::PartNote& b)
+    {
+        return a.start < b.start + b.length - 0.03 && b.start < a.start + a.length - 0.03;
+    }
+
+    void snapBassToHarmony(Notes& bass, const std::vector<ChordInfo>& progression, int low, int high)
+    {
+        for (auto& note : bass)
+        {
+            const double barBeat = note.start - 4.0 * std::floor(note.start / 4.0 + 1.0e-9);
+            const bool strong = barBeat < 0.14 || (barBeat > 1.86 && barBeat < 2.14);
+            if (!strong)
+                continue;
+            const auto& chord = progression[static_cast<size_t>(chordIndexAt(progression, note.start))];
+            const int rootPc = chord.rootPitchClass;
+            const int fifthPc = (rootPc + 7) % 12;
+            const int pc = ((note.pitch % 12) + 12) % 12;
+            if (pc == rootPc || pc == fifthPc)
+                continue;
+            note.pitch = foldIntoRange(theory::nearestPitchWithClass(rootPc, note.pitch), low, high);
+        }
+    }
+
+    void resolveUnisons(std::map<Part, Notes>& parts)
+    {
+        auto bumpAway = [](ArrangementGenerator::PartNote& note, int occupied, int lo, int hi)
+        {
+            if (note.pitch != occupied)
+                return;
+            if (note.pitch + 12 <= hi)
+                note.pitch += 12;
+            else if (note.pitch - 12 >= lo)
+                note.pitch -= 12;
+            else if (note.pitch + 3 <= hi)
+                note.pitch += 3;
+            else if (note.pitch - 3 >= lo)
+                note.pitch -= 3;
+        };
+
+        auto collide = [&](Part moving, Part held, int lo, int hi, int midLo, int midHi)
+        {
+            auto mit = parts.find(moving);
+            auto hit = parts.find(held);
+            if (mit == parts.end() || hit == parts.end())
+                return;
+            for (auto& a : mit->second)
+            {
+                if (a.pitch < midLo || a.pitch > midHi)
+                    continue;
+                for (const auto& b : hit->second)
+                {
+                    if (a.pitch != b.pitch || !notesOverlap(a, b))
+                        continue;
+                    bumpAway(a, b.pitch, lo, hi);
+                    break;
+                }
+            }
+        };
+
+        for (int pass = 0; pass < 3; ++pass)
+        {
+            collide(Part::Synth, Part::Chords, 62, 98, 40, 90);
+            collide(Part::Synth, Part::Piano, 67, 98, 52, 96);
+            collide(Part::Piano, Part::Chords, 67, 94, 48, 82);
+            collide(Part::Chords, Part::Bass, 48, 76, 26, 60);
+            collide(Part::Piano, Part::Bass, 55, 94, 26, 60);
+            collide(Part::Synth, Part::Bass, 62, 98, 26, 60);
+        }
+    }
+
+    int scaleMove(const std::vector<int>& scale, int pitch, int delta);
+
+    void addInnerVoiceMotion(Notes& notes, const std::vector<int>& scale, std::mt19937& rng)
+    {
+        if (notes.size() < 3)
+            return;
+
+        std::vector<size_t> order(notes.size());
+        for (size_t i = 0; i < order.size(); ++i)
+            order[i] = i;
+        std::sort(order.begin(), order.end(), [&](size_t a, size_t b)
+        {
+            return notes[a].start != notes[b].start ? notes[a].start < notes[b].start
+                                                    : notes[a].pitch < notes[b].pitch;
+        });
+
+        Notes extras;
+        for (size_t i = 0; i < order.size();)
+        {
+            const double start = notes[order[i]].start;
+            std::vector<size_t> stack;
+            size_t j = i;
+            while (j < order.size() && std::abs(notes[order[j]].start - start) < 0.06)
+            {
+                stack.push_back(order[j]);
+                ++j;
+            }
+            i = j;
+            if (stack.size() < 3)
+                continue;
+
+            double hold = notes[stack.front()].length;
+            for (size_t idx : stack)
+                hold = juce::jmin(hold, notes[idx].length);
+            if (hold < 1.45)
+                continue;
+
+            const size_t innerIdx = stack[stack.size() - 2];
+            auto& inner = notes[innerIdx];
+            const double motionAt = start + (hold >= 3.0 ? 2.0 : juce::jmax(1.5, hold * 0.5));
+            if (motionAt >= start + hold - 0.3)
+                continue;
+
+            const int direction = uniform(rng) < 0.5 ? 1 : -1;
+            int moved = scaleMove(scale, inner.pitch, direction);
+            if (moved == inner.pitch)
+                moved = scaleMove(scale, inner.pitch, -direction);
+
+            bool clash = false;
+            for (size_t idx : stack)
+            {
+                if (idx == innerIdx)
+                    continue;
+                const int other = notes[idx].pitch;
+                if (other == moved || std::abs(other - moved) % 12 == 1)
+                    clash = true;
+            }
+            if (clash)
+            {
+                moved = inner.pitch + 12;
+                if (moved > 88)
+                    moved = inner.pitch - 12;
+                if (moved < 48)
+                    continue;
+            }
+
+            const double tail = start + hold;
+            inner.length = juce::jmax(0.2, motionAt - start - 0.02);
+            extras.push_back({ moved, motionAt, juce::jmax(0.4, tail - motionAt - 0.02),
+                               juce::jlimit(1, 127, inner.velocity - 4) });
+        }
+
+        notes.insert(notes.end(), extras.begin(), extras.end());
+    }
+
     int nearestOf(const std::vector<int>& candidates, int target, int fallback)
     {
         int best = fallback;
@@ -501,6 +646,7 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         swingSixteenths = true;
     }
 
+    std::map<Part, PartNotes> generated;
     PartNotes bassNotes;
 
     for (const auto part : allParts)
@@ -549,6 +695,12 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
             }
         }
 
+        if (part == Part::Chords || part == Part::Piano)
+        {
+            const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
+            addInnerVoiceMotion(notes, padScale, rng);
+        }
+
         if (part != Part::Drums)
         {
             applySwing(notes, swing, swingSixteenths);
@@ -559,15 +711,25 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         }
         finalise(notes, ctx.totalBeats);
 
+        generated[part] = notes;
         if (part == Part::Bass)
             bassNotes = notes;
+    }
 
+    if (auto it = generated.find(Part::Bass); it != generated.end())
+        snapBassToHarmony(it->second, result.progression, profile.bassLow, profile.bassHigh);
+    resolveUnisons(generated);
+
+    for (const auto part : allParts)
+    {
+        auto it = generated.find(part);
+        if (it == generated.end())
+            continue;
         if (params.part != Part::All && params.part != part)
             continue;
         if (!partIsEnabled(params, part))
             continue;
-
-        appendToBuffer(notes, partChannel(part), part == Part::Bass ? 12 : 2, result.midi);
+        appendToBuffer(it->second, partChannel(part), part == Part::Bass ? 12 : 2, result.midi);
     }
 
     for (const auto& section : result.sections)
@@ -624,12 +786,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 {
     const auto& progression = ctx.progression;
 
-    std::vector<std::vector<int>> voicings;
     std::vector<int> previous;
-    for (const auto& chord : progression)
+    std::vector<std::vector<int>> voicingForBar(static_cast<size_t>(juce::jmax(1, ctx.params.lengthInBars)));
+    for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
-        voicings.push_back(theory::voiceChord(chord, previous, voicingOptions, rng));
-        previous = voicings.back();
+        const int index = chordIndexAt(progression, bar * 4.0);
+        voicingForBar[static_cast<size_t>(bar)] =
+            theory::voiceChord(progression[static_cast<size_t>(index)], previous, voicingOptions, rng);
+        previous = voicingForBar[static_cast<size_t>(bar)];
     }
 
     PartNotes notes;
@@ -674,7 +838,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                : hit.symbol == 'g' ? baseVelocity - 25
                                                    : baseVelocity) * (0.40f + 0.60f * energy));
 
-            const auto& voicing = voicings[static_cast<size_t>(index)];
+            std::vector<int> voicing = voicingForBar[static_cast<size_t>(bar)];
+            if (anticipated)
+                voicing = theory::voiceChord(progression[static_cast<size_t>(index)], voicing,
+                                            voicingOptions, rng);
             size_t from = 0;
             size_t to = voicing.size();
             if (hit.symbol == 'g' && to > 2)
@@ -759,8 +926,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
                         pitch = root + 7 <= high ? root + 7 : root - 5;
                     else
                     {
-                        const int direction = nextRoot > root ? 1 : -1;
-                        pitch = uniform(rng) < 0.7 ? nextRoot - direction : nextRoot - 2 * direction;
+                        const int fifth = root + 7 <= high ? root + 7 : root - 5;
+                        const int third = root + (chord.intervals.size() > 1 ? chord.intervals[1] % 12 : 4);
+                        pitch = std::abs(fifth - nextRoot) <= std::abs(third - nextRoot) ? fifth : third;
                     }
                     break;
                 }
@@ -768,6 +936,19 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
             }
 
             pitch = foldIntoRange(pitch, low - 2, high + 2);
+
+            // Strong beats (1 and 3) stay on the root or fifth so the bass agrees with the harmony.
+            if (hit.step % 8 == 0)
+            {
+                const int fifth = root + 7 <= high ? root + 7 : root - 5;
+                pitch = (hit.step == 0 || role == 'R') ? root : fifth;
+            }
+            else if (hit.step % 4 == 0 && role != 'A')
+            {
+                const int fifth = root + 7 <= high ? root + 7 : root - 5;
+                if (pitch % 12 != root % 12 && pitch % 12 != fifth % 12)
+                    pitch = fifth;
+            }
 
             double length = hit.length * stepBeats;
             length = juce::jmin(length, chordEnd(chord) - start);
@@ -818,22 +999,35 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
             int pitch;
             if (beat == beats - 1)
             {
-                if (nextRoot == current)
+                int chordApproach = 0;
+                bool found = false;
+                for (int tone : chordTones)
+                {
+                    if (std::abs(tone - nextRoot) <= 3 && tone != nextRoot)
+                    {
+                        chordApproach = tone;
+                        found = true;
+                        if (std::abs(tone - nextRoot) == 1)
+                            break;
+                    }
+                }
+                if (found)
+                    pitch = foldIntoRange(chordApproach, low, high);
+                else if (nextRoot == current)
                     pitch = scaleMove(scale, current, uniform(rng) < 0.5 ? 1 : -1);
                 else
-                {
-                    const int direction = nextRoot > current ? 1 : -1;
-                    pitch = uniform(rng) < 0.6 ? nextRoot - direction
-                                               : scaleMove(scale, nextRoot, -direction);
-                }
+                    pitch = foldIntoRange(root + 7 <= high ? root + 7 : root - 5, low, high);
+            }
+            else if (beat % 2 == 0)
+            {
+                pitch = foldIntoRange(root + 7 <= high ? root + 7 : root - 5, low, high);
             }
             else
             {
                 const int remaining = beats - beat;
                 const double ideal = current + (nextRoot - current) / static_cast<double>(remaining + 1);
-                std::vector<int> candidates = beat == 2 ? chordTones : scale;
-                if (beat != 2)
-                    candidates.insert(candidates.end(), chordTones.begin(), chordTones.end());
+                std::vector<int> candidates = scale;
+                candidates.insert(candidates.end(), chordTones.begin(), chordTones.end());
 
                 double bestScore = 1.0e9;
                 pitch = current;
@@ -841,7 +1035,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
                 {
                     if (candidate == current || std::abs(candidate - current) > 7)
                         continue;
-                    const double score = std::abs(candidate - ideal) + 2.0 * uniform(rng);
+                    const double score = std::abs(candidate - ideal) + 2.0 * uniform(rng)
+                                       + (theory::containsPitchClass(chord, candidate) ? 0.0 : 1.8);
                     if (score < bestScore)
                     {
                         bestScore = score;
@@ -1145,17 +1340,16 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 {
     PartNotes notes;
     std::vector<int> previous;
-    int bass = 45;
 
     for (const auto& chord : ctx.progression)
     {
-        bass = foldIntoRange(theory::nearestPitchWithClass(chord.rootPitchClass, bass), 52, 64);
         const auto voicing = theory::voiceChord(chord, previous, ctx.profile.pianoVoicing, rng);
         previous = voicing;
+        if (voicing.empty())
+            continue;
 
-        const int fifth = bass + (chord.intervals.size() > 2 ? chord.intervals[2] % 12 : 7);
         const auto v = [&voicing](size_t i) { return voicing[juce::jmin(i, voicing.size() - 1)]; };
-        const int sequence[] = { bass, fifth, v(0), v(1), v(2), v(1), v(0), fifth };
+        const int sequence[] = { v(0), v(1), v(2), v(1), v(0), v(2), v(1), v(0) };
 
         const double end = chordEnd(chord);
         int index = 0;
@@ -1201,7 +1395,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
             const float density = ctx.densityAt(part, beat);
             if (index % 2 == 1 && uniform(rng) > 0.35 + 0.65 * density)
                 continue;
-            const int pitch = tones[static_cast<size_t>(shape[index % shape.size()]) % tones.size()];
+            const int rotate = static_cast<int>(std::floor(chord.startBeat / 4.0 + 1.0e-9));
+            const int pitch = tones[static_cast<size_t>(shape[(index + rotate) % shape.size()]) % tones.size()];
             const double inBeat = beat - std::floor(beat);
             const int velocity = role.velocity + (inBeat < 1.0e-6 ? 10 : std::abs(inBeat - 0.5) < 1.0e-6 ? 3 : -4);
             notes.push_back({ pitch, beat, rate * role.gate, humanise(velocity, rng, 4) });
@@ -1236,7 +1431,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
     const auto& progression = ctx.progression;
     const int keyRoot = ctx.params.rootNote;
     const int bars = ctx.params.lengthInBars;
-    const int finest = ctx.finestSteps;
+    const int finest = (role.syncopation >= 0.32
+                        || ctx.profile.genre == Genre::Trap
+                        || ctx.profile.genre == Genre::Pop
+                        || ctx.profile.genre == Genre::House)
+        ? 1
+        : juce::jmax(2, ctx.finestSteps);
     const int motifBars = juce::jlimit(1, juce::jmax(1, bars), role.motifBars);
     const int motifSteps = motifBars * 16;
     const auto keyScale = scalePitches(keyRoot, ctx.params.scale, role.low, role.high);
@@ -1249,8 +1449,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const int inBar = step % 16;
             const double weight = inBar == 0 ? 1.0 : inBar % 8 == 0 ? 0.8 : inBar % 4 == 0 ? 0.55
                                 : inBar % 2 == 0 ? 0.3 : 0.15;
-            const double offbeat = inBar % 4 == 2 ? 0.25 : inBar % 2 == 1 ? 0.12 : 0.0;
-            const double chance = step == 0 ? 0.85 : role.density * (0.4 + weight) + role.syncopation * offbeat;
+            const double offbeat = inBar % 4 == 2 ? 0.35 : inBar % 2 == 1 ? 0.50 : 0.0;
+            const double chance = step == 0 ? 0.88 : role.density * (0.4 + weight) + role.syncopation * offbeat;
             if (uniform(rng) < chance)
                 onsets.push_back(step);
         }
@@ -1358,11 +1558,24 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
     };
 
     const Rhythm rhythmA = makeRhythm();
-    const auto contourA = makeContour(rhythmA.size());
+    auto contourA = makeContour(rhythmA.size());
+    if (contourA.size() >= 4)
+    {
+        // Memorable 4-note hook: neighbour / skip, then the inversion answers.
+        contourA[0] = 0;
+        contourA[1] = uniform(rng) < 0.55 ? 2 : 1;
+        contourA[2] = uniform(rng) < 0.6 ? contourA[1] : 0;
+        contourA[3] = -contourA[1];
+    }
     const auto contourA2 = varyEnding(contourA);
-    const Rhythm rhythmB = uniform(rng) < 0.5 ? mutateRhythm(rhythmA) : makeRhythm();
-    const auto contourB = makeContour(rhythmB.size());
-    const bool contrastInSecondPhrase = uniform(rng) < 0.5;
+    const Rhythm rhythmB = mutateRhythm(rhythmA);
+    auto contourB = makeContour(rhythmB.size());
+    if (contourB.size() >= 4)
+    {
+        for (size_t i = 0; i < 4 && i < contourB.size(); ++i)
+            contourB[i] = -contourA[juce::jmin(i, contourA.size() - 1)];
+    }
+    const bool contrastInSecondPhrase = true;
 
     const int numSegments = (bars + motifBars - 1) / motifBars;
     const int segmentsPerPhrase = juce::jmax(1, 4 / motifBars);
@@ -1484,15 +1697,19 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const float density = ctx.densityAt(part, start);
             if (!strong && !cadenceNote && uniform(rng) > 0.45 + 0.55 * energy * density)
                 continue;
+            // Avoid constant 8ths: skip a short note that follows another short note.
+            if (!cadenceNote && k > 0 && rn.length <= 2 * finest
+                && segmentRhythm[k - 1].length <= 2 * finest && uniform(rng) < 0.58)
+                continue;
 
             // Call-and-response: piano answers the second bar of each 2-bar cell;
             // synth/lead leaves that bar more open.
             const double beatInTwoBars = std::fmod(start, 8.0);
             if (!cadenceNote)
             {
-                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.72)
+                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.38)
                     continue;
-                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.55)
+                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.32)
                     continue;
             }
 
