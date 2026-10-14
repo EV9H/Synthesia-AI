@@ -226,6 +226,12 @@ void SynthesiaAIProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     simpleSynth.renderNextBlock(buffer, blockMidi, 0, numSamples);
 
+    float peak = buffer.getMagnitude(0, 0, numSamples);
+    if (buffer.getNumChannels() > 1)
+        peak = juce::jmax(peak, buffer.getMagnitude(1, 0, numSamples));
+    const float previous = previewLevel.load(std::memory_order_relaxed);
+    previewLevel.store(previous * 0.78f + peak * 0.22f, std::memory_order_relaxed);
+
     // Pass the same events on so the DAW can record/route them.
     midiMessages.swapWith(blockMidi);
 }

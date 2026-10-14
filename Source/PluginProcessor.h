@@ -150,6 +150,7 @@ public:
     MixSettings getPreviewMix() const;
     void loadGenreSounds(Genre genre);
     int getSoundVersion() const { return simpleSynth.getSoundVersion(); }
+    float getPreviewLevel() const { return previewLevel.load(std::memory_order_relaxed); }
 
 private:
     struct ClipEvent
@@ -213,6 +214,7 @@ private:
     bool hostWasPlaying{false};
     double nextHostBeat{0.0};
     std::atomic<bool> previewPlaying{false};
+    std::atomic<float> previewLevel{0.0f};
     
     std::atomic<bool> isGeneratingMidi{false};
     

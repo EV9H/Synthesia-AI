@@ -9,19 +9,26 @@
 
 namespace Theme
 {
-    inline const juce::Colour background{0xff0b0d12};
-    inline const juce::Colour header{0xff12151c};
-    inline const juce::Colour surface{0xff151821};
-    inline const juce::Colour panel{0xff1b2030};
-    inline const juce::Colour outline{0xff2a3144};
-    inline const juce::Colour clipBackground{0xff0e1118};
-    inline const juce::Colour accent{0xff6e8bff};
-    inline const juce::Colour accentHover{0xff8aa3ff};
-    inline const juce::Colour accentAlt{0xff7dcea0};
-    inline const juce::Colour label{0xffeef1f7};
-    inline const juce::Colour dimText{0xff8b93a5};
+    inline const juce::Colour background{0xff07080d};
+    inline const juce::Colour header{0xff10121a};
+    inline const juce::Colour surface{0xff141824};
+    inline const juce::Colour panel{0xff1a1f2c};
+    inline const juce::Colour outline{0x33ffffff};
+    inline const juce::Colour clipBackground{0xff0b0d14};
+    inline const juce::Colour accent{0xff9a7cff};
+    inline const juce::Colour accentViolet{0xff8b6cff};
+    inline const juce::Colour accentCoral{0xffff6b5c};
+    inline const juce::Colour accentHover{0xffb39cff};
+    inline const juce::Colour accentAlt{0xff5ee0c4};
+    inline const juce::Colour label{0xfff3f1f7};
+    inline const juce::Colour dimText{0xff8d8fa3};
     inline const juce::Colour trial{0xffe0a14a};
     inline const juce::Colour licensed{0xff5fbf8a};
+
+    juce::Font regular(float height);
+    juce::Font medium(float height);
+    void fillGlass(juce::Graphics& g, juce::Rectangle<float> bounds, float radius);
+    void fillAccentGradient(juce::Graphics& g, juce::Rectangle<float> bounds, float alpha = 1.0f);
 }
 
 enum class IconKind
@@ -57,11 +64,51 @@ private:
     IconKind kind;
 };
 
+class Wordmark : public juce::Component
+{
+public:
+    void paint(juce::Graphics&) override;
+};
+
+class PreviewOrb : public juce::Component
+{
+public:
+    void setLevel(float level);
+    void setPlaying(bool playing);
+    void tick();
+    void paint(juce::Graphics&) override;
+
+private:
+    float level{0.0f};
+    float display{0.0f};
+    float phase{0.0f};
+    bool playing{false};
+};
+
+class GenerateButton : public juce::Button
+{
+public:
+    GenerateButton();
+    void setBusy(bool busy);
+    void tick();
+    void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    bool busy{false};
+    float pulse{0.0f};
+    float hover{0.0f};
+};
+
 class GenreChip : public juce::Button
 {
 public:
-    GenreChip(juce::String text);
+    GenreChip(Genre genre);
+    void tick();
     void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    Genre genre;
+    float hover{0.0f};
 };
 
 class ParamPill : public juce::Component
@@ -69,6 +116,7 @@ class ParamPill : public juce::Component
 public:
     std::function<void()> onClick;
     void setText(juce::String text);
+    void tick();
     void paint(juce::Graphics&) override;
     void mouseUp(const juce::MouseEvent&) override;
     void mouseEnter(const juce::MouseEvent&) override;
@@ -77,6 +125,7 @@ public:
 private:
     juce::String text;
     bool hovered{false};
+    float hover{0.0f};
 };
 
 class DragHandle : public juce::Component
@@ -242,13 +291,14 @@ private:
     void styleSlider(juce::Slider& slider);
     void applyEngineChoice();
     void setupSectionLabel(juce::Label& label, const juce::String& text);
+    void rebuildBackdrop();
     Genre selectedGenre() const;
     ScaleType selectedScale() const;
 
     SynthesiaAIProcessor& audioProcessor;
     SynthesiaLookAndFeel lookAndFeel;
 
-    juce::Label titleLabel;
+    Wordmark wordmark;
     juce::Label licenseBadge;
     ParamPill keyPill;
     ParamPill tempoPill;
@@ -256,8 +306,10 @@ private:
     IconButton settingsButton { IconKind::Settings, "Settings" };
 
     juce::TextEditor promptEditor;
+    PreviewOrb previewOrb;
     juce::OwnedArray<GenreChip> genreChips;
-    juce::TextButton generateButton;
+    GenerateButton generateButton;
+    juce::Image backdrop;
     juce::TextButton importButton;
     juce::TextButton moreButton;
 

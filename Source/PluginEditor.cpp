@@ -4,6 +4,8 @@
 #include "Generators/GenreProfiles.h"
 #include "PresetStore.h"
 #include "LicenseStub.h"
+#include "FontBinaryData.h"
+#include <cmath>
 #include <map>
 
 namespace
@@ -16,13 +18,103 @@ namespace
     {
         switch (channel)
         {
-            case 1:  return juce::Colour(0xffe8b86d);
-            case 2:  return juce::Colour(0xfff07178);
-            case 3:  return juce::Colour(0xff6e8bff);
+            case 1:  return juce::Colour(0xfff0c27a);
+            case 2:  return juce::Colour(0xffff6b7a);
+            case 3:  return juce::Colour(0xff9a7cff);
             case 4:  return juce::Colour(0xff7dcea0);
-            case 10: return juce::Colour(0xffc4a5e8);
+            case 10: return juce::Colour(0xff5ee0c4);
             default: return Theme::accent;
         }
+    }
+
+    juce::Colour colourForGenre(Genre genre)
+    {
+        switch (genre)
+        {
+            case Genre::Pop:       return juce::Colour(0xff9a7cff);
+            case Genre::LoFiJazz:  return juce::Colour(0xfff0c27a);
+            case Genre::House:     return juce::Colour(0xff5ee0c4);
+            case Genre::Trap:      return juce::Colour(0xffff6b7a);
+            case Genre::RnB:       return juce::Colour(0xfff0a0c8);
+            case Genre::Cinematic: return juce::Colour(0xffa8c4ff);
+        }
+        return Theme::accent;
+    }
+
+    juce::Typeface::Ptr regularFace()
+    {
+        static auto face = juce::Typeface::createSystemTypefaceFor(
+            FontBinaryData::SpaceGroteskRegular_ttf, FontBinaryData::SpaceGroteskRegular_ttfSize);
+        return face;
+    }
+
+    juce::Typeface::Ptr mediumFace()
+    {
+        static auto face = juce::Typeface::createSystemTypefaceFor(
+            FontBinaryData::SpaceGroteskMedium_ttf, FontBinaryData::SpaceGroteskMedium_ttfSize);
+        return face;
+    }
+
+    void drawGenreMark(juce::Graphics& g, Genre genre, juce::Rectangle<float> b, juce::Colour colour)
+    {
+        auto r = b.reduced(b.getWidth() * 0.18f, b.getHeight() * 0.18f);
+        juce::Path p;
+        const float x = r.getX(), y = r.getY(), w = r.getWidth(), h = r.getHeight();
+        switch (genre)
+        {
+            case Genre::Pop:
+                p.addTriangle(x + w * 0.5f, y, x + w * 0.62f, y + h * 0.38f, x + w * 0.38f, y + h * 0.38f);
+                p.addTriangle(x + w * 0.5f, y + h, x + w * 0.62f, y + h * 0.62f, x + w * 0.38f, y + h * 0.62f);
+                p.addTriangle(x, y + h * 0.5f, x + w * 0.38f, y + h * 0.38f, x + w * 0.38f, y + h * 0.62f);
+                p.addTriangle(x + w, y + h * 0.5f, x + w * 0.62f, y + h * 0.38f, x + w * 0.62f, y + h * 0.62f);
+                break;
+            case Genre::LoFiJazz:
+                p.addCentredArc(x + w * 0.55f, y + h * 0.55f, w * 0.42f, h * 0.42f, 0.0f, 0.6f, 5.4f, true);
+                p.addEllipse(x + w * 0.58f, y + h * 0.12f, w * 0.28f, h * 0.28f);
+                break;
+            case Genre::House:
+                p.addRoundedRectangle(x + w * 0.18f, y + h * 0.42f, w * 0.64f, h * 0.46f, 2.0f);
+                p.addTriangle(x + w * 0.08f, y + h * 0.46f, x + w * 0.5f, y, x + w * 0.92f, y + h * 0.46f);
+                break;
+            case Genre::Trap:
+                p.addTriangle(x + w * 0.5f, y, x + w, y + h * 0.5f, x + w * 0.5f, y + h);
+                p.addTriangle(x + w * 0.5f, y, x, y + h * 0.5f, x + w * 0.5f, y + h);
+                break;
+            case Genre::RnB:
+                p.addCentredArc(x + w * 0.32f, y + h * 0.38f, w * 0.22f, h * 0.22f, 0.0f, 3.3f, 6.2f, true);
+                p.addCentredArc(x + w * 0.68f, y + h * 0.38f, w * 0.22f, h * 0.22f, 0.0f, 3.3f, 6.2f, true);
+                p.startNewSubPath(x + w * 0.08f, y + h * 0.42f);
+                p.quadraticTo(x + w * 0.5f, y + h * 1.08f, x + w * 0.92f, y + h * 0.42f);
+                break;
+            case Genre::Cinematic:
+                p.addRoundedRectangle(x, y + h * 0.18f, w, h * 0.64f, 2.0f);
+                p.addRectangle(x + w * 0.12f, y + h * 0.04f, w * 0.16f, h * 0.14f);
+                p.addRectangle(x + w * 0.72f, y + h * 0.04f, w * 0.16f, h * 0.14f);
+                break;
+        }
+        g.setColour(colour);
+        g.fillPath(p);
+    }
+
+    void drawGlowPill(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour colour, float glow)
+    {
+        if (glow > 0.02f)
+        {
+            g.setColour(colour.withAlpha(0.10f * glow));
+            g.fillRoundedRectangle(r.expanded(3.4f, 2.6f), 5.0f);
+            g.setColour(colour.withAlpha(0.20f * glow));
+            g.fillRoundedRectangle(r.expanded(1.6f, 1.2f), 4.0f);
+        }
+        g.setColour(colour);
+        g.fillRoundedRectangle(r, 3.2f);
+        auto sheen = r.removeFromTop(juce::jmax(1.2f, r.getHeight() * 0.38f)).reduced(0.7f, 0.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.16f + 0.10f * glow));
+        g.fillRoundedRectangle(sheen, 2.0f);
+    }
+
+    void tickToward(float& value, float target, float rate = 0.32f)
+    {
+        value += (target - value) * rate;
     }
 
     juce::Colour colourForPart(Part part) { return colourForChannel(partChannel(part)); }
@@ -44,9 +136,39 @@ namespace
     {
         label.setText(text, juce::dontSendNotification);
         label.setColour(juce::Label::textColourId, Theme::dimText);
-        label.setFont(juce::Font(13.0f));
+        label.setFont(Theme::regular(13.0f));
     }
 
+}
+
+juce::Font Theme::regular(float height)
+{
+    return juce::Font(regularFace()).withHeight(height);
+}
+
+juce::Font Theme::medium(float height)
+{
+    return juce::Font(mediumFace()).withHeight(height);
+}
+
+void Theme::fillGlass(juce::Graphics& g, juce::Rectangle<float> bounds, float radius)
+{
+    g.setColour(Theme::surface.withAlpha(0.86f));
+    g.fillRoundedRectangle(bounds, radius);
+    juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.08f), bounds.getX(), bounds.getY(),
+                               juce::Colours::transparentWhite, bounds.getX(), bounds.getBottom(), false);
+    g.setGradientFill(sheen);
+    g.fillRoundedRectangle(bounds, radius);
+    g.setColour(juce::Colours::white.withAlpha(0.10f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), radius, 1.0f);
+}
+
+void Theme::fillAccentGradient(juce::Graphics& g, juce::Rectangle<float> bounds, float alpha)
+{
+    juce::ColourGradient grad(Theme::accentViolet.withAlpha(alpha), bounds.getX(), bounds.getY(),
+                              Theme::accentCoral.withAlpha(alpha), bounds.getRight(), bounds.getBottom(), false);
+    g.setGradientFill(grad);
+    g.fillRoundedRectangle(bounds, 12.0f);
 }
 
 void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> b, juce::Colour colour)
@@ -136,8 +258,8 @@ void drawIcon(juce::Graphics& g, IconKind kind, juce::Rectangle<float> b, juce::
 SynthesiaLookAndFeel::SynthesiaLookAndFeel()
 {
     setColourScheme({
-        0xff0b0d12, 0xff1b2030, 0xff12151c, 0xff2a3144,
-        0xffeef1f7, 0xff6e8bff, 0xffffffff, 0xff6e8bff, 0xffffffff
+        0xff07080d, 0xff1a1f2c, 0xff10121a, 0xff2a3144,
+        0xfff3f1f7, 0xff9a7cff, 0xffffffff, 0xff9a7cff, 0xffffffff
     });
     setColour(juce::ResizableWindow::backgroundColourId, Theme::background);
     setColour(juce::TextButton::buttonColourId, Theme::panel);
@@ -179,6 +301,8 @@ void SynthesiaLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button&
         colour = colour.brighter(0.14f);
     g.setColour(colour);
     g.fillRoundedRectangle(bounds, 10.0f);
+    g.setColour(juce::Colours::white.withAlpha(down ? 0.04f : (highlighted ? 0.08f : 0.05f)));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 10.0f, 1.0f);
 }
 
 void SynthesiaLookAndFeel::drawComboBox(juce::Graphics& g, int width, int height, bool,
@@ -213,10 +337,10 @@ void SynthesiaLookAndFeel::drawTextEditorOutline(juce::Graphics& g, int width, i
     g.drawRoundedRectangle(0.5f, 0.5f, (float) width - 1.0f, (float) height - 1.0f, 12.0f, 1.2f);
 }
 
-juce::Font SynthesiaLookAndFeel::getTextButtonFont(juce::TextButton&, int) { return juce::Font(15.0f); }
-juce::Font SynthesiaLookAndFeel::getLabelFont(juce::Label&) { return juce::Font(13.5f); }
-juce::Font SynthesiaLookAndFeel::getComboBoxFont(juce::ComboBox&) { return juce::Font(14.5f); }
-juce::Font SynthesiaLookAndFeel::getPopupMenuFont() { return juce::Font(14.5f); }
+juce::Font SynthesiaLookAndFeel::getTextButtonFont(juce::TextButton&, int) { return Theme::medium(14.5f); }
+juce::Font SynthesiaLookAndFeel::getLabelFont(juce::Label&) { return Theme::regular(13.0f); }
+juce::Font SynthesiaLookAndFeel::getComboBoxFont(juce::ComboBox&) { return Theme::regular(14.0f); }
+juce::Font SynthesiaLookAndFeel::getPopupMenuFont() { return Theme::regular(14.0f); }
 
 IconButton::IconButton(IconKind k, juce::String tip) : juce::Button({}), kind(k)
 {
@@ -241,43 +365,179 @@ void IconButton::paintButton(juce::Graphics& g, bool highlighted, bool down)
     drawIcon(g, kind, bounds, colour);
 }
 
-GenreChip::GenreChip(juce::String label) : juce::Button(label)
+GenreChip::GenreChip(Genre g) : juce::Button(shortGenre[static_cast<int>(g)]), genre(g)
 {
     setClickingTogglesState(false);
+}
+
+void GenreChip::tick()
+{
+    const float previous = hover;
+    tickToward(hover, isMouseOver() || getToggleState() ? 1.0f : 0.0f);
+    if (std::abs(hover - previous) > 0.01f)
+        repaint();
 }
 
 void GenreChip::paintButton(juce::Graphics& g, bool highlighted, bool down)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
     const bool on = getToggleState();
-    g.setColour(on ? Theme::accent : (down ? Theme::panel.brighter(0.08f)
-                                           : (highlighted ? Theme::panel.brighter(0.12f) : Theme::panel)));
-    g.fillRoundedRectangle(bounds, 16.0f);
-    if (!on)
+    const auto tint = colourForGenre(genre);
+    if (on)
     {
-        g.setColour(Theme::outline);
-        g.drawRoundedRectangle(bounds, 16.0f, 1.0f);
+        juce::ColourGradient grad(tint, bounds.getX(), bounds.getY(),
+                                  tint.interpolatedWith(Theme::accentCoral, 0.45f),
+                                  bounds.getRight(), bounds.getBottom(), false);
+        g.setGradientFill(grad);
+        g.fillRoundedRectangle(bounds, 16.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.16f));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 16.0f, 1.0f);
     }
+    else
+    {
+        g.setColour(Theme::panel.brighter(0.08f * hover + (down ? 0.06f : 0.0f)));
+        g.fillRoundedRectangle(bounds, 16.0f);
+        g.setColour(tint.withAlpha(0.28f + 0.35f * hover));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 16.0f, 1.0f);
+    }
+    auto icon = bounds.removeFromLeft(22.0f).reduced(4.0f, 7.0f);
+    drawGenreMark(g, genre, icon, on ? juce::Colours::white : tint.interpolatedWith(Theme::label, 0.25f));
     g.setColour(on ? juce::Colours::white : Theme::label);
-    g.setFont(juce::Font(13.5f, juce::Font::bold));
-    g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred, false);
+    g.setFont(Theme::medium(13.0f));
+    g.drawText(getButtonText(), bounds.withTrimmedRight(6.0f), juce::Justification::centred, false);
+    juce::ignoreUnused(highlighted);
+}
+
+void Wordmark::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    auto mark = bounds.removeFromLeft(28.0f).withSizeKeepingCentre(22.0f, 22.0f);
+    Theme::fillAccentGradient(g, mark, 1.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.92f));
+    juce::Path diamond;
+    diamond.addRoundedRectangle(mark.reduced(6.2f), 2.2f);
+    diamond.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f,
+                                                           mark.getCentreX(), mark.getCentreY()));
+    g.fillPath(diamond);
+
+    g.setFont(Theme::medium(20.0f));
+    g.setColour(Theme::label);
+    auto name = bounds.removeFromLeft(108.0f);
+    g.drawText("Synthesia", name, juce::Justification::centredLeft, false);
+    g.setFont(Theme::medium(20.0f));
+    juce::ColourGradient grad(Theme::accentViolet, bounds.getX(), bounds.getY(),
+                              Theme::accentCoral, bounds.getRight(), bounds.getBottom(), false);
+    g.setGradientFill(grad);
+    g.drawText("AI", bounds, juce::Justification::centredLeft, false);
+}
+
+void PreviewOrb::setLevel(float newLevel)
+{
+    level = juce::jlimit(0.0f, 1.0f, newLevel * 2.4f);
+}
+
+void PreviewOrb::setPlaying(bool shouldPlay)
+{
+    playing = shouldPlay;
+}
+
+void PreviewOrb::tick()
+{
+    phase += playing ? 0.14f : 0.04f;
+    const float previous = display;
+    tickToward(display, playing ? juce::jmax(0.12f, level) : level * 0.25f, 0.28f);
+    if (playing || std::abs(display - previous) > 0.008f)
+        repaint();
+}
+
+void PreviewOrb::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(4.0f);
+    Theme::fillGlass(g, bounds, 16.0f);
+    const auto centre = bounds.getCentre();
+    const float radius = 11.0f + 7.0f * display;
+    g.setColour(Theme::accentViolet.withAlpha(0.10f + 0.22f * display));
+    g.fillEllipse(centre.x - radius - 6.0f, centre.y - radius - 6.0f, (radius + 6.0f) * 2.0f, (radius + 6.0f) * 2.0f);
+    juce::ColourGradient orb(Theme::accentViolet, centre.x - 4.0f, centre.y - 4.0f,
+                             Theme::accentCoral, centre.x + radius, centre.y + radius, true);
+    g.setGradientFill(orb);
+    g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.22f + 0.25f * display));
+    g.fillEllipse(centre.x - radius * 0.35f, centre.y - radius * 0.42f, radius * 0.7f, radius * 0.45f);
+
+    auto bars = bounds.removeFromRight(22.0f).reduced(3.0f, 10.0f);
+    const int count = 5;
+    const float gap = 2.0f;
+    const float bw = (bars.getWidth() - gap * (count - 1)) / (float) count;
+    for (int i = 0; i < count; ++i)
+    {
+        const float wave = 0.25f + 0.75f * display * (0.45f + 0.55f * std::sin(phase + i * 0.9f));
+        const float h = juce::jmax(3.0f, bars.getHeight() * wave);
+        auto bar = juce::Rectangle<float>(bars.getX() + i * (bw + gap),
+                                          bars.getCentreY() - h * 0.5f, bw, h);
+        g.setColour((i % 2 == 0 ? Theme::accentViolet : Theme::accentCoral).withAlpha(0.35f + 0.5f * display));
+        g.fillRoundedRectangle(bar, 1.6f);
+    }
+}
+
+GenerateButton::GenerateButton() : juce::Button("Generate") {}
+
+void GenerateButton::setBusy(bool shouldBusy)
+{
+    if (busy == shouldBusy)
+        return;
+    busy = shouldBusy;
+    repaint();
+}
+
+void GenerateButton::tick()
+{
+    const float previousHover = hover;
+    tickToward(hover, isMouseOver() || isDown() ? 1.0f : 0.0f, 0.28f);
+    if (busy)
+        pulse += 0.13f;
+    if (busy || std::abs(hover - previousHover) > 0.01f)
+        repaint();
+}
+
+void GenerateButton::paintButton(juce::Graphics& g, bool, bool down)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(0.5f);
+    const float glow = busy ? 0.55f + 0.45f * (0.5f + 0.5f * std::sin(pulse)) : 0.35f + 0.25f * hover;
+    g.setColour(Theme::accentViolet.withAlpha(0.16f * glow));
+    g.fillRoundedRectangle(bounds.expanded(4.0f, 3.0f), 16.0f);
+    Theme::fillAccentGradient(g, bounds, down ? 0.86f : (0.92f + 0.08f * hover));
+    g.setColour(juce::Colours::white.withAlpha(0.16f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 12.0f, 1.0f);
+    g.setFont(Theme::medium(16.5f));
+    g.setColour(juce::Colours::white);
+    g.drawText(busy ? "Generating" : "Generate", getLocalBounds(), juce::Justification::centred, false);
 }
 
 void ParamPill::setText(juce::String t)
 {
+    if (text == t)
+        return;
     text = std::move(t);
     repaint();
+}
+
+void ParamPill::tick()
+{
+    const float previous = hover;
+    tickToward(hover, hovered ? 1.0f : 0.0f);
+    if (std::abs(hover - previous) > 0.01f)
+        repaint();
 }
 
 void ParamPill::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
-    g.setColour(hovered ? Theme::panel.brighter(0.10f) : Theme::panel);
+    Theme::fillGlass(g, bounds, 14.0f);
+    g.setColour(Theme::accentViolet.withAlpha(0.10f * hover));
     g.fillRoundedRectangle(bounds, 14.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(bounds, 14.0f, 1.0f);
     g.setColour(Theme::label);
-    g.setFont(juce::Font(13.0f, juce::Font::bold));
+    g.setFont(Theme::medium(12.5f));
     g.drawText(text, getLocalBounds().reduced(10, 0), juce::Justification::centred, false);
 }
 
@@ -336,7 +596,7 @@ void LabeledDrag::paint(juce::Graphics& g)
     auto icon = getLocalBounds().removeFromLeft(36).toFloat();
     drawIcon(g, IconKind::Drag, icon, ready ? Theme::accent : Theme::outline);
     g.setColour(ready ? Theme::label : Theme::dimText);
-    g.setFont(juce::Font(14.0f, juce::Font::bold));
+    g.setFont(Theme::medium(13.5f));
     g.drawText("Drag all", getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
 }
 
@@ -476,8 +736,10 @@ void TrackLanes::resized()
 
 void TrackLanes::paintLaneRoll(juce::Graphics& g, const Lane& lane, juce::Rectangle<float> area) const
 {
-    g.setColour(Theme::clipBackground);
-    g.fillRoundedRectangle(area, 8.0f);
+    g.setColour(Theme::clipBackground.withAlpha(0.92f));
+    g.fillRoundedRectangle(area, 10.0f);
+    g.setColour(lane.colour.withAlpha(0.08f));
+    g.drawRoundedRectangle(area.reduced(0.5f), 10.0f, 1.0f);
 
     const bool muted = (muteMask & partLockBit(lane.part)) != 0;
     if (clipLength <= 0.0)
@@ -502,11 +764,11 @@ void TrackLanes::paintLaneRoll(juce::Graphics& g, const Lane& lane, juce::Rectan
     const int rows = juce::jmax(1, hi - lo + 3);
     const float rh = area.getHeight() / (float) rows;
 
-    g.setColour(juce::Colours::white.withAlpha(0.04f));
+    g.setColour(juce::Colours::white.withAlpha(0.035f));
     for (int beat = 0; beat <= (int) clipLength; ++beat)
     {
         const float x = area.getX() + beat * ppb;
-        g.drawVerticalLine(juce::roundToInt(x), area.getY(), area.getBottom());
+        g.drawVerticalLine(juce::roundToInt(x), area.getY() + 2.0f, area.getBottom() - 2.0f);
     }
 
     for (const auto& n : notes)
@@ -514,53 +776,60 @@ void TrackLanes::paintLaneRoll(juce::Graphics& g, const Lane& lane, juce::Rectan
         if (n.channel != ch)
             continue;
         const float x = area.getX() + (float) n.start * ppb;
-        const float w = juce::jmax(2.0f, (float) n.length * ppb - 1.0f);
+        const float w = juce::jmax(3.0f, (float) n.length * ppb - 1.0f);
         const float y = area.getY() + (hi + 1 - n.pitch) * rh;
-        g.setColour(lane.colour.withAlpha(muted ? 0.18f : juce::jmap((float) n.velocity, 0.0f, 127.0f, 0.45f, 1.0f)));
-        g.fillRoundedRectangle(x, y, w, juce::jmax(2.0f, rh - 1.0f), 2.0f);
+        const bool active = playbackBeat >= n.start && playbackBeat < n.start + n.length;
+        const float vel = juce::jmap((float) n.velocity, 0.0f, 127.0f, 0.42f, 1.0f);
+        const auto colour = lane.colour.withAlpha(muted ? 0.16f : vel);
+        auto pill = juce::Rectangle<float>(x, y + 0.6f, w, juce::jmax(2.4f, rh - 1.4f));
+        if (active && !muted)
+            pill = pill.expanded(0.0f, 0.8f);
+        drawGlowPill(g, pill, colour, muted ? 0.0f : (active ? 1.0f : 0.35f + 0.4f * vel));
     }
 
     if (playbackBeat >= 0.0)
     {
         const float x = area.getX() + (float) playbackBeat * ppb;
-        g.setColour(juce::Colours::white.withAlpha(0.8f));
-        g.fillRect(x, area.getY(), 1.4f, area.getHeight());
+        g.setColour(Theme::accentCoral.withAlpha(0.10f));
+        g.fillRoundedRectangle(x - 7.0f, area.getY(), 14.0f, area.getHeight(), 4.0f);
+        g.setColour(Theme::accentViolet.withAlpha(0.55f));
+        g.fillRect(x - 1.4f, area.getY() + 1.0f, 2.8f, area.getHeight() - 2.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.92f));
+        g.fillRect(x - 0.6f, area.getY() + 1.0f, 1.2f, area.getHeight() - 2.0f);
     }
 }
 
 void TrackLanes::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    g.setColour(Theme::surface);
-    g.fillRoundedRectangle(bounds, 14.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(bounds.reduced(0.5f), 14.0f, 1.0f);
+    Theme::fillGlass(g, bounds, 16.0f);
 
     if (!hasMidi)
     {
-        g.setColour(Theme::dimText);
-        g.setFont(juce::Font(15.0f));
+        g.setColour(Theme::label);
+        g.setFont(Theme::medium(16.0f));
         g.drawText("Describe a track or pick a genre, then Generate.",
-                   getLocalBounds(), juce::Justification::centred);
-        g.setFont(juce::Font(13.0f));
-        auto hint = getLocalBounds().reduced(24);
-        hint.removeFromTop(getHeight() / 2 + 14);
+                   getLocalBounds().translated(0, -10), juce::Justification::centred);
+        g.setColour(Theme::dimText);
+        g.setFont(Theme::regular(13.0f));
         g.drawText("Drop a .mid here to accompany, extend, rewrite or restyle.",
-                   hint.removeFromTop(22), juce::Justification::centred);
+                   getLocalBounds().translated(0, 12), juce::Justification::centred);
         return;
     }
 
-    auto area = getLocalBounds().reduced(10, 8);
+    auto area = getLocalBounds().reduced(12, 10);
     const int laneH = area.getHeight() / juce::jmax(1, (int) lanes.size());
-    g.setFont(juce::Font(13.0f, juce::Font::bold));
+    g.setFont(Theme::medium(12.5f));
     for (const auto& lane : lanes)
     {
         auto row = area.removeFromTop(laneH).reduced(0, 4);
         auto name = row.removeFromLeft(72);
+        g.setColour(lane->colour.withAlpha(0.28f));
+        g.fillEllipse((float) name.getX() + 1.0f, (float) name.getCentreY() - 6.0f, 12.0f, 12.0f);
         g.setColour(lane->colour);
-        g.fillEllipse((float) name.getX() + 2.0f, (float) name.getCentreY() - 4.0f, 8.0f, 8.0f);
+        g.fillEllipse((float) name.getX() + 3.5f, (float) name.getCentreY() - 3.5f, 7.0f, 7.0f);
         g.setColour(Theme::label);
-        g.drawText(lane->name, name.withTrimmedLeft(16), juce::Justification::centredLeft, false);
+        g.drawText(lane->name, name.withTrimmedLeft(18), juce::Justification::centredLeft, false);
         row.removeFromRight(36 + 6 + 36 + 6 + 36);
         paintLaneRoll(g, *lane, row.toFloat());
     }
@@ -569,13 +838,13 @@ void TrackLanes::paint(juce::Graphics& g)
 ImportModePicker::ImportModePicker()
 {
     title.setText("Use this MIDI as", juce::dontSendNotification);
-    title.setFont(juce::Font(18.0f, juce::Font::bold));
+    title.setFont(Theme::medium(18.0f));
     title.setColour(juce::Label::textColourId, Theme::label);
     title.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(title);
 
     subtitle.setText("Choose how the generator should treat the file.", juce::dontSendNotification);
-    subtitle.setFont(juce::Font(13.5f));
+    subtitle.setFont(Theme::regular(13.5f));
     subtitle.setColour(juce::Label::textColourId, Theme::dimText);
     subtitle.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(subtitle);
@@ -605,13 +874,9 @@ void ImportModePicker::setFileName(const juce::String& name)
 
 void ImportModePicker::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.setColour(juce::Colours::black.withAlpha(0.52f));
     g.fillRect(getLocalBounds());
-    auto card = getLocalBounds().withSizeKeepingCentre(420, 280);
-    g.setColour(Theme::surface);
-    g.fillRoundedRectangle(card.toFloat(), 16.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(card.toFloat().reduced(0.5f), 16.0f, 1.0f);
+    Theme::fillGlass(g, getLocalBounds().withSizeKeepingCentre(420, 280).toFloat(), 18.0f);
 }
 
 void ImportModePicker::resized()
@@ -639,12 +904,9 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 {
     setLookAndFeel(&lookAndFeel);
 
-    titleLabel.setText("Synthesia", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(22.0f, juce::Font::bold));
-    titleLabel.setColour(juce::Label::textColourId, Theme::label);
-    addAndMakeVisible(titleLabel);
+    addAndMakeVisible(wordmark);
 
-    licenseBadge.setFont(juce::Font(11.5f, juce::Font::bold));
+    licenseBadge.setFont(Theme::medium(11.5f));
     licenseBadge.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(licenseBadge);
 
@@ -660,22 +922,24 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     promptEditor.setMultiLine(true);
     promptEditor.setReturnKeyStartsNewLine(true);
-    promptEditor.setFont(juce::Font(16.0f));
+    promptEditor.setFont(Theme::regular(16.0f));
     promptEditor.setTextToShowWhenEmpty("Describe your track  ·  optional", Theme::dimText);
-    promptEditor.setColour(juce::TextEditor::backgroundColourId, Theme::surface);
+    promptEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground.withAlpha(0.55f));
     addAndMakeVisible(promptEditor);
+    addAndMakeVisible(previewOrb);
 
     for (int i = 0; i < numGenres; ++i)
     {
-        auto* chip = genreChips.add(new GenreChip(shortGenre[i]));
+        auto* chip = genreChips.add(new GenreChip(static_cast<Genre>(i)));
         chip->onClick = [this, i]() { chooseGenre(static_cast<Genre>(i)); };
         addAndMakeVisible(chip);
     }
 
-    generateButton.setButtonText("Generate");
-    generateButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
-    generateButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    generateButton.onClick = [this]() { onGenerateClicked(); };
+    generateButton.onClick = [this]()
+    {
+        if (!audioProcessor.isGenerating())
+            onGenerateClicked();
+    };
     addAndMakeVisible(generateButton);
 
     importButton.setButtonText("Import MIDI");
@@ -716,7 +980,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addAndMakeVisible(previewButton);
 
     statusLabel.setColour(juce::Label::textColourId, Theme::dimText);
-    statusLabel.setFont(juce::Font(13.0f));
+    statusLabel.setFont(Theme::regular(13.0f));
     addAndMakeVisible(statusLabel);
 
     moreViewport.setViewedComponent(&morePage, false);
@@ -786,7 +1050,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addMore(planButton);
     planSummaryEditor.setMultiLine(true);
     planSummaryEditor.setReadOnly(true);
-    planSummaryEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 12.5f, juce::Font::plain));
+    planSummaryEditor.setFont(Theme::regular(12.5f));
     addMore(planSummaryEditor);
 
     setupLabel(pianoLabel, "Piano");
@@ -929,8 +1193,9 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     refreshPills();
 
     setResizable(true, true);
-    setResizeLimits(640, 560, 1200, 1100);
-    setSize(760, 760);
+    setResizeLimits(680, 580, 1280, 1100);
+    setSize(800, 780);
+    rebuildBackdrop();
     startTimerHz(30);
 }
 
@@ -950,7 +1215,7 @@ void SynthesiaAIEditor::setupSectionLabel(juce::Label& label, const juce::String
 {
     label.setText(text, juce::dontSendNotification);
     label.setColour(juce::Label::textColourId, Theme::dimText);
-    label.setFont(juce::Font(11.5f, juce::Font::bold));
+    label.setFont(Theme::medium(11.0f));
 }
 
 void SynthesiaAIEditor::chooseGenre(Genre genre)
@@ -1181,23 +1446,54 @@ void SynthesiaAIEditor::applyEngineChoice()
         audioProcessor.setGeneratorType(GeneratorType::Genre);
 }
 
+void SynthesiaAIEditor::rebuildBackdrop()
+{
+    const int w = juce::jmax(1, getWidth());
+    const int h = juce::jmax(1, getHeight());
+    backdrop = juce::Image(juce::Image::ARGB, w, h, true);
+    juce::Graphics g(backdrop);
+    g.fillAll(Theme::background);
+
+    juce::ColourGradient violet(Theme::accentViolet.withAlpha(0.20f), 0.0f, 0.0f,
+                                juce::Colours::transparentBlack, (float) w * 0.72f, (float) h * 0.58f, true);
+    g.setGradientFill(violet);
+    g.fillAll();
+    juce::ColourGradient coral(Theme::accentCoral.withAlpha(0.14f), (float) w, (float) h,
+                               juce::Colours::transparentBlack, (float) w * 0.28f, (float) h * 0.38f, true);
+    g.setGradientFill(coral);
+    g.fillAll();
+    juce::ColourGradient teal(Theme::accentAlt.withAlpha(0.07f), (float) w * 0.85f, (float) h * 0.18f,
+                              juce::Colours::transparentBlack, (float) w * 0.4f, (float) h * 0.7f, true);
+    g.setGradientFill(teal);
+    g.fillAll();
+
+    juce::Random rng(0x5e11);
+    for (int i = 0; i < 1400; ++i)
+    {
+        const int x = rng.nextInt(w);
+        const int y = rng.nextInt(h);
+        g.setColour(juce::Colours::white.withAlpha(0.015f + rng.nextFloat() * 0.03f));
+        g.fillRect(x, y, 1, 1);
+    }
+}
+
 void SynthesiaAIEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(Theme::background);
+    if (backdrop.isValid())
+        g.drawImageAt(backdrop, 0, 0);
+    else
+        g.fillAll(Theme::background);
+
     if (moreOpen && moreViewport.isVisible())
-    {
-        g.setColour(Theme::surface);
-        g.fillRoundedRectangle(moreViewport.getBounds().toFloat(), 12.0f);
-        g.setColour(Theme::outline);
-        g.drawRoundedRectangle(moreViewport.getBounds().toFloat().reduced(0.5f), 12.0f, 1.0f);
-    }
+        Theme::fillGlass(g, moreViewport.getBounds().toFloat(), 14.0f);
+
     if (draggingFiles)
     {
-        g.setColour(Theme::accent.withAlpha(0.12f));
-        g.fillRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 16.0f);
-        g.setColour(Theme::accent);
-        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 16.0f, 2.0f);
-        g.setFont(18.0f);
+        g.setColour(Theme::accentViolet.withAlpha(0.12f));
+        g.fillRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 18.0f);
+        g.setColour(Theme::accentCoral);
+        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(8.0f), 18.0f, 1.6f);
+        g.setFont(Theme::medium(18.0f));
         g.setColour(juce::Colours::white);
         g.drawText("Drop MIDI to import", getLocalBounds(), juce::Justification::centred);
     }
@@ -1208,7 +1504,7 @@ void SynthesiaAIEditor::resized()
     auto area = getLocalBounds().reduced(20, 16);
 
     auto header = area.removeFromTop(36);
-    titleLabel.setBounds(header.removeFromLeft(130));
+    wordmark.setBounds(header.removeFromLeft(178));
     settingsButton.setBounds(header.removeFromRight(36));
     header.removeFromRight(8);
     barsPill.setBounds(header.removeFromRight(78));
@@ -1229,7 +1525,10 @@ void SynthesiaAIEditor::resized()
     }
 
     area.removeFromTop(16);
-    promptEditor.setBounds(area.removeFromTop(72));
+    auto promptRow = area.removeFromTop(72);
+    previewOrb.setBounds(promptRow.removeFromRight(72).reduced(4, 4));
+    promptRow.removeFromRight(10);
+    promptEditor.setBounds(promptRow);
     area.removeFromTop(12);
 
     auto chipRow = area.removeFromTop(34);
@@ -1362,9 +1661,25 @@ void SynthesiaAIEditor::resized()
     importPicker.setBounds(getLocalBounds());
     if (settingsOverlay != nullptr)
         settingsOverlay->setBounds(getLocalBounds());
+
+    if (backdrop.getWidth() != getWidth() || backdrop.getHeight() != getHeight())
+        rebuildBackdrop();
 }
 
-void SynthesiaAIEditor::timerCallback() { updateUIState(); }
+void SynthesiaAIEditor::timerCallback()
+{
+    updateUIState();
+    generateButton.setBusy(audioProcessor.isGenerating());
+    generateButton.tick();
+    previewOrb.setLevel(audioProcessor.getPreviewLevel());
+    previewOrb.setPlaying(audioProcessor.isPreviewPlaying() || audioProcessor.getPlaybackBeat() >= 0.0);
+    previewOrb.tick();
+    for (auto* chip : genreChips)
+        chip->tick();
+    keyPill.tick();
+    tempoPill.tick();
+    barsPill.tick();
+}
 
 MidiGenerationParams SynthesiaAIEditor::collectParams() const
 {
@@ -1808,7 +2123,6 @@ void SynthesiaAIEditor::exportToChooser(int menuId)
 void SynthesiaAIEditor::updateUIState()
 {
     const bool busy = audioProcessor.isGenerating();
-    generateButton.setEnabled(!busy);
     const bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     dragAllButton.setReady(hasMidi && !busy);
     previewButton.setEnabled(hasMidi && !busy);
@@ -1884,7 +2198,7 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     : processor(p)
 {
     title.setText("Settings", juce::dontSendNotification);
-    title.setFont(juce::Font(20.0f, juce::Font::bold));
+    title.setFont(Theme::medium(20.0f));
     title.setColour(juce::Label::textColourId, Theme::label);
     addAndMakeVisible(title);
 
@@ -1897,7 +2211,7 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
         editor.setColour(juce::TextEditor::outlineColourId, Theme::outline);
         editor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent);
         editor.setColour(juce::TextEditor::textColourId, Theme::label);
-        editor.setFont(juce::Font(15.0f));
+        editor.setFont(Theme::regular(15.0f));
     };
 
     setupLabel(providerLabel, "Provider");
@@ -1940,13 +2254,13 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
         resized();
     };
 
-    usageLabel.setFont(juce::Font(13.0f));
+    usageLabel.setFont(Theme::regular(13.0f));
     usageLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(usageLabel);
 
     hintLabel.setText("Keys stay on this machine. Without a key, Plan uses an offline heuristic.",
                       juce::dontSendNotification);
-    hintLabel.setFont(juce::Font(13.0f));
+    hintLabel.setFont(Theme::regular(13.0f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(hintLabel);
 
@@ -2021,13 +2335,9 @@ juce::Rectangle<int> SettingsOverlay::cardBounds() const
 
 void SettingsOverlay::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.setColour(juce::Colours::black.withAlpha(0.52f));
     g.fillRect(getLocalBounds());
-    auto card = cardBounds().toFloat();
-    g.setColour(Theme::surface);
-    g.fillRoundedRectangle(card, 16.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(card.reduced(0.5f), 16.0f, 1.0f);
+    Theme::fillGlass(g, cardBounds().toFloat(), 18.0f);
 }
 
 void SettingsOverlay::mouseUp(const juce::MouseEvent& e)

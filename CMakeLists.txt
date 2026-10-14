@@ -67,6 +67,14 @@ juce_add_binary_data(SynthesiaDrumSamples
     SOURCES ${SYNTHESIA_DRUM_WAVS})
 set_target_properties(SynthesiaDrumSamples PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
+juce_add_binary_data(SynthesiaFonts
+    HEADER_NAME FontBinaryData.h
+    NAMESPACE FontBinaryData
+    SOURCES
+        Resources/Fonts/SpaceGrotesk-Regular.ttf
+        Resources/Fonts/SpaceGrotesk-Medium.ttf)
+set_target_properties(SynthesiaFonts PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 # JUCE modules
 target_compile_definitions(SynthesiaAI
     PUBLIC
@@ -84,6 +92,7 @@ target_link_libraries(SynthesiaAI
         juce::juce_dsp
         CURL::libcurl
         SynthesiaDrumSamples
+        SynthesiaFonts
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -107,6 +116,7 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
         juce::juce_dsp
         CURL::libcurl
         SynthesiaDrumSamples
+        SynthesiaFonts
         juce::juce_recommended_config_flags)
 endif()
 
