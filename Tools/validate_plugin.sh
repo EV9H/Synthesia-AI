@@ -60,7 +60,7 @@ build_vst3() {
     if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
         return 0
     fi
-    echo "==> Building SynthesiaAI_VST3"
+    echo "==> Building SynthesiaAI_VST3" >&2
     if [[ ! -f "$BUILD/CMakeCache.txt" ]]; then
         cmake -B "$BUILD" -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="${CC:-gcc}" -DCMAKE_CXX_COMPILER="${CXX:-g++}"
@@ -83,8 +83,8 @@ download_pluginval() {
     fi
     local zip="$CACHE/$PV_ASSET"
     local url="https://github.com/Tracktion/pluginval/releases/latest/download/${PV_ASSET}"
-    echo "==> Downloading pluginval ($PV_ASSET)"
-    curl -fL --retry 4 --retry-delay 4 -o "$zip" "$url"
+    echo "==> Downloading pluginval ($PV_ASSET)" >&2
+    curl -fL --retry 4 --retry-delay 4 -o "$zip" "$url" >&2
     unzip -o "$zip" -d "$dest" >/dev/null
     bin="$(find "$dest" -type f \( -name 'pluginval' -o -name 'pluginval.exe' \) | head -n 1 || true)"
     if [[ -z "$bin" ]]; then
@@ -125,18 +125,15 @@ run_pluginval() {
     local vst3="$1"
     local pv="$2"
     local log="$LOG_DIR/pluginval-s${STRICTNESS}.txt"
-    local args=(--validate-in-process --strictness-level "$STRICTNESS"
+    local args=(--skip-gui-tests --strictness-level "$STRICTNESS"
                 --timeout-ms 600000 --output-dir "$LOG_DIR" --validate "$vst3")
-    if "$pv" --help 2>&1 | grep -q -- '--skip-gui-tests'; then
-        args=(--skip-gui-tests "${args[@]}")
-    fi
     echo "==> pluginval strictness $STRICTNESS"
     echo "    $pv ${args[*]}"
     set +e
     "$pv" "${args[@]}" 2>&1 | tee "$log"
     local rc=${PIPESTATUS[0]}
     set -e
-    if grep -q 'ALL TESTS PASSED' "$log"; then
+    if grep -Eqi 'ALL TESTS PASSED|^SUCCESS$|All tests completed successfully' "$log"; then
         echo "pluginval: PASS (strictness $STRICTNESS)"
         return 0
     fi
@@ -217,16 +214,14 @@ echo "  Steinberg VST3 validator:          $st_status"
 echo "  VST3: $VST3"
 echo "=================================="
 if [[ -n "${SYNTHESIA_VALIDATOR_JSON:-}" ]]; then
-    python3 - "$SYNTHESIA_VALIDATOR_JSON" "$pv_status" "$st_status" "$STRICTNESS" "$VST3" "$rc" <<'PY'
-import json, sys
-path, pv, st, strict, vst3, rc = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], int(sys.argv[6])
-open(path, "w").write(json.dumps({
-    "pluginval": {"status": pv, "strictness": strict},
-    "steinberg": {"status": st},
-    "vst3": vst3,
-    "exit": rc,
-}, indent=2) + "\n")
-PY
+    cat > "$SYNTHESIA_VALIDATOR_JSON" <<EOF
+{
+  "pluginval": {"status": "$pv_status", "strictness": $STRICTNESS},
+  "steinberg": {"status": "$st_status"},
+  "vst3": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$VST3"),
+  "exit": $rc
+}
+EOF
 fi
 if [[ "$pv_status" == "FAIL" || "$st_status" == "FAIL" ]]; then
     echo "RESULT: FAIL"

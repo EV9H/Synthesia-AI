@@ -221,7 +221,8 @@ def _bar_hash(clip: Clip, notes: list[Note], bar: int) -> tuple:
         if n.end <= t0 or n.start >= t1:
             continue
         pos = int(np.round((n.start - t0) / max(t1 - t0, 1e-6) * 16))
-        cells.append((pos, n.pitch % 12 if not n.is_drum else drum_class(n.pitch)))
+        token = drum_class(n.pitch) if n.is_drum else f"p{n.pitch % 12}"
+        cells.append((pos, token))
     return tuple(sorted(cells))
 
 

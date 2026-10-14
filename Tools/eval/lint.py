@@ -27,6 +27,9 @@ def lint_clip(clip: Clip) -> list[dict[str, Any]]:
         for b in pitched[i + 1 :]:
             if a.part == b.part:
                 continue
+            # Piano doubling the chord stab is expected, not a collision.
+            if {a.part, b.part} == {"piano", "chords"}:
+                continue
             if a.pitch == b.pitch and _overlap(a.start, a.end, b.start, b.end):
                 collisions += 1
                 if collisions >= 12:

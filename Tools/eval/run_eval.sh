@@ -34,9 +34,14 @@ fi
 
 if [[ ! -x "$PY" ]]; then
     echo "==> Creating eval venv"
-    python3 -m venv "$CACHE/venv"
-    "$CACHE/venv/bin/pip" install -q -U pip
-    "$CACHE/venv/bin/pip" install -q -r "$ROOT/Tools/eval/requirements.txt"
+    if python3 -m venv "$CACHE/venv" 2>/dev/null; then
+        "$CACHE/venv/bin/pip" install -q -U pip
+        "$CACHE/venv/bin/pip" install -q -r "$ROOT/Tools/eval/requirements.txt"
+    else
+        echo "    venv unavailable; using system python3 (pip --user)"
+        PY="$(command -v python3)"
+        python3 -m pip install -q --user -r "$ROOT/Tools/eval/requirements.txt"
+    fi
 fi
 
 VAL_JSON="$REPORT/plugin-validation.json"

@@ -263,12 +263,14 @@ def ensure_refs(force: bool = False) -> dict:
     for genre, paths in local.items():
         files[genre]["harmony"].extend(str(p) for p in paths)
 
-    # MAESTRO piano performances: cinematic + pop harmonic/voice-leading refs.
+    # MAESTRO piano performances: voice-leading / register refs for every genre,
+    # with extra weight on cinematic and pop.
     for i, path in enumerate(maestro):
-        genre = "cinematic" if i % 3 else "pop"
-        files[genre]["harmony"].append(str(path))
-        if i % 5 == 0:
-            files["lofi"]["harmony"].append(str(path))
+        files[GENRES[i % len(GENRES)]]["harmony"].append(str(path))
+        if i % 2 == 0:
+            files["cinematic"]["harmony"].append(str(path))
+        if i % 3 == 0:
+            files["pop"]["harmony"].append(str(path))
 
     for i, path in enumerate(lakh):
         genre = GENRES[i % len(GENRES)]

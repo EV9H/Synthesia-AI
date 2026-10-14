@@ -98,6 +98,10 @@ def build_reference_stats(force: bool = False) -> dict[str, Any]:
             for k, v in vec.items():
                 if isinstance(v, (int, float)) and np.isfinite(v):
                     buckets[genre][part][k].append(float(v))
+                    # Piano performances also stand in for chord/melody refs.
+                    if part == "piano":
+                        buckets[genre]["chords"][k].append(float(v))
+                        buckets[genre]["synth"][k].append(float(v))
 
     for genre in GENRES:
         for path in files.get(genre, {}).get("drums", []):
@@ -132,9 +136,19 @@ def build_reference_stats(force: bool = False) -> dict[str, Any]:
 
 
 def _ref_array(stats: dict[str, Any], genre: str, part: str, key: str) -> np.ndarray:
-    vals = stats.get("by_genre", {}).get(genre, {}).get(part, {}).get(key)
+    def grab(g: str | None, p: str) -> list | None:
+        src = stats.get("by_genre", {}).get(g or "", {}).get(p, {}) if g else stats.get("global", {}).get(p, {})
+        if not src:
+            src = stats.get("global", {}).get(p, {})
+        return src.get(key)
+
+    vals = grab(genre, part)
+    if not vals and part in {"chords", "synth"}:
+        vals = grab(genre, "piano")
     if not vals:
-        vals = stats.get("global", {}).get(part, {}).get(key)
+        vals = grab(None, part)
+    if not vals and part in {"chords", "synth"}:
+        vals = grab(None, "piano")
     if not vals:
         return np.zeros(0)
     return np.asarray(vals, dtype=float)
