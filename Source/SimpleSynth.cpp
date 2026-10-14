@@ -91,7 +91,7 @@ namespace
 
     void truePeakLimit(float* left, float* right, int num, float& env, double sr)
     {
-        const float ceiling = 0.68f; // ~-3.4 dBFS; MP3 encoding adds ~1.5–2 dB true peak
+        const float ceiling = 0.89125f; // −1 dBTP
         const float rel = coeffFor(0.16, sr);
         for (int i = 0; i < num; ++i)
         {
@@ -640,7 +640,28 @@ void SimpleSynth::loadGenreDefaults(Genre genre)
     patches[1] = PatchLibrary::defaultFor(genre, Part::Bass);
     patches[2] = PatchLibrary::defaultFor(genre, Part::Synth);
     patches[3] = PatchLibrary::defaultFor(genre, Part::Piano);
-    mix = MixLibrary::defaultFor(genre);
+    mix = MixLibrary::previewMaster();
+    ++soundVersion;
+}
+
+void SimpleSynth::loadNeutralPreview()
+{
+    currentKit = Genre::Pop;
+    auto ep = PatchLibrary::find("rnb-warm-ep");
+    auto bass = PatchLibrary::find("rnb-round-bass");
+    auto piano = PatchLibrary::find("pop-piano");
+    ep.part = Part::Chords;
+    bass.part = Part::Bass;
+    piano.part = Part::Piano;
+    auto synth = piano;
+    synth.part = Part::Synth;
+    synth.id = "neutral-keys";
+    synth.name = "Neutral Keys";
+    patches[0] = ep;
+    patches[1] = bass;
+    patches[2] = synth;
+    patches[3] = piano;
+    mix = MixLibrary::previewMaster();
     ++soundVersion;
 }
 
@@ -692,10 +713,7 @@ void SimpleSynth::readSoundXml(const juce::XmlElement& xml)
         patches[i].part = pitchedParts[i];
         ++i;
     }
-    if (auto* mixXml = xml.getChildByName("Mix"))
-        mix = MixSettings::fromXml(*mixXml);
-    else
-        mix = MixLibrary::defaultFor(currentKit);
+    mix = MixLibrary::previewMaster();
     ++soundVersion;
 }
 
@@ -812,78 +830,7 @@ void SimpleSynth::applyPartInserts(int partIndex, juce::AudioBuffer<float>& buff
 
 void SimpleSynth::applyBusMix(int start, int num, const juce::MidiBuffer& drumMidi)
 {
-    const double sr = juce::jmax(1.0, currentSampleRate);
-    const float macro = juce::jlimit(0.0f, 1.0f, mix.compAmount);
-    auto* mL = musicBus.getWritePointer(0, start);
-    auto* mR = musicBus.getWritePointer(1, start);
-    auto* bL = bassBus.getWritePointer(0, start);
-    auto* bR = bassBus.getWritePointer(1, start);
-    auto* dL = drumBus.getWritePointer(0, start);
-    auto* dR = drumBus.getWritePointer(1, start);
-
-    compressStereo(dL, dR, num, drumEnv, mix.drum, macro, sr);
-    compressStereo(bL, bR, num, bassEnv, mix.bass, macro, sr);
-    compressStereo(mL, mR, num, musicEnv, mix.music, macro, sr);
-
-    const float width = juce::jlimit(1.0f, 2.0f, mix.musicWidth);
-    const int haasDelay = currentKit == Genre::LoFiJazz ? 12 : 32;
-    const int haasSize = (int) (sizeof(musicHaas) / sizeof(musicHaas[0]));
-    for (int i = 0; i < num; ++i)
-    {
-        const float mid = 0.5f * (mL[i] + mR[i]);
-        const float side = 0.5f * (mL[i] - mR[i]) * width;
-        mL[i] = mid + side;
-        musicHaas[(size_t) haasWrite] = mid - side;
-        int rpos = haasWrite - haasDelay;
-        if (rpos < 0)
-            rpos += haasSize;
-        mR[i] = musicHaas[(size_t) rpos];
-        if (++haasWrite >= haasSize)
-            haasWrite = 0;
-    }
-
-    const float scAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainAmount);
-    if (scAmt < 0.01f)
-        return;
-
-    std::vector<float> kickTrig((size_t) num, 0.0f);
-    for (const auto metadata : drumMidi)
-    {
-        const auto message = metadata.getMessage();
-        if (!message.isNoteOn() || message.getVelocity() <= 0)
-            continue;
-        if (DrumLibrary::pieceFromNote(message.getNoteNumber()) != DrumPiece::Kick)
-            continue;
-        const int pos = juce::jlimit(0, num - 1, metadata.samplePosition - start);
-        kickTrig[(size_t) pos] = juce::jmax(kickTrig[(size_t) pos],
-                                            0.25f + 0.55f * message.getFloatVelocity());
-    }
-
-    const float atk = coeffFor(juce::jmax(0.008f, mix.sidechainAttack), sr);
-    const float rel = coeffFor(juce::jmax(0.08f, mix.sidechainRelease), sr);
-    const float pulseDecay = coeffFor(0.045, sr);
-    const float smooth = coeffFor(0.008, sr);
-    const float lpCoeff = onePoleCoeff(85.0, sr);
-    const float bassAmt = juce::jlimit(0.0f, 1.0f, mix.sidechainBass);
-    for (int i = 0; i < num; ++i)
-    {
-        const float mid = 0.5f * (dL[i] + dR[i]);
-        kickLp += lpCoeff * (mid - kickLp);
-        if (kickTrig[(size_t) i] > kickPulse)
-            kickPulse += atk * (kickTrig[(size_t) i] - kickPulse);
-        else
-            kickPulse += pulseDecay * (0.0f - kickPulse);
-        const float key = juce::jmax(std::abs(kickLp) * 2.4f, kickPulse);
-        scEnv += (key > scEnv ? atk : rel) * (key - scEnv);
-        const float targetDuck = juce::jlimit(0.0f, 0.72f, scEnv * scAmt * 1.15f);
-        duckSmooth += smooth * (targetDuck - duckSmooth);
-        const float musicG = 1.0f - duckSmooth;
-        const float bassG = 1.0f - duckSmooth * bassAmt;
-        mL[i] *= musicG;
-        mR[i] *= musicG;
-        bL[i] *= bassG;
-        bR[i] *= bassG;
-    }
+    juce::ignoreUnused(start, num, drumMidi);
 }
 
 void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int num)
@@ -900,8 +847,8 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
         const float delaySec = (float) ((60.0 / juce::jmax(40.0, tempoBpm)) * 0.375);
         int delaySamp = juce::jlimit(1, size - 2, (int) std::round(delaySec * sr));
         int delaySampR = juce::jlimit(1, size - 2, (int) std::round(delaySec * 1.5f * sr));
-        const float fb = 0.28f;
-        const float wet = 0.2f;
+        const float fb = 0.22f;
+        const float wet = 0.12f;
         for (int i = 0; i < num; ++i)
         {
             int rL = delayWrite - delaySamp;
@@ -920,9 +867,8 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
     }
 
     juce::Reverb::Parameters rp;
-    rp.roomSize = currentKit == Genre::Cinematic ? 0.62f
-                : currentKit == Genre::LoFiJazz ? 0.38f : 0.44f;
-    rp.damping = currentKit == Genre::LoFiJazz ? 0.55f : 0.36f;
+    rp.roomSize = 0.42f;
+    rp.damping = 0.40f;
     rp.wetLevel = 1.0f;
     rp.dryLevel = 0.0f;
     rp.width = 1.0f;
@@ -933,63 +879,21 @@ void SimpleSynth::applyMaster(juce::AudioBuffer<float>& buffer, int start, int n
     reverb.process(juce::dsp::ProcessContextReplacing<float>(revSub));
     sanitize(reverbSend, start, num);
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        buffer.addFrom(ch, start, reverbSend, juce::jmin(ch, 1), start, num, 0.72f);
+        buffer.addFrom(ch, start, reverbSend, juce::jmin(ch, 1), start, num, 0.42f);
 
     const float hpCoeff = onePoleCoeff(22.0, sr);
-    const float shelfCoeff = onePoleCoeff(9000.0, sr);
-    const float shelfGain = currentKit == Genre::LoFiJazz ? 1.22f : 1.48f;
     for (int i = 0; i < num; ++i)
     {
         hpStateL += hpCoeff * (oL[i] - hpStateL);
         hpStateR += hpCoeff * (oR[i] - hpStateR);
-        const float hpL = oL[i] - hpStateL;
-        const float hpR = oR[i] - hpStateR;
-        shelfStateL += shelfCoeff * (hpL - shelfStateL);
-        shelfStateR += shelfCoeff * (hpR - shelfStateR);
-        oL[i] = hpL + (hpL - shelfStateL) * (shelfGain - 1.0f);
-        oR[i] = hpR + (hpR - shelfStateR) * (shelfGain - 1.0f);
+        oL[i] -= hpStateL;
+        oR[i] -= hpStateR;
     }
 
-    compressStereo(oL, oR, num, masterEnv, mix.master,
-                   juce::jlimit(0.0f, 1.0f, mix.compAmount), sr);
+    const MixSettings preview = MixLibrary::previewMaster();
+    compressStereo(oL, oR, num, masterEnv, preview.master, preview.compAmount, sr);
 
-    float vinyl = 0.0f;
-    float tape = 0.0f;
-    for (const auto& p : patches)
-    {
-        vinyl = juce::jmax(vinyl, p.vinylAmount);
-        tape = juce::jmax(tape, p.tapeSat);
-    }
-    if (currentKit == Genre::LoFiJazz)
-        vinyl = juce::jmax(vinyl, 0.08f);
-
-    if (vinyl > 0.01f)
-    {
-        for (int i = 0; i < num; ++i)
-        {
-            const float n = noiseSample(vinylState);
-            vinylPhase = wrap(vinylPhase + 0.55 / sr);
-            const float rumble = 0.008f * std::sin((float) vinylPhase * (float) twoPi);
-            const float hiss = n * 0.006f;
-            const float crackle = (std::abs(n) > 0.997f) ? n * 0.03f : 0.0f;
-            const float v = vinyl * (rumble + hiss + crackle);
-            oL[i] += v;
-            oR[i] += v * 0.82f;
-        }
-    }
-
-    if (tape > 0.05f)
-    {
-        const float amount = 1.0f + 0.55f * tape;
-        const float inv = 1.0f / std::tanh(amount);
-        for (int i = 0; i < num; ++i)
-        {
-            oL[i] = std::tanh(oL[i] * amount) * inv;
-            oR[i] = std::tanh(oR[i] * amount) * inv;
-        }
-    }
-
-    const float makeup = juce::jlimit(0.4f, 3.4f, mix.outputGain);
+    const float makeup = juce::jlimit(0.4f, 2.0f, preview.outputGain);
     for (int i = 0; i < num; ++i)
     {
         oL[i] *= makeup;

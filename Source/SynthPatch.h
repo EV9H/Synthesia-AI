@@ -137,4 +137,5 @@ public:
     static juce::StringArray ids();
     static MixSettings find(const juce::String& id);
     static MixSettings defaultFor(Genre genre);
+    static MixSettings previewMaster();
 };

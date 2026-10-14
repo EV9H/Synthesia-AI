@@ -684,113 +684,29 @@ MixSettings MixSettings::fromXml(const juce::XmlElement& xml)
     return m;
 }
 
+MixSettings MixLibrary::previewMaster()
+{
+    MixSettings m;
+    m.id = "preview";
+    m.name = "Preview";
+    m.sidechainAmount = 0.0f;
+    m.sidechainAttack = 0.012f;
+    m.sidechainRelease = 0.18f;
+    m.sidechainBass = 0.0f;
+    m.compAmount = 0.28f;
+    m.outputGain = 1.15f;
+    m.musicWidth = 1.0f;
+    m.drum = bus(0.0f, 0.020f, 0.12f, 1.2f, 0.5f);
+    m.bass = bus(0.0f, 0.024f, 0.16f, 1.2f, 0.5f);
+    m.music = bus(0.0f, 0.028f, 0.18f, 1.2f, 0.5f);
+    m.master = bus(0.28f, 0.040f, 0.22f, 1.8f, 0.42f);
+    return m;
+}
+
 juce::Array<MixSettings> MixLibrary::all()
 {
     juce::Array<MixSettings> mixes;
-
-    {
-        MixSettings m;
-        m.id = "house-pump";
-        m.name = "House Pump";
-        m.sidechainAmount = 0.72f;
-        m.sidechainAttack = 0.012f;
-        m.sidechainRelease = 0.16f;
-        m.sidechainBass = 0.78f;
-        m.compAmount = 0.42f;
-        m.outputGain = 3.32f;
-        m.musicWidth = 1.82f;
-        m.drum = bus(0.24f, 0.020f, 0.12f, 2.2f, 0.34f);
-        m.bass = bus(0.22f, 0.024f, 0.16f, 2.0f, 0.36f);
-        m.music = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.38f);
-        m.master = bus(0.14f, 0.045f, 0.24f, 1.4f, 0.48f);
-        mixes.add(m);
-    }
-    {
-        MixSettings m;
-        m.id = "trap-808";
-        m.name = "Trap 808";
-        m.sidechainAmount = 0.48f;
-        m.sidechainAttack = 0.010f;
-        m.sidechainRelease = 0.22f;
-        m.sidechainBass = 0.10f;
-        m.compAmount = 0.40f;
-        m.outputGain = 2.28f;
-        m.musicWidth = 1.75f;
-        m.drum = bus(0.22f, 0.022f, 0.13f, 2.1f, 0.36f);
-        m.bass = bus(0.16f, 0.032f, 0.22f, 1.6f, 0.42f);
-        m.music = bus(0.18f, 0.030f, 0.20f, 1.8f, 0.38f);
-        m.master = bus(0.12f, 0.050f, 0.26f, 1.35f, 0.50f);
-        mixes.add(m);
-    }
-    {
-        MixSettings m;
-        m.id = "lofi-glue";
-        m.name = "Lo-fi Glue";
-        m.sidechainAmount = 0.16f;
-        m.sidechainAttack = 0.018f;
-        m.sidechainRelease = 0.28f;
-        m.sidechainBass = 0.28f;
-        m.compAmount = 0.32f;
-        m.outputGain = 2.90f;
-        m.musicWidth = 1.42f;
-        m.drum = bus(0.16f, 0.028f, 0.20f, 1.7f, 0.40f);
-        m.bass = bus(0.16f, 0.030f, 0.20f, 1.7f, 0.40f);
-        m.music = bus(0.14f, 0.036f, 0.26f, 1.5f, 0.42f);
-        m.master = bus(0.10f, 0.060f, 0.32f, 1.3f, 0.52f);
-        mixes.add(m);
-    }
-    {
-        MixSettings m;
-        m.id = "rnb-smooth";
-        m.name = "R&B Smooth";
-        m.sidechainAmount = 0.32f;
-        m.sidechainAttack = 0.014f;
-        m.sidechainRelease = 0.24f;
-        m.sidechainBass = 0.42f;
-        m.compAmount = 0.36f;
-        m.outputGain = 3.36f;
-        m.musicWidth = 1.90f;
-        m.drum = bus(0.18f, 0.024f, 0.16f, 1.9f, 0.38f);
-        m.bass = bus(0.18f, 0.028f, 0.18f, 1.8f, 0.40f);
-        m.music = bus(0.16f, 0.034f, 0.22f, 1.6f, 0.42f);
-        m.master = bus(0.10f, 0.055f, 0.28f, 1.3f, 0.52f);
-        mixes.add(m);
-    }
-    {
-        MixSettings m;
-        m.id = "cine-wide";
-        m.name = "Cinematic Wide";
-        m.sidechainAmount = 0.08f;
-        m.sidechainAttack = 0.025f;
-        m.sidechainRelease = 0.36f;
-        m.sidechainBass = 0.16f;
-        m.compAmount = 0.28f;
-        m.outputGain = 3.35f;
-        m.musicWidth = 2.00f;
-        m.drum = bus(0.12f, 0.032f, 0.24f, 1.6f, 0.42f);
-        m.bass = bus(0.12f, 0.036f, 0.28f, 1.5f, 0.42f);
-        m.music = bus(0.12f, 0.040f, 0.32f, 1.4f, 0.44f);
-        m.master = bus(0.08f, 0.065f, 0.34f, 1.25f, 0.55f);
-        mixes.add(m);
-    }
-    {
-        MixSettings m;
-        m.id = "pop-radio";
-        m.name = "Pop Radio";
-        m.sidechainAmount = 0.28f;
-        m.sidechainAttack = 0.012f;
-        m.sidechainRelease = 0.18f;
-        m.sidechainBass = 0.55f;
-        m.compAmount = 0.38f;
-        m.outputGain = 1.75f;
-        m.musicWidth = 1.58f;
-        m.drum = bus(0.20f, 0.022f, 0.14f, 2.0f, 0.36f);
-        m.bass = bus(0.20f, 0.026f, 0.16f, 1.9f, 0.38f);
-        m.music = bus(0.16f, 0.030f, 0.18f, 1.7f, 0.40f);
-        m.master = bus(0.12f, 0.050f, 0.24f, 1.35f, 0.50f);
-        mixes.add(m);
-    }
-
+    mixes.add(previewMaster());
     return mixes;
 }
 
@@ -820,13 +736,6 @@ MixSettings MixLibrary::find(const juce::String& id)
 
 MixSettings MixLibrary::defaultFor(Genre genre)
 {
-    switch (genre)
-    {
-        case Genre::House:     return find("house-pump");
-        case Genre::Trap:      return find("trap-808");
-        case Genre::LoFiJazz:  return find("lofi-glue");
-        case Genre::RnB:       return find("rnb-smooth");
-        case Genre::Cinematic: return find("cine-wide");
-        default:               return find("pop-radio");
-    }
+    juce::ignoreUnused(genre);
+    return previewMaster();
 }

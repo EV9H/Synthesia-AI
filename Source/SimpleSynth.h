@@ -163,6 +163,7 @@ public:
     void setMix(const MixSettings& settings);
     void setSidechainAmount(float amount);
     void loadGenreDefaults(Genre genre);
+    void loadNeutralPreview();
     int getSoundVersion() const { return soundVersion; }
 
     void writeSoundXml(juce::XmlElement& xml) const;
