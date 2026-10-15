@@ -438,6 +438,8 @@ int main(int argc, char* argv[])
     }
 
     const bool importOnly = importPath.isNotEmpty() && params.importMode == ImportMode::None;
+    synthesia->setLastUiParams(params);
+    synthesia->previewSynth().setKit(params.genre);
     if (!importOnly)
         synthesia->generateMidiBlocking(params);
 

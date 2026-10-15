@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <map>
 #include <sstream>
+#include <utility>
 
 namespace
 {
@@ -187,7 +188,39 @@ namespace
         }
     }
 
-    void resolveUnisons(std::map<Part, Notes>& parts)
+    bool pitchInKey(int pitch, int keyRoot, ScaleType scaleType)
+    {
+        const auto intervals = theory::melodyIntervals(scaleType);
+        const int relative = ((pitch - keyRoot) % 12 + 12) % 12;
+        return std::find(intervals.begin(), intervals.end(), relative) != intervals.end();
+    }
+
+    bool pitchAllowed(int pitch, const ChordInfo& chord, int keyRoot, ScaleType scaleType)
+    {
+        return pitchInKey(pitch, keyRoot, scaleType) || theory::containsPitchClass(chord, pitch);
+    }
+
+    int snapToPitchClasses(int pitch, const std::vector<int>& pcs, int lo, int hi)
+    {
+        if (pcs.empty())
+            return juce::jlimit(lo, hi, pitch);
+        int best = foldIntoRange(theory::nearestPitchWithClass(pcs.front(), pitch), lo, hi);
+        int bestDistance = std::abs(best - pitch);
+        for (int pc : pcs)
+        {
+            const int candidate = foldIntoRange(theory::nearestPitchWithClass(pc, pitch), lo, hi);
+            const int distance = std::abs(candidate - pitch);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    void resolveUnisons(std::map<Part, Notes>& parts, const MidiGenerationParams& params,
+                        const std::vector<ChordInfo>& progression)
     {
         auto collide = [&](Part moving, int lo, int hi, int midLo, int midHi)
         {
@@ -216,14 +249,32 @@ namespace
                 };
                 if (!occupied(a.pitch))
                     continue;
-                const std::initializer_list<int> downFirst{ -3, -4, -5, 3, 4, -7, 5, 7, -12, 12 };
-                const std::initializer_list<int> upFirst{ 3, 4, 5, -3, -4, 7, -7, 12, -12 };
-                bool moved = false;
-                for (int delta : a.pitch >= 68 ? downFirst : upFirst)
+
+                const auto& chord = progression[static_cast<size_t>(chordIndexAt(progression, a.start))];
+                auto allowed = [&](int pitch)
                 {
-                    const int candidate = a.pitch + delta;
-                    if (candidate >= lo && candidate <= hi && !occupied(candidate))
+                    return pitchAllowed(pitch, chord, params.rootNote, params.scale);
+                };
+                auto isChordTone = [&](int pitch)
+                {
+                    return theory::containsPitchClass(chord, pitch);
+                };
+
+                // Prefer a nearby chord tone (third / fourth / fifth / octave).
+                // Never land on a pitch outside the key unless it is a borrowed chord tone.
+                const std::initializer_list<int> downFirst{ -12, -7, -5, -4, -3, 12, 7, 5, 4, 3, -8, 8, -9, 9 };
+                const std::initializer_list<int> upFirst{ 12, 7, 5, 4, 3, -12, -7, -5, -4, -3, 8, -8, 9, -9 };
+                bool moved = false;
+                for (int pass = 0; pass < 2 && !moved; ++pass)
+                {
+                    const bool chordPass = pass == 0;
+                    for (int delta : a.pitch >= 68 ? downFirst : upFirst)
                     {
+                        const int candidate = a.pitch + delta;
+                        if (candidate < lo || candidate > hi || occupied(candidate) || !allowed(candidate))
+                            continue;
+                        if (chordPass && !isChordTone(candidate))
+                            continue;
                         a.pitch = candidate;
                         moved = true;
                         break;
@@ -231,12 +282,13 @@ namespace
                 }
                 if (!moved)
                 {
-                    for (int d = 1; d <= 11 && !moved; ++d)
+                    for (int d = 1; d <= 16 && !moved; ++d)
                     {
                         for (int sign : { -1, 1 })
                         {
                             const int candidate = a.pitch + sign * d;
-                            if (candidate >= lo && candidate <= hi && !occupied(candidate))
+                            if (candidate >= lo && candidate <= hi && !occupied(candidate)
+                                && allowed(candidate))
                             {
                                 a.pitch = candidate;
                                 moved = true;
@@ -260,6 +312,74 @@ namespace
             collide(Part::Synth, 60, 84, 40, 90);
             collide(Part::Chords, 48, 88, 36, 60); // only vs bass in the low mid
             collide(Part::Piano, 52, 96, 26, 55);  // only vs bass
+        }
+    }
+
+    void enforceKey(std::map<Part, Notes>& parts, const MidiGenerationParams& params,
+                    const std::vector<ChordInfo>& progression)
+    {
+        if (progression.empty())
+            return;
+
+        const std::map<Part, std::pair<int, int>> ranges{
+            { Part::Chords, { 48, 88 } },
+            { Part::Bass,   { 24, 60 } },
+            { Part::Synth,  { 55, 88 } },
+            { Part::Piano,  { 48, 96 } },
+        };
+
+        for (auto& [part, notes] : parts)
+        {
+            if (part == Part::Drums || notes.empty())
+                continue;
+            const auto range = ranges.count(part) != 0 ? ranges.at(part) : std::pair<int, int>{ 24, 96 };
+
+            std::vector<size_t> order(notes.size());
+            for (size_t i = 0; i < order.size(); ++i)
+                order[i] = i;
+            std::sort(order.begin(), order.end(), [&](size_t a, size_t b)
+            {
+                return notes[a].start < notes[b].start;
+            });
+
+            for (size_t oi = 0; oi < order.size(); ++oi)
+            {
+                auto& note = notes[order[oi]];
+                const auto& chord = progression[static_cast<size_t>(chordIndexAt(progression, note.start))];
+                const bool inChord = theory::containsPitchClass(chord, note.pitch);
+                const bool inKey = pitchInKey(note.pitch, params.rootNote, params.scale);
+                const double barBeat = note.start - 4.0 * std::floor(note.start / 4.0 + 1.0e-9);
+                const bool strong = barBeat < 0.14 || (barBeat > 1.86 && barBeat < 2.14);
+
+                if (!inKey && !inChord && !strong && oi + 1 < order.size())
+                {
+                    const double durSec = note.length * 60.0 / juce::jmax(1.0, params.tempo);
+                    const auto& next = notes[order[oi + 1]];
+                    const int step = std::abs(next.pitch - note.pitch);
+                    const bool nextLegal = pitchAllowed(next.pitch,
+                        progression[static_cast<size_t>(chordIndexAt(progression, next.start))],
+                        params.rootNote, params.scale);
+                    // Off-beat chromatic passing tone: short, resolves by step.
+                    if (durSec < 0.35 && step >= 1 && step <= 2 && nextLegal)
+                        continue;
+                }
+
+                if (strong && !inChord)
+                {
+                    const auto pcs = theory::chordPitchClasses(chord);
+                    if (!pcs.empty())
+                        note.pitch = snapToPitchClasses(note.pitch, pcs, range.first, range.second);
+                    continue;
+                }
+
+                if (!inKey && !inChord)
+                {
+                    std::vector<int> pcs = theory::chordPitchClasses(chord);
+                    for (int interval : theory::melodyIntervals(params.scale))
+                        pcs.push_back((params.rootNote + interval) % 12);
+                    note.pitch = snapToPitchClasses(note.pitch, pcs, range.first, range.second);
+                }
+            }
         }
     }
 
@@ -323,7 +443,21 @@ namespace
                         clash = true;
                 }
                 if (clash)
-                    moved = currentPitch + (moved >= currentPitch ? 2 : -2);
+                {
+                    int alt = scaleMove(scale, currentPitch, moved >= currentPitch ? 2 : -2);
+                    bool altClash = alt == currentPitch;
+                    for (size_t idx : stack)
+                    {
+                        if (idx == innerIdx)
+                            continue;
+                        const int other = notes[idx].pitch;
+                        if (other == alt || std::abs(other - alt) % 12 == 1)
+                            altClash = true;
+                    }
+                    if (altClash)
+                        continue;
+                    moved = alt;
+                }
 
                 if (first)
                 {
@@ -753,7 +887,9 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
 
     if (auto it = generated.find(Part::Bass); it != generated.end())
         snapBassToHarmony(it->second, result.progression, profile.bassLow, profile.bassHigh);
-    resolveUnisons(generated);
+    resolveUnisons(generated, params, result.progression);
+    enforceKey(generated, params, result.progression);
+    resolveUnisons(generated, params, result.progression);
 
     for (const auto part : allParts)
     {
@@ -919,20 +1055,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 if (!clash)
                     voicing = std::move(alt);
             }
-            if (ctx.profile.genre == Genre::House
-                && voicing.size() >= 3 && hitIndex % 2 == 1)
-            {
-                // Transpose a fifth for playback only; keep `leading` on the
-                // close voicing so the next stab can fall back and actually move.
-                for (int& p : voicing)
-                {
-                    if (p + 7 <= voicingOptions.high)
-                        p += 7;
-                    else if (p - 5 >= voicingOptions.low)
-                        p -= 5;
-                }
-                std::sort(voicing.begin(), voicing.end());
-            }
+            // House odd-hit +5th transpose invented out-of-key tones (F# over C).
+            // Variation comes from the next stab's voice leading instead.
             size_t from = 0;
             size_t to = voicing.size();
             if (hit.symbol == 'g' && to > 3)
@@ -1022,8 +1146,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
                     {
                         const int direction = nextRoot >= root ? 1 : -1;
                         int candidate = nextRoot - direction;
-                        if (theory::containsPitchClass(chord, candidate))
-                            candidate = nextRoot + direction;
+                        if (!pitchAllowed(candidate, chord, ctx.params.rootNote, ctx.params.scale))
+                        {
+                            const int fifth = root + 7 <= high ? root + 7 : root - 5;
+                            const int third = root + (chord.intervals.size() > 1 ? chord.intervals[1] % 12 : 4);
+                            candidate = std::abs(fifth - nextRoot) <= std::abs(third - nextRoot) ? fifth : third;
+                        }
                         pitch = candidate;
                     }
                     else
