@@ -92,14 +92,36 @@ if [[ -n "${GROQ_API_KEY:-}" ]]; then
     CRITIC_FLAG=(--critic)
 fi
 
+PITCH_JSON="$REPORT/pitch-check.json"
+PITCH_ARGS=()
+echo "==> Sampler pitch check (C major scale on preview instruments)"
+set +e
+"$PY" "$ROOT/Tools/eval/pitch_check.py" --host "$HOST" --out "$PITCH_JSON"
+PITCH_RC=$?
+set -e
+if [[ -f "$PITCH_JSON" ]]; then
+    PITCH_ARGS=(--pitch-json "$PITCH_JSON")
+fi
+if [[ "$PITCH_RC" -ne 0 ]]; then
+    echo "    pitch check failed (eval will fail the run)"
+fi
+
 echo "==> Scoring"
+set +e
 "$PY" "$ROOT/Tools/eval/run_eval.py" \
     --clips "$CLIPS" \
     --report "$REPORT" \
     --pluginval-json "$VAL_JSON" \
+    "${PITCH_ARGS[@]}" \
     "${MP3_ARGS[@]}" \
     "${CRITIC_FLAG[@]}"
+SCORE_RC=$?
+set -e
 
 echo
 echo "Reports: $REPORT/report.md  $REPORT/report.json"
 echo "Clips:   $CLIPS"
+if [[ "$PITCH_RC" -ne 0 || "$SCORE_RC" -ne 0 ]]; then
+    echo "EVAL FAILED (pitch=$PITCH_RC score=$SCORE_RC)"
+    exit 1
+fi

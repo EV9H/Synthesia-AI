@@ -5,9 +5,15 @@ from typing import Any
 
 import numpy as np
 
+from harmony import analyze_harmony
 from midi_parse import Clip, drum_class
 from paths import REGISTER_LIMITS
 from features import _ioi_cv, bass_root_conflict, onset_density, repetition_scores
+
+# Hard product gates: pitched notes stay in the key (or on a borrowed chord tone).
+IN_KEY_MAX_OUT_PCT = 3.0
+STRONG_CHORD_TONE_MIN_PCT = 80.0
+CHROMATIC_PASSING_MAX_PCT = 3.5
 
 
 def _overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> bool:
@@ -80,5 +86,19 @@ def lint_clip(clip: Clip) -> list[dict[str, Any]]:
         if frac >= 0.08:
             add("out_of_range_notes", "error" if frac >= 0.2 else "warn",
                 f"{len(bad)} notes outside {lo}-{hi} ({frac:.0%})", part)
+
+    harm = analyze_harmony(clip)
+    if harm["out_of_key_not_chord_pct"] > IN_KEY_MAX_OUT_PCT:
+        add("out_of_key", "error",
+            f"{harm['out_of_key_not_chord_pct']:.1f}% pitched notes outside key and current chord "
+            f"(in-key {harm['in_key_pct']:.1f}%)")
+    if harm["strong_chord_tone_pct"] < STRONG_CHORD_TONE_MIN_PCT:
+        add("strong_beat_not_chord_tone", "error",
+            f"strong-beat chord-tone {harm['strong_chord_tone_pct']:.1f}% "
+            f"(min {STRONG_CHORD_TONE_MIN_PCT:.0f}%)")
+    if harm["chromatic_passing_pct"] > CHROMATIC_PASSING_MAX_PCT:
+        add("chromatic_passing", "error",
+            f"chromatic passing {harm['chromatic_passing_pct']:.1f}% "
+            f"(max {CHROMATIC_PASSING_MAX_PCT:.1f}%)")
 
     return issues

@@ -52,6 +52,35 @@ def _markdown(p: dict[str, Any]) -> str:
         )
     lines += [
         "",
+        "## In-key / chord-tone gates",
+        "",
+        "| Clip | In-key % | Out-key (not chord) % | Strong-beat chord-tone % | Chromatic pass % |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for clip in p.get("clips", []):
+        h = clip.get("harmony") or {}
+        lines.append(
+            f"| {clip.get('file', '')} | {h.get('in_key_pct', 0):.1f} | "
+            f"{h.get('out_of_key_not_chord_pct', 0):.1f} | "
+            f"{h.get('strong_chord_tone_pct', 0):.1f} | "
+            f"{h.get('chromatic_passing_pct', 0):.1f} |"
+        )
+    pitch = p.get("pitch_check")
+    lines += ["", "## Sampler pitch check", ""]
+    if not pitch:
+        lines.append("Skipped.")
+    else:
+        status = "PASS" if pitch.get("ok") else "FAIL"
+        lines.append(f"- status: **{status}** (limit {pitch.get('cents_limit', 50)} cents)")
+        for genre, row in (pitch.get("genres") or {}).items():
+            if row.get("ok"):
+                lines.append(f"- {genre}: ok ({row.get('n', 0)} notes)")
+            elif "error" in row:
+                lines.append(f"- {genre}: render failed — {row['error']}")
+            else:
+                lines.append(f"- {genre}: {row.get('failed', 0)} off-pitch notes")
+    lines += [
+        "",
         "## Lint hits",
         "",
     ]

@@ -18,6 +18,7 @@ sys.path.insert(0, str(HERE))
 from critic import critic_clip  # noqa: E402
 from download_refs import ensure_refs  # noqa: E402
 from features import clip_features  # noqa: E402
+from harmony import analyze_harmony  # noqa: E402
 from lint import lint_clip  # noqa: E402
 from midi_parse import load_midi  # noqa: E402
 from paths import GENRES, PARTS, repo_root  # noqa: E402
@@ -39,7 +40,7 @@ def _mean(xs: list[float]) -> float:
 
 
 def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: dict,
-                 mp3s: list[str], critic: bool) -> dict:
+                 mp3s: list[str], critic: bool, pitch_check: dict | None = None) -> dict:
     ensure_refs()
     stats = build_reference_stats()
     midis = sorted(clips_dir.glob("*.mid"))
@@ -65,6 +66,7 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
         feats = clip_features(clip)
         issues = lint_clip(clip)
         scored = score_clip(feats, genre, stats, issues)
+        harmony = analyze_harmony(clip)
         for issue in issues:
             issue = dict(issue)
             issue["clip"] = path.name
@@ -74,6 +76,21 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
             "genre": genre,
             **scored,
             "lint": issues,
+            "harmony": {
+                "in_key_pct": harmony["in_key_pct"],
+                "out_of_key_not_chord_pct": harmony["out_of_key_not_chord_pct"],
+                "strong_chord_tone_pct": harmony["strong_chord_tone_pct"],
+                "chromatic_passing_pct": harmony["chromatic_passing_pct"],
+                "parts": {
+                    p: {
+                        "n": st["n"],
+                        "out_of_key_pct": st["out_of_key_pct"],
+                        "out_of_chord_pct": st["out_of_chord_pct"],
+                        "strong_off_chord_pct": st["strong_off_chord_pct"],
+                    }
+                    for p, st in harmony["parts"].items()
+                },
+            },
         }
         clips.append(row)
         by_genre_acc[genre]["scores"].append(scored["pro_likeness"])
@@ -118,6 +135,7 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
         "clips": clips,
         "lint": all_issues,
         "mp3s": mp3s,
+        "pitch_check": pitch_check,
         "critic": None if not critic else {
             "model": (critic_rows[0].get("model") if critic_rows else ""),
             "clips": critic_rows,
@@ -127,8 +145,18 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
         payload["critic"] = None
     write_reports(payload, report_dir)
     print(f"overall pro-likeness {payload['overall']:.1f}  ({len(clips)} clips)")
+    in_keys = [c.get("harmony", {}).get("in_key_pct") for c in clips if c.get("harmony")]
+    if in_keys:
+        print(f"in-key {float(np.mean(in_keys)):.1f}%  "
+              f"(range {min(in_keys):.1f}–{max(in_keys):.1f})")
     print(f"wrote {report_dir / 'report.md'}")
     return payload
+
+
+def _gate_failed(payload: dict) -> bool:
+    errors = [i for i in payload.get("lint", []) if i.get("severity") == "error"]
+    pitch = payload.get("pitch_check") or {}
+    return bool(errors) or pitch.get("ok") is False
 
 
 def main() -> int:
@@ -136,6 +164,7 @@ def main() -> int:
     ap.add_argument("--clips", type=Path, required=True)
     ap.add_argument("--report", type=Path, required=True)
     ap.add_argument("--pluginval-json", type=Path, default=None)
+    ap.add_argument("--pitch-json", type=Path, default=None)
     ap.add_argument("--mp3", action="append", default=[])
     ap.add_argument("--critic", action="store_true")
     args = ap.parse_args()
@@ -145,7 +174,17 @@ def main() -> int:
         data = json.loads(args.pluginval_json.read_text())
         pluginval = data.get("pluginval", pluginval)
         steinberg = data.get("steinberg", steinberg)
-    evaluate_dir(args.clips, args.report, pluginval, steinberg, args.mp3, args.critic)
+    pitch_check = None
+    if args.pitch_json and args.pitch_json.exists():
+        pitch_check = json.loads(args.pitch_json.read_text())
+    payload = evaluate_dir(args.clips, args.report, pluginval, steinberg,
+                           args.mp3, args.critic, pitch_check)
+    if _gate_failed(payload):
+        errors = [i for i in payload.get("lint", []) if i.get("severity") == "error"]
+        print(f"EVAL GATE FAILED ({len(errors)} lint errors, "
+              f"pitch_ok={ (payload.get('pitch_check') or {}).get('ok') })",
+              file=sys.stderr)
+        return 1
     return 0
 
 
