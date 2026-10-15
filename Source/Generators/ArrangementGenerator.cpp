@@ -1055,8 +1055,26 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 if (!clash)
                     voicing = std::move(alt);
             }
-            // House odd-hit +5th transpose invented out-of-key tones (F# over C).
-            // Variation comes from the next stab's voice leading instead.
+            if (ctx.profile.genre == Genre::House
+                && voicing.size() >= 3 && hitIndex % 2 == 1)
+            {
+                // Diatonic inversion of the same chord (octave only) so odd
+                // hits still move without inventing out-of-key fifths.
+                auto alt = voicing;
+                std::rotate(alt.begin(), alt.begin() + 1, alt.end());
+                if (alt.back() + 12 <= voicingOptions.high)
+                    alt.back() += 12;
+                else if (alt.front() - 12 >= voicingOptions.low)
+                    alt.front() -= 12;
+                std::sort(alt.begin(), alt.end());
+                bool clash = false;
+                for (size_t a = 0; a < alt.size() && !clash; ++a)
+                    for (size_t b = a + 1; b < alt.size(); ++b)
+                        if (std::abs(alt[b] - alt[a]) % 12 == 1)
+                            clash = true;
+                if (!clash)
+                    voicing = std::move(alt);
+            }
             size_t from = 0;
             size_t to = voicing.size();
             if (hit.symbol == 'g' && to > 3)
