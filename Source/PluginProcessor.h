@@ -145,6 +145,9 @@ public:
     void persistLocalSettings() const;
     void loadLocalSettings();
 
+    bool hasSeenFirstRunTour() const { return firstRunTourSeen; }
+    void setFirstRunTourSeen(bool seen);
+
     SimpleSynth& previewSynth() { return simpleSynth; }
     const SimpleSynth& previewSynth() const { return simpleSynth; }
     void setPreviewPatch(Part part, const SynthPatch& patch);
@@ -250,6 +253,7 @@ private:
     std::atomic<int> hostTimeSigNum{4};
     std::atomic<int> hostTimeSigDen{4};
     bool advancedUi{false};
+    bool firstRunTourSeen{false};
 
     std::atomic<bool> captureEnabled{false};
     juce::SpinLock captureLock;

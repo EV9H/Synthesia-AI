@@ -752,7 +752,7 @@ void LabeledDrag::paint(juce::Graphics& g)
     drawIcon(g, IconKind::Drag, icon, ready ? Theme::accent : Theme::outline);
     g.setColour(ready ? Theme::label : Theme::dimText);
     g.setFont(Theme::medium(13.5f));
-    g.drawText("Drag all", getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
+    g.drawText("Drag MIDI", getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
 }
 
 void LabeledDrag::mouseDown(const juce::MouseEvent&) { dragging = false; }
@@ -785,6 +785,7 @@ TrackLanes::TrackLanes()
         lane->mute.onClick = [this, part]() { if (onMute) onMute(part); };
         lane->regen.onClick = [this, part]() { if (onRegen) onRegen(part); };
         lane->drag.onDrag = [this, part]() { if (onDrag) onDrag(part); };
+        lane->drag.setTooltip("Drag this part's MIDI into your DAW");
         lanes.push_back(std::move(lane));
     }
     setReady(false);
@@ -963,12 +964,14 @@ void TrackLanes::paint(juce::Graphics& g)
     {
         g.setColour(Theme::label);
         g.setFont(Theme::medium(16.0f));
-        g.drawText("Describe a track or pick a genre, then Generate.",
-                   getLocalBounds().translated(0, -10), juce::Justification::centred);
+        g.drawText("Generate MIDI, then drag it into your DAW.",
+                   getLocalBounds().translated(0, -18), juce::Justification::centred);
         g.setColour(Theme::dimText);
         g.setFont(Theme::regular(13.0f));
-        g.drawText("Drop a .mid here to accompany, extend, rewrite or restyle.",
-                   getLocalBounds().translated(0, 12), juce::Justification::centred);
+        g.drawText("Preview is a sketch — play the notes with your own piano.",
+                   getLocalBounds().translated(0, 4), juce::Justification::centred);
+        g.drawText("Pick a genre, tap Generate, or choose an Inspire seed.",
+                   getLocalBounds().translated(0, 24), juce::Justification::centred);
         return;
     }
 
@@ -1054,6 +1057,98 @@ void ImportModePicker::resized()
     cancel.setBounds(card.removeFromTop(36).withSizeKeepingCentre(120, 36));
 }
 
+FirstRunTour::FirstRunTour()
+{
+    title.setText("Welcome to Harmonia", juce::dontSendNotification);
+    title.setFont(Theme::medium(20.0f));
+    title.setColour(juce::Label::textColourId, Theme::label);
+    title.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(title);
+
+    body.setText("This is a MIDI generator, not a synth. The product is the notes.",
+                 juce::dontSendNotification);
+    body.setFont(Theme::regular(13.5f));
+    body.setColour(juce::Label::textColourId, Theme::dimText);
+    body.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(body);
+
+    auto styleStep = [](juce::Label& label, const juce::String& text)
+    {
+        label.setText(text, juce::dontSendNotification);
+        label.setFont(Theme::regular(14.0f));
+        label.setColour(juce::Label::textColourId, Theme::label);
+        label.setJustificationType(juce::Justification::centredLeft);
+    };
+    styleStep(step1, "1.  Pick a genre, or an Inspire seed for a finished plan.");
+    styleStep(step2, "2.  Tap Generate. You get an 8-bar arrangement as MIDI.");
+    styleStep(step3, "3.  Drag MIDI into Ableton / Logic / FL. Load your piano.");
+    addAndMakeVisible(step1);
+    addAndMakeVisible(step2);
+    addAndMakeVisible(step3);
+
+    licenseNote.setFont(Theme::regular(12.5f));
+    licenseNote.setColour(juce::Label::textColourId, Theme::trial);
+    licenseNote.setJustificationType(juce::Justification::centred);
+    licenseNote.setVisible(false);
+    addAndMakeVisible(licenseNote);
+
+    gotIt.setColour(juce::TextButton::buttonColourId, Theme::panel);
+    gotIt.onClick = [this]() { if (onDismiss) onDismiss(); };
+    addAndMakeVisible(gotIt);
+
+    generateNow.setColour(juce::TextButton::buttonColourId, Theme::accent);
+    generateNow.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    generateNow.onClick = [this]()
+    {
+        if (onGenerateNow)
+            onGenerateNow();
+        else if (onDismiss)
+            onDismiss();
+    };
+    addAndMakeVisible(generateNow);
+}
+
+void FirstRunTour::setNeedsLicense(bool needsLicense)
+{
+    licenseNote.setVisible(needsLicense);
+    licenseNote.setText(needsLicense
+                            ? "Paid copy: Settings → paste your HRM- license key, then Generate."
+                            : "",
+                        juce::dontSendNotification);
+    resized();
+}
+
+void FirstRunTour::paint(juce::Graphics& g)
+{
+    g.setColour(juce::Colours::black.withAlpha(0.58f));
+    g.fillRect(getLocalBounds());
+    Theme::fillGlass(g, getLocalBounds().withSizeKeepingCentre(460, 360).toFloat(), 18.0f);
+}
+
+void FirstRunTour::resized()
+{
+    auto card = getLocalBounds().withSizeKeepingCentre(460, 360).reduced(28, 24);
+    title.setBounds(card.removeFromTop(28));
+    card.removeFromTop(8);
+    body.setBounds(card.removeFromTop(36));
+    card.removeFromTop(16);
+    step1.setBounds(card.removeFromTop(24));
+    card.removeFromTop(6);
+    step2.setBounds(card.removeFromTop(24));
+    card.removeFromTop(6);
+    step3.setBounds(card.removeFromTop(24));
+    card.removeFromTop(12);
+    if (licenseNote.isVisible())
+    {
+        licenseNote.setBounds(card.removeFromTop(28));
+        card.removeFromTop(8);
+    }
+    auto row = card.removeFromBottom(40);
+    generateNow.setBounds(row.removeFromRight(160));
+    row.removeFromRight(10);
+    gotIt.setBounds(row.removeFromRight(100));
+}
+
 SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
@@ -1078,7 +1173,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     promptEditor.setMultiLine(true);
     promptEditor.setReturnKeyStartsNewLine(true);
     promptEditor.setFont(Theme::regular(16.0f));
-    promptEditor.setTextToShowWhenEmpty("Describe your track  -  optional", Theme::dimText);
+    promptEditor.setTextToShowWhenEmpty("Optional: describe the track — or pick a genre and Generate", Theme::dimText);
     promptEditor.setColour(juce::TextEditor::backgroundColourId, Theme::clipBackground.withAlpha(0.55f));
     addAndMakeVisible(promptEditor);
     addAndMakeVisible(previewOrb);
@@ -1117,6 +1212,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
         if (!audioProcessor.isGenerating())
             onGenerateClicked();
     };
+    generateButton.setTooltip("Write an 8-bar MIDI loop. Drag it into your DAW after.");
     addAndMakeVisible(generateButton);
 
     inspireButton.onClick = [this]()
@@ -1196,7 +1292,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
             inspireSeedCombo.addItem(seed.label, id++);
     }
     inspireSeedCombo.setSelectedId(1, juce::dontSendNotification);
-    inspireSeedCombo.setTooltip("One-click plans that land a good 8-bar arrangement");
+    inspireSeedCombo.setTooltip("One-click plans. Picking a seed generates MIDI you can drag into your DAW.");
     inspireSeedCombo.onChange = [this]()
     {
         if (!audioProcessor.isGenerating())
@@ -1225,6 +1321,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addAndMakeVisible(trackLanes);
 
     dragAllButton.onDrag = [this]() { startExternalMidiDrag(Part::All); };
+    dragAllButton.setTooltip("Drag the full MIDI arrangement into your DAW");
     addAndMakeVisible(dragAllButton);
 
     previewButton.onClick = [this]()
@@ -1317,6 +1414,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     pianoRegen.onClick = [this]() { onRegeneratePart(Part::Piano, false); };
     pianoDrag.onDrag = [this]() { startExternalMidiDrag(Part::Piano); };
+    pianoDrag.setTooltip("Drag the piano MIDI into your DAW");
     addMore(pianoMute);
     addMore(pianoRegen);
     addMore(pianoDrag);
@@ -1440,6 +1538,15 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     settingsOverlay->onClose = [this]() { hideSettings(); };
     addChildComponent(*settingsOverlay);
 
+    firstRunTour = std::make_unique<FirstRunTour>();
+    firstRunTour->onDismiss = [this]() { hideFirstRunTour(); };
+    firstRunTour->onGenerateNow = [this]()
+    {
+        hideFirstRunTour();
+        onGenerateClicked();
+    };
+    addChildComponent(*firstRunTour);
+
     refreshStyleCombo();
     refreshPresetCombo();
     applyParamsToUI(audioProcessor.getLastUiParams());
@@ -1451,6 +1558,9 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     setSize(800, 840);
     rebuildBackdrop();
     startTimerHz(30);
+
+    if (!audioProcessor.hasSeenFirstRunTour())
+        showFirstRunTour();
 }
 
 SynthesiaAIEditor::~SynthesiaAIEditor()
@@ -1689,6 +1799,23 @@ void SynthesiaAIEditor::hideSettings()
     settingsOpen = false;
 }
 
+void SynthesiaAIEditor::showFirstRunTour()
+{
+    if (firstRunTour == nullptr)
+        return;
+    const bool needsLicense = LicenseStub::enforceGenerate() && !audioProcessor.isLicensed();
+    firstRunTour->setNeedsLicense(needsLicense);
+    firstRunTour->setVisible(true);
+    firstRunTour->toFront(true);
+}
+
+void SynthesiaAIEditor::hideFirstRunTour()
+{
+    if (firstRunTour != nullptr)
+        firstRunTour->setVisible(false);
+    audioProcessor.setFirstRunTourSeen(true);
+}
+
 void SynthesiaAIEditor::applyEngineChoice()
 {
     const int id = engineComboBox.getSelectedId();
@@ -1843,7 +1970,7 @@ void SynthesiaAIEditor::resized()
     statusLabel.setBounds(area.removeFromBottom(20));
     area.removeFromBottom(8);
     auto transport = area.removeFromBottom(40);
-    dragAllButton.setBounds(transport.removeFromLeft(120));
+    dragAllButton.setBounds(transport.removeFromLeft(128));
     transport.removeFromLeft(10);
     previewButton.setBounds(transport.removeFromLeft(40));
 
@@ -1955,6 +2082,8 @@ void SynthesiaAIEditor::resized()
     importPicker.setBounds(getLocalBounds());
     if (settingsOverlay != nullptr)
         settingsOverlay->setBounds(getLocalBounds());
+    if (firstRunTour != nullptr)
+        firstRunTour->setBounds(getLocalBounds());
 
     if (backdrop.getWidth() != getWidth() || backdrop.getHeight() != getHeight())
         rebuildBackdrop();
@@ -2647,7 +2776,7 @@ void SynthesiaAIEditor::updateUIState()
 
     if (!busy && statusLabel.getText() == "Generating...")
     {
-        juce::String ready = "Ready  ·  drag a part into your DAW";
+        juce::String ready = "Ready  ·  drag MIDI into your DAW (preview is a sketch)";
         if (hasMidi && inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
             ready = inspireHistory[(size_t) inspireIndex].caption;
         statusLabel.setText(hasMidi ? ready : "Generation failed", juce::dontSendNotification);

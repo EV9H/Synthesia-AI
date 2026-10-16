@@ -1104,7 +1104,14 @@ void SynthesiaAIProcessor::persistLocalSettings() const
     xml.setAttribute("advancedUi", advancedUi ? 1 : 0);
     xml.setAttribute("followHostTempo", followHostTempo.load() ? 1 : 0);
     xml.setAttribute("followHostKey", followHostKey.load() ? 1 : 0);
+    xml.setAttribute("firstRunTourSeen", firstRunTourSeen ? 1 : 0);
     xml.writeTo(localSettingsFile());
+}
+
+void SynthesiaAIProcessor::setFirstRunTourSeen(bool seen)
+{
+    firstRunTourSeen = seen;
+    persistLocalSettings();
 }
 
 void SynthesiaAIProcessor::loadLocalSettings()
@@ -1124,6 +1131,7 @@ void SynthesiaAIProcessor::loadLocalSettings()
     advancedUi = xml->getIntAttribute("advancedUi", 0) != 0;
     followHostTempo.store(xml->getIntAttribute("followHostTempo", 1) != 0);
     followHostKey.store(xml->getIntAttribute("followHostKey", 0) != 0);
+    firstRunTourSeen = xml->getIntAttribute("firstRunTourSeen", 0) != 0;
     configureLlm(*generator);
 }
 

@@ -177,7 +177,8 @@ private:
     float hover{0.0f};
 };
 
-class DragHandle : public juce::Component
+class DragHandle : public juce::Component,
+                   public juce::SettableTooltipClient
 {
 public:
     std::function<void()> onDrag;
@@ -194,7 +195,8 @@ private:
     bool hovered{false};
 };
 
-class LabeledDrag : public juce::Component
+class LabeledDrag : public juce::Component,
+                    public juce::SettableTooltipClient
 {
 public:
     std::function<void()> onDrag;
@@ -282,6 +284,28 @@ private:
     juce::TextButton cancel { "Cancel" };
 };
 
+class FirstRunTour : public juce::Component
+{
+public:
+    std::function<void()> onDismiss;
+    std::function<void()> onGenerateNow;
+
+    FirstRunTour();
+    void setNeedsLicense(bool needsLicense);
+    void paint(juce::Graphics&) override;
+    void resized() override;
+
+private:
+    juce::Label title;
+    juce::Label body;
+    juce::Label step1;
+    juce::Label step2;
+    juce::Label step3;
+    juce::Label licenseNote;
+    juce::TextButton gotIt { "Got it" };
+    juce::TextButton generateNow { "Generate a loop" };
+};
+
 class SettingsOverlay;
 
 class SynthesiaAIEditor : public juce::AudioProcessorEditor,
@@ -337,6 +361,8 @@ private:
     void applyImportMode(ImportMode mode);
     void openSettings();
     void hideSettings();
+    void showFirstRunTour();
+    void hideFirstRunTour();
     void styleSlider(juce::Slider& slider);
     void applyEngineChoice();
     void setupSectionLabel(juce::Label& label, const juce::String& text);
@@ -442,6 +468,7 @@ private:
 
     ImportModePicker importPicker;
     std::unique_ptr<SettingsOverlay> settingsOverlay;
+    std::unique_ptr<FirstRunTour> firstRunTour;
     juce::TooltipWindow tooltipWindow { this, 450 };
     juce::File pendingImportFile;
     bool importPickerOpen{false};
