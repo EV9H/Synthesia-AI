@@ -97,6 +97,10 @@ House/lo-fi chorus crash skipped (house drums 71.3 → **71.8**, matching q8). C
 
 Lo-fi arrangement: complementary piano (not unison comps), verse-only-X, hook restate on contour A (not inverted B), sustained two-hit pads, one inner-voice step. Arrange **68.3 → 77.4**. Chords **64.8 → 64.2** (held; short stabs walked back — bass_root error). Piano 81.7 → **84.6**, bass 75.8 → **80.9**, melody 69.3 → 66.6. Headline **76.8** loop-v1, legacy **76.2**. Hard gates green (two bass_root *warns*, no errors). Other genres unchanged. Artifacts: `sell-q14-*_s7.{mp3,mid}`.
 
-## Next loop (q15+) if unblocked
+## sell-q15
 
-MIDI: cinematic arrange 69.8 / overall 74.0; lofi melody 66.6. Trap chords 58.0 are structurally capped — do not chase vocab. Do not retouch trap melody with 2-bar/sustain stacks. Do not shorten lo-fi pad holds. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
+Cinematic: one pad stack per chord (not per-beat retrigger), ghost-free snares, one inner-voice step. Arrange **69.8 → 77.0**. Overall 74.0 → **74.2**. Chords 72.7 → 66.1, drums 83.6 → 73.0 (loop groove vs piano-ref trade), melody 70.5 → **76.8**, piano held 71.6 (verse arp skips walked back). Headline **76.8** loop-v1, legacy **75.9**, arrange **78.3**. Gates green. Artifacts: `sell-q15-*_s7.{mp3,mid}`.
+
+## Next loop (q16+) if unblocked
+
+MIDI still moving on arrange (75.6 → 78.3). Remaining weak parts: house drums 71.8, pop piano 69.2, lofi melody 66.6. Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
