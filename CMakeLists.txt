@@ -108,7 +108,7 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
         ${SYNTHESIA_SOURCES})
     target_include_directories(SynthesiaRender PRIVATE Source)
     target_compile_definitions(SynthesiaRender PRIVATE
-        JucePlugin_Name="Synthesia AI"
+        JucePlugin_Name="Harmonia"
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=1)
     target_link_libraries(SynthesiaRender PRIVATE

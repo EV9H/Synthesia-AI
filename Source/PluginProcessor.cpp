@@ -33,7 +33,7 @@ SynthesiaAIProcessor::~SynthesiaAIProcessor()
 
 const juce::String SynthesiaAIProcessor::getName() const
 {
-    return JucePlugin_Name;
+    return "Harmonia";
 }
 
 bool SynthesiaAIProcessor::acceptsMidi() const

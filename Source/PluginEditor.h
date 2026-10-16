@@ -348,6 +348,7 @@ private:
     void showInspireHistory(int index);
     void refreshInspireCaption();
     void refreshMoodChips();
+    void applyInspireSeed();
     Genre selectedGenre() const;
     ScaleType selectedScale() const;
 
@@ -378,6 +379,7 @@ private:
     juce::Random inspireRng;
     juce::TextButton importButton;
     juce::TextButton moreButton;
+    juce::ComboBox inspireSeedCombo;
 
     TrackLanes trackLanes;
     LabeledDrag dragAllButton;
@@ -500,6 +502,7 @@ private:
     juce::TextEditor licenseEditor;
     juce::Label usageLabel;
     juce::Label hintLabel;
+    juce::Label aboutLabel;
     juce::TextButton saveButton;
     juce::TextButton cancelButton;
 

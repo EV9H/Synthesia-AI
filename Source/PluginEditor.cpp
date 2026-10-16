@@ -456,13 +456,7 @@ void Wordmark::paint(juce::Graphics& g)
 
     g.setFont(Theme::medium(20.0f));
     g.setColour(Theme::label);
-    auto name = bounds.removeFromLeft(108.0f);
-    g.drawText("Synthesia", name, juce::Justification::centredLeft, false);
-    g.setFont(Theme::medium(20.0f));
-    juce::ColourGradient grad(Theme::accentViolet, bounds.getX(), bounds.getY(),
-                              Theme::accentCoral, bounds.getRight(), bounds.getBottom(), false);
-    g.setGradientFill(grad);
-    g.drawText("AI", bounds, juce::Justification::centredLeft, false);
+    g.drawText("Harmonia", bounds, juce::Justification::centredLeft, false);
 }
 
 void PreviewOrb::setLevel(float newLevel)
@@ -1195,6 +1189,21 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     moreButton.onClick = [this]() { setMoreOpen(!moreOpen); };
     addAndMakeVisible(moreButton);
 
+    inspireSeedCombo.addItem("Inspire seed...", 1);
+    {
+        int id = 2;
+        for (const auto& seed : inspireFactorySeeds())
+            inspireSeedCombo.addItem(seed.label, id++);
+    }
+    inspireSeedCombo.setSelectedId(1, juce::dontSendNotification);
+    inspireSeedCombo.setTooltip("One-click plans that land a good 8-bar arrangement");
+    inspireSeedCombo.onChange = [this]()
+    {
+        if (!audioProcessor.isGenerating())
+            applyInspireSeed();
+    };
+    addAndMakeVisible(inspireSeedCombo);
+
     setupSectionLabel(moreArrangement, "ARRANGEMENT");
     setupSectionLabel(moreHarmony, "HARMONY");
     setupSectionLabel(moreFeel, "FEEL");
@@ -1749,7 +1758,7 @@ void SynthesiaAIEditor::resized()
     auto area = getLocalBounds().reduced(20, 16);
 
     auto header = area.removeFromTop(36);
-    wordmark.setBounds(header.removeFromLeft(178));
+    wordmark.setBounds(header.removeFromLeft(168));
     settingsButton.setBounds(header.removeFromRight(36));
     header.removeFromRight(8);
     barsPill.setBounds(header.removeFromRight(78));
@@ -1827,6 +1836,8 @@ void SynthesiaAIEditor::resized()
     importButton.setBounds(secondary.removeFromLeft(130));
     secondary.removeFromLeft(10);
     moreButton.setBounds(secondary.removeFromLeft(150));
+    secondary.removeFromLeft(10);
+    inspireSeedCombo.setBounds(secondary.removeFromRight(168));
 
     area.removeFromTop(14);
     statusLabel.setBounds(area.removeFromBottom(20));
@@ -2221,6 +2232,20 @@ void SynthesiaAIEditor::onInspireAgain()
     onInspireClicked();
 }
 
+void SynthesiaAIEditor::applyInspireSeed()
+{
+    const int id = inspireSeedCombo.getSelectedId();
+    if (id <= 1)
+        return;
+    const auto& seeds = inspireFactorySeeds();
+    const int index = id - 2;
+    if (index < 0 || index >= (int) seeds.size())
+        return;
+    auto idea = inspireIdeaFromSeed(seeds[(size_t) index]);
+    pushInspireHistory(std::move(idea));
+    applyInspireIdea(inspireHistory[(size_t) inspireIndex], true);
+}
+
 void SynthesiaAIEditor::applyInspireIdea(const InspireIdea& idea, bool generate)
 {
     if (!inspireLocks.tempo)
@@ -2544,6 +2569,7 @@ void SynthesiaAIEditor::updateUIState()
     dragAllButton.setReady(hasMidi && !busy);
     generateButton.setEnabled(!busy);
     inspireButton.setEnabled(!busy);
+    inspireSeedCombo.setEnabled(!busy);
     againButton.setEnabled(!busy);
     previewButton.setEnabled(hasMidi && !busy);
     previewButton.setKind(audioProcessor.isPreviewPlaying() ? IconKind::Stop : IconKind::Play);
@@ -2688,6 +2714,12 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(hintLabel);
 
+    aboutLabel.setText("Harmonia 0.1.0  ·  MIDI generator for your own sounds",
+                       juce::dontSendNotification);
+    aboutLabel.setFont(Theme::regular(12.5f));
+    aboutLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    addAndMakeVisible(aboutLabel);
+
     saveButton.setButtonText("Save");
     saveButton.setColour(juce::TextButton::buttonColourId, Theme::accent);
     saveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
@@ -2754,7 +2786,7 @@ void SettingsOverlay::applyProviderDefaults()
 
 juce::Rectangle<int> SettingsOverlay::cardBounds() const
 {
-    return getLocalBounds().withSizeKeepingCentre(440, advancedToggle.getToggleState() ? 560 : 500);
+    return getLocalBounds().withSizeKeepingCentre(440, advancedToggle.getToggleState() ? 590 : 530);
 }
 
 void SettingsOverlay::paint(juce::Graphics& g)
@@ -2796,6 +2828,8 @@ void SettingsOverlay::resized()
     usageLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(6);
     hintLabel.setBounds(area.removeFromTop(36));
+    area.removeFromTop(4);
+    aboutLabel.setBounds(area.removeFromTop(22));
     auto buttons = area.removeFromBottom(36);
     saveButton.setBounds(buttons.removeFromRight(96));
     buttons.removeFromRight(10);

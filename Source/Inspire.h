@@ -2,6 +2,7 @@
 
 #include "Generators/GenreProfiles.h"
 #include <juce_core/juce_core.h>
+#include <vector>
 
 enum class InspireMood
 {
@@ -272,6 +273,109 @@ inline InspireIdea rollInspire(const InspireIdea* previous, const InspireLocks& 
     idea.tempoLabel = juce::String(juce::roundToInt(tempo)) + " bpm";
     idea.moodLabel = moodCaption(idea.mood);
     idea.caption = idea.genreLabel + "  ·  " + idea.keyLabel + "  ·  " + idea.tempoLabel
+                   + "  ·  " + idea.moodLabel;
+    return idea;
+}
+
+struct InspireSeedSpec
+{
+    const char* id;
+    const char* label;
+    Genre genre;
+    InspireMood mood;
+    int root;
+    ScaleType scale;
+    int tempo;
+    const char* chords;
+    const char* rhythm;
+    float density;
+    ArrangementForm form;
+    int bars;
+    unsigned int seed;
+};
+
+inline const std::vector<InspireSeedSpec>& inspireFactorySeeds()
+{
+    static const std::vector<InspireSeedSpec> seeds{
+        { "pop-radio", "Radio Pop", Genre::Pop, InspireMood::Happy,
+          0, ScaleType::Major, 110, "1 5 67 4", "straight", 0.62f,
+          ArrangementForm::Loop, 8, 7 },
+        { "lofi-dust", "Dusty Lo-fi", Genre::LoFiJazz, InspireMood::Chill,
+          0, ScaleType::Major, 84, "27 5 19 67", "sparse", 0.34f,
+          ArrangementForm::Loop, 8, 7 },
+        { "house-night", "Night House", Genre::House, InspireMood::Dark,
+          0, ScaleType::Minor, 124, "1 5D 67 4", "straight", 0.40f,
+          ArrangementForm::Loop, 8, 7 },
+        { "trap-chrome", "Chrome Trap", Genre::Trap, InspireMood::Dark,
+          0, ScaleType::Minor, 140, "1 67 4 5D", "sparse", 0.38f,
+          ArrangementForm::Loop, 8, 7 },
+        { "rnb-velvet", "Velvet R&B", Genre::RnB, InspireMood::Dreamy,
+          0, ScaleType::Minor, 88, "4 3 27 1", "swung", 0.36f,
+          ArrangementForm::Loop, 8, 7 },
+        { "cine-wide", "Wide Cue", Genre::Cinematic, InspireMood::Epic,
+          0, ScaleType::Minor, 80, "1s4 67 3 7", "sparse", 0.32f,
+          ArrangementForm::Loop, 8, 7 },
+        { "pop-uplift", "Pop Uplift", Genre::Pop, InspireMood::Happy,
+          7, ScaleType::Major, 118, "1 5s4 6 4", "straight", 0.70f,
+          ArrangementForm::Loop, 8, 11 },
+        { "lofi-song", "Lo-fi Song", Genre::LoFiJazz, InspireMood::Chill,
+          9, ScaleType::Minor, 84, "19 67 27 5", "sparse", 0.32f,
+          ArrangementForm::Song, 16, 11 },
+        { "house-anthem", "House Anthem", Genre::House, InspireMood::Epic,
+          9, ScaleType::Minor, 124, "67 4 1 5D", "straight", 0.78f,
+          ArrangementForm::Song, 16, 11 },
+        { "rnb-late", "Late Pocket", Genre::RnB, InspireMood::Chill,
+          2, ScaleType::Minor, 86, "67 27 5D 19", "swung", 0.34f,
+          ArrangementForm::Loop, 8, 23 },
+    };
+    return seeds;
+}
+
+inline InspireIdea inspireIdeaFromSeed(const InspireSeedSpec& spec)
+{
+    InspireIdea idea;
+    idea.mood = spec.mood;
+    idea.params.genre = spec.genre;
+    idea.params.rootNote = spec.root;
+    idea.params.scale = spec.scale;
+    idea.params.tempo = (double) spec.tempo;
+    idea.params.quantization = getGenreProfile(spec.genre).defaultGrid;
+    idea.params.part = Part::All;
+    idea.params.form = spec.form;
+    idea.params.lengthInBars = spec.bars;
+    idea.params.chordText = spec.chords;
+    idea.params.lockProgression = true;
+    idea.params.progression.clear();
+    idea.params.grooveIndex = 0;
+    idea.params.seed = spec.seed;
+    idea.params.density = spec.density;
+    idea.params.motifRhythm = spec.rhythm;
+    idea.params.motifContour = spec.mood == InspireMood::Happy ? "rising"
+                             : spec.mood == InspireMood::Dark ? "falling"
+                             : spec.mood == InspireMood::Epic ? "arch"
+                             : "static";
+    idea.params.importMode = ImportMode::None;
+    idea.params.stylePrompt.clear();
+    idea.params.planJson.clear();
+    idea.params.plannedSections.clear();
+    if (spec.mood == InspireMood::Chill || spec.mood == InspireMood::Dreamy)
+    {
+        idea.params.swing = juce::jmax(0.56, getGenreProfile(spec.genre).swing);
+        idea.params.humanizeMs = juce::jmax(6.0, getGenreProfile(spec.genre).drums.humanizeMs);
+    }
+    else
+    {
+        idea.params.swing = getGenreProfile(spec.genre).swing;
+        idea.params.humanizeMs = getGenreProfile(spec.genre).drums.humanizeMs;
+    }
+
+    static const char* keyNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    idea.adjective = spec.label;
+    idea.genreLabel = spec.label;
+    idea.keyLabel = juce::String(keyNames[juce::jlimit(0, 11, spec.root)]) + " " + inspireScaleName(spec.scale);
+    idea.tempoLabel = juce::String(spec.tempo) + " bpm";
+    idea.moodLabel = moodCaption(spec.mood);
+    idea.caption = juce::String(spec.label) + "  ·  " + idea.keyLabel + "  ·  " + idea.tempoLabel
                    + "  ·  " + idea.moodLabel;
     return idea;
 }

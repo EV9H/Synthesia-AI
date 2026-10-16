@@ -22,7 +22,7 @@ def _markdown(p: dict[str, Any]) -> str:
     when = p.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     git = p.get("git", "")
     lines = [
-        f"# Synthesia AI eval — {when}",
+        f"# Harmonia eval — {when}",
         "",
         f"- git: `{git}`",
         f"- clips: {p.get('n_clips', 0)}",
