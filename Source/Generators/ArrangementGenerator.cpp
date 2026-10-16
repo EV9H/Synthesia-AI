@@ -1926,10 +1926,17 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int rotate = bar % 8;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
-            const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
+            // Pop refs sit at vel_std p50=15 / p90=20. 96/74/50 + downbeat
+            // accents landed at 24 (already above p90). Compress the curve and
+            // skip playedVelocity accents — the opposite of q18/q21 widens.
+            const int velocity = trapPiano
+                ? (index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50)
+                : (index % 8 == 0 ? 92 : index % 2 == 0 ? 74 : 56);
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
-            notes.push_back({ pitch, beat, noteLen, playedVelocity(velocity, beat, rng, trapPiano ? 14 : 12) });
+            notes.push_back({ pitch, beat, noteLen,
+                trapPiano ? playedVelocity(velocity, beat, rng, 14)
+                          : humanise(velocity, rng, 12) });
         }
         if (trapPiano && !voicing.empty())
         {
