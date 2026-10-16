@@ -1,0 +1,31 @@
+Harmonia — unsigned zip smoke test (2 minutes)
+
+This zip is unsigned. macOS Gatekeeper and Windows SmartScreen will warn.
+That is expected until the developer signs the installer. It is not malware.
+
+macOS
+1. Unzip. You get "Synthesia AI.vst3" plus GETTING_STARTED.txt.
+2. If Gatekeeper blocks: right-click the .vst3 → Open
+   (or System Settings → Privacy & Security → Open Anyway).
+3. Copy Synthesia AI.vst3 into ~/Library/Audio/Plug-Ins/VST3/
+4. Rescan plugins in your DAW.
+
+Windows
+1. Unzip.
+2. If SmartScreen warns: More info → Run anyway.
+3. Copy the .vst3 folder into C:\Program Files\Common Files\VST3\
+4. Rescan.
+
+Then in the DAW
+1. Insert Harmonia on a MIDI / instrument track.
+2. Pick a genre → Generate (or pick an Inspire seed).
+   If Generate is grey: Settings → paste HRM-XXXXXXXX-CCCC from your
+   receipt → Validate. Spaces and a "License:" prefix are stripped.
+3. Drag the handle labelled "Drag MIDI" into the DAW (not the piano-roll).
+4. Load YOUR piano, bass, and drums. Route channel 10 to a drum kit.
+
+You should see five tracks: Chords (ch 1), Bass (ch 2), Synth (ch 3),
+Piano (ch 4), Drums (ch 10 / GM). Preview audio is a cheap sketch.
+
+If that path fails, email support before leaving a 1-star review.
+Display name: Harmonia. Bundle id is still SynthesiaAI until a dedicated rename.

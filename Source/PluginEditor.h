@@ -511,6 +511,7 @@ public:
 
 private:
     void applyProviderDefaults();
+    void attemptLicenseUnlock();
     void save();
     juce::Rectangle<int> cardBounds() const;
 

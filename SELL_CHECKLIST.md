@@ -16,7 +16,7 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 - Offline license mint: `Tools/make_license_key.sh` → writes `HRM-XXXXXXXX-CCCC`. A local sample may exist at `Tools/sample_license.txt` (**gitignored**). Do not commit Lemon/production secrets.
 - Plugin stub: Settings → License key + Validate. Shipping gate: `cmake -DHARMONIA_LICENSE_ENFORCE=1`
 - First-run tour + empty-state: generate → drag MIDI into the DAW. Preview is labelled a sketch. Paid builds: Open Settings from the tour; drag still works without a key.
-- Zip includes `Tools/GETTING_STARTED.txt` (unsigned-build warning + generate→drag).
+- Zip includes `Tools/GETTING_STARTED.txt` and `Tools/UNSIGNED_SMOKE.txt` (Gatekeeper/SmartScreen bypass + generate→drag).
 - Inspire factory seeds: combo still auto-generates. Keep at least one seed per shipping genre.
 - Eval honesty: headline is `loop-v1` (legacy column still reported so q8 **75.4** stays comparable).
 
@@ -117,6 +117,10 @@ Tried lofi melody (syncopate restated A, fold 60–69) — melody **66.6 → 56.
 
 Tried lo-fi bass_root (snap approaches; force pad root after invert). Lint stayed 38–42% and lofi dipped 73.3 → 72.8 — walked back. Product: GETTING_STARTED names GM channels (1–4 + ch 10 drums); sell-site FAQ “preview piano is a sketch.” MIDI = q17/q18. Headline **77.0**. Artifacts: `sell-q19-*_s7.{mp3,mid}`.
 
-## Next loop (q20+) if unblocked
+## sell-q20
 
-MIDI: lofi melody 66.6, pop piano 69.2, cinematic drums 73.0, lofi bass_root warns (do not chase the same snap/root-insert). Do not retouch lofi lead rhythm A / fold-69. Do not widen pop piano to 32–108. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Tried cinematic one-ghost-per-backbeat snares. Drums **73.0 → 74.8** but arrange **77.0 → 75.4** and cinematic **74.2 → 74.1** — walked back (do not retry sparse cinematic ghosts). MIDI = q17/q18/q19. Headline **77.0**, arrange **78.4**, gates green. Product: visible license paste + sanitise/auto-Validate; `UNSIGNED_SMOKE.txt` in the VST3 zip; first-run status “Generate then drag.” Artifacts: `sell-q20-*_s7.{mp3,mid}`.
+
+## Next loop (q21+) if unblocked
+
+MIDI: lofi melody 66.6 (not rhythm-A / fold-69), pop piano 69.2 (not 32–108 accents; modest spread-only is untried), cinematic drums 73.0 (ghosts walked back). Do not chase lofi bass_root snap/root-insert. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.

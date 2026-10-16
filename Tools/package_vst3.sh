@@ -50,6 +50,7 @@ stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 cp -R "$VST3" "$stage/"
 cp "$ROOT/Tools/GETTING_STARTED.txt" "$stage/GETTING_STARTED.txt"
+cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$stage/UNSIGNED_SMOKE.txt"
 (
     cd "$stage"
     zip -r -q "$out" .

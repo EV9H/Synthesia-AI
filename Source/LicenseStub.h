@@ -48,6 +48,17 @@ public:
         return (juce::uint16) sum;
     }
 
+    static juce::String sanitiseKey(const juce::String& raw)
+    {
+        auto s = raw.trim();
+        const juce::String prefixes[] = { "LICENSE KEY:", "LICENSE:", "KEY:" };
+        for (const auto& p : prefixes)
+            if (s.startsWithIgnoreCase(p))
+                s = s.substring(p.length()).trim();
+        s = s.removeCharacters(" \t\r\n");
+        return s.toUpperCase();
+    }
+
     static juce::String makeOfflineKey(const juce::String& hex8)
     {
         const auto payload = hex8.toUpperCase().paddedLeft('0', 8).substring(0, 8);
@@ -57,7 +68,7 @@ public:
 
     static bool offlineKeyValid(const juce::String& key)
     {
-        const auto trimmed = key.trim().toUpperCase();
+        const auto trimmed = sanitiseKey(key);
         if (trimmed.startsWith(legacyPrefix) && trimmed.length() >= 12)
             return true;
         if (!trimmed.startsWith(prefix) || trimmed.length() < 17)
@@ -86,12 +97,15 @@ public:
     // Offline first. HTTP only when a URL is supplied — no embedded secrets.
     static Result validate(const juce::String& key, const juce::String& urlIn = {})
     {
-        const auto trimmed = key.trim();
+        const auto trimmed = sanitiseKey(key);
         if (trimmed.isEmpty())
             return { false, "Paste a license key (HRM-XXXXXXXX-CCCC)." };
 
         if (offlineKeyValid(trimmed))
-            return { true, "Valid offline key." };
+            return { true, "Valid offline key. Generate is unlocked. Drag MIDI always works." };
+
+        if (trimmed.startsWith(prefix))
+            return { false, "HRM- key checksum failed. Paste the full HRM-XXXXXXXX-CCCC line from your receipt, then Validate." };
 
         auto url = urlIn.trim();
         if (url.isEmpty())

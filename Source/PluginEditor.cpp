@@ -1347,6 +1347,8 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     statusLabel.setColour(juce::Label::textColourId, Theme::dimText);
     statusLabel.setFont(Theme::regular(13.0f));
+    statusLabel.setText("Pick a genre, tap Generate, then drag MIDI into your DAW.",
+                        juce::dontSendNotification);
     addAndMakeVisible(statusLabel);
 
     moreViewport.setViewedComponent(&morePage, false);
@@ -2862,21 +2864,20 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
 
     setupLabel(licenseLabel, "License key");
     addAndMakeVisible(licenseLabel);
-    licenseEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
-    licenseEditor.setTextToShowWhenEmpty("HRM-XXXXXXXX-CCCC", Theme::dimText);
+    // Product keys are paste-once, not passwords — bullets hide checksum typos.
+    licenseEditor.setPasswordCharacter(0);
+    licenseEditor.setTextToShowWhenEmpty("paste HRM-XXXXXXXX-CCCC from your receipt", Theme::dimText);
     styleEditor(licenseEditor);
     addAndMakeVisible(licenseEditor);
     validateLicenseButton.setButtonText("Validate");
     validateLicenseButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.08f));
     validateLicenseButton.setColour(juce::TextButton::textColourOffId, Theme::label);
-    validateLicenseButton.onClick = [this]()
+    validateLicenseButton.onClick = [this]() { attemptLicenseUnlock(); };
+    licenseEditor.onReturnKey = [this]() { attemptLicenseUnlock(); };
+    licenseEditor.onTextChange = [this]()
     {
-        processor.setLicenseKey(licenseEditor.getText());
-        processor.setLicenseValidateUrl(licenseUrlEditor.getText());
-        const auto result = processor.validateLicense();
-        licenseStatusLabel.setText(result.message, juce::dontSendNotification);
-        licenseStatusLabel.setColour(juce::Label::textColourId,
-                                     result.licensed ? Theme::licensed : Theme::trial);
+        if (LicenseStub::offlineKeyValid(licenseEditor.getText()))
+            attemptLicenseUnlock();
     };
     addAndMakeVisible(validateLicenseButton);
     licenseStatusLabel.setFont(Theme::regular(12.5f));
@@ -2958,6 +2959,19 @@ void SettingsOverlay::refreshFromProcessor()
     resized();
 }
 
+void SettingsOverlay::attemptLicenseUnlock()
+{
+    const auto cleaned = LicenseStub::sanitiseKey(licenseEditor.getText());
+    if (cleaned != licenseEditor.getText())
+        licenseEditor.setText(cleaned, juce::dontSendNotification);
+    processor.setLicenseKey(cleaned);
+    processor.setLicenseValidateUrl(licenseUrlEditor.getText());
+    const auto result = processor.validateLicense();
+    licenseStatusLabel.setText(result.message, juce::dontSendNotification);
+    licenseStatusLabel.setColour(juce::Label::textColourId,
+                                 result.licensed ? Theme::licensed : Theme::trial);
+}
+
 void SettingsOverlay::save()
 {
     const auto id = providerComboBox.getSelectedId();
@@ -2966,9 +2980,7 @@ void SettingsOverlay::save()
     processor.setApiEndpoint(endpointEditor.getText());
     processor.setApiModel(modelEditor.getText());
     processor.setAdvancedUi(advancedToggle.getToggleState());
-    processor.setLicenseKey(licenseEditor.getText());
-    processor.setLicenseValidateUrl(licenseUrlEditor.getText());
-    processor.validateLicense();
+    attemptLicenseUnlock();
     if (onClose)
         onClose();
 }

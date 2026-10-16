@@ -1039,7 +1039,7 @@ juce::File SynthesiaAIProcessor::writeTempMidi(Part part) const
 
 void SynthesiaAIProcessor::setLicenseKey(const juce::String& key)
 {
-    licenseKey = key.trim();
+    licenseKey = LicenseStub::sanitiseKey(key);
     persistLocalSettings();
 }
 
