@@ -19,8 +19,9 @@ Windows
 Then in the DAW
 1. Insert Harmonia on a MIDI / instrument track.
 2. Pick a genre → Generate (or pick an Inspire seed).
-   If Generate is grey: Settings → paste HRM-XXXXXXXX-CCCC from your
-   receipt → Validate. Spaces and a "License:" prefix are stripped.
+   If Generate needs a key: tap it — Settings opens. Paste
+   HRM-XXXXXXXX-CCCC (or hit Paste) → Validate. Spaces and a
+   "License:" prefix are stripped.
 3. Drag the handle labelled "Drag MIDI" into the DAW (not the piano-roll).
 4. Load YOUR piano, bass, and drums. Route channel 10 to a drum kit.
 

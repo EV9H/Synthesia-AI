@@ -11,10 +11,11 @@ preview piano sounds thin, that is expected — load your own sounds.
 4. Drag the handle labelled "Drag MIDI" into your DAW (not the piano-roll).
 5. Load YOUR piano, bass, and drums on those tracks. Route ch 10 to a drum kit.
 
-If Generate is greyed out: Settings → paste HRM-XXXXXXXX-CCCC from your
-receipt → Validate (the key is visible so you can check the checksum;
-spaces and a "License:" prefix are stripped). Drag and export stay
-unlocked even before a key. Generate locks only on paid (ENFORCE) builds.
+If Generate needs a key: tap it — Settings opens. Paste HRM-XXXXXXXX-CCCC
+from your receipt (or hit Paste) → Validate. The key is visible so you
+can check the checksum; spaces and a "License:" prefix are stripped.
+Drag and export stay unlocked even before a key. Generate locks only
+on paid (ENFORCE) builds.
 
 Unsigned build: macOS Gatekeeper and Windows SmartScreen will warn.
 That is expected until the developer signs the installer. The zip is not malware.

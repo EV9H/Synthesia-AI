@@ -133,6 +133,14 @@ Pop broken piano compressed to 92/74/56 with humanise-only (no downbeat accents)
 
 Tried lo-fi lead onset-fill (density 0.60, keep weak notes, drop the second-bar skip). Melody **66.6 → 72.1** but arrange **77.3 → 73.5**; genre held 73.3, headline held 77.2. Walked back — loop synth band 0.70±0.40 vs piano-ref p10 1.74. MIDI = q22. Headline **77.2**. Artifacts: `sell-q23-*_s7.{mp3,mid}`.
 
-## Next loop (q24+) if unblocked
+## sell-q24
 
-MIDI: cinematic drums 73.0 (not sparse ghosts; anticipated backbeats untried), lofi melody 66.6 (onset-fill walked back; not rhythm-A / fold-69). Trap chords 58.0 (do not chase vocab). Do not widen pop piano. Do not chase lofi bass_root. Trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Tried cinematic anticipated backbeats (same snare count, not ghosts). Sync rose but swing scored 8.0; drums **73.0 → 70.3**, cinematic **74.2 → 73.7**, headline **77.2 → 77.1**. Walked back. MIDI = q22. Headline **77.2**. Artifacts: `sell-q24-*_s7.{mp3,mid}`.
+
+## sell-q25
+
+MIDI stalled (lofi onset-fill + cinematic anticipate both walked back). Product: Generate / Inspire stay clickable on paid builds and open Settings; license Paste-from-clipboard; tour + GETTING_STARTED + FAQ copy. MIDI = q22. Headline **77.2**, arrange **78.3**, gates green. Artifacts: `sell-q25-*_s7.{mp3,mid}`.
+
+## Next loop (q26+) if unblocked
+
+MIDI: lofi melody 66.6 (onset-fill and rhythm-A/fold-69 walked back), cinematic drums 73.0 (ghosts and anticipated backbeats walked back). Trap chords 58.0 (do not chase vocab). Do not widen pop piano. Do not chase lofi bass_root. Trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.

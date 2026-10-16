@@ -1122,7 +1122,7 @@ void FirstRunTour::setNeedsLicense(bool needsLicense)
     licenseNote.setVisible(needsLicense);
     openSettings.setVisible(needsLicense);
     licenseNote.setText(needsLicense
-                            ? "Paid copy: Settings → paste HRM-XXXXXXXX-CCCC. Generate needs the key; drag always works."
+                            ? "Paid copy: tap Generate to open Settings and paste HRM-XXXXXXXX-CCCC. Drag always works."
                             : "",
                         juce::dontSendNotification);
     resized();
@@ -2338,6 +2338,7 @@ void SynthesiaAIEditor::onGenerateClicked()
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
         statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        openSettings();
         return;
     }
     const int engine = engineComboBox.getSelectedId();
@@ -2359,6 +2360,7 @@ void SynthesiaAIEditor::onInspireClicked()
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
         statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        openSettings();
         return;
     }
     InspireIdea base;
@@ -2398,6 +2400,7 @@ void SynthesiaAIEditor::applyInspireSeed()
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
         statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        openSettings();
         return;
     }
     const int id = inspireSeedCombo.getSelectedId();
@@ -2734,12 +2737,14 @@ void SynthesiaAIEditor::updateUIState()
     const bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     dragAllButton.setReady(hasMidi && !busy);
     const bool licensed = audioProcessor.isLicensed() || !LicenseStub::enforceGenerate();
-    generateButton.setEnabled(!busy && licensed);
+    // Stay clickable when unlicensed — a greyed Generate is a refund. The
+    // click opens Settings so they can paste HRM-.
+    generateButton.setEnabled(!busy);
     generateButton.setTooltip(licensed
         ? "Write an 8-bar MIDI loop. Drag it into your DAW after."
-        : "Paste your HRM- key in Settings to Generate. Drag MIDI always works.");
-    inspireButton.setEnabled(!busy && licensed);
-    inspireSeedCombo.setEnabled(!busy && licensed);
+        : "Tap to paste your HRM- key in Settings. Drag MIDI always works.");
+    inspireButton.setEnabled(!busy);
+    inspireSeedCombo.setEnabled(!busy);
     againButton.setEnabled(!busy);
     previewButton.setEnabled(hasMidi && !busy);
     previewButton.setKind(audioProcessor.isPreviewPlaying() ? IconKind::Stop : IconKind::Play);
@@ -2869,6 +2874,17 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     licenseEditor.setTextToShowWhenEmpty("paste HRM-XXXXXXXX-CCCC from your receipt", Theme::dimText);
     styleEditor(licenseEditor);
     addAndMakeVisible(licenseEditor);
+    pasteLicenseButton.setButtonText("Paste");
+    pasteLicenseButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.08f));
+    pasteLicenseButton.setColour(juce::TextButton::textColourOffId, Theme::label);
+    pasteLicenseButton.setTooltip("Paste the HRM- line from your receipt clipboard");
+    pasteLicenseButton.onClick = [this]()
+    {
+        licenseEditor.setText(juce::SystemClipboard::getTextFromClipboard(),
+                              juce::dontSendNotification);
+        attemptLicenseUnlock();
+    };
+    addAndMakeVisible(pasteLicenseButton);
     validateLicenseButton.setButtonText("Validate");
     validateLicenseButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.08f));
     validateLicenseButton.setColour(juce::TextButton::textColourOffId, Theme::label);
@@ -2938,6 +2954,7 @@ void SettingsOverlay::refreshFromProcessor()
     licenseUrlEditor.setText(processor.getLicenseValidateUrl(), juce::dontSendNotification);
     licenseLabel.setVisible(true);
     licenseEditor.setVisible(true);
+    pasteLicenseButton.setVisible(true);
     validateLicenseButton.setVisible(true);
     licenseStatusLabel.setVisible(true);
     licenseUrlLabel.setVisible(advancedToggle.getToggleState());
@@ -3043,6 +3060,8 @@ void SettingsOverlay::resized()
     area.removeFromTop(4);
     auto licenseRow = area.removeFromTop(30);
     validateLicenseButton.setBounds(licenseRow.removeFromRight(88));
+    licenseRow.removeFromRight(8);
+    pasteLicenseButton.setBounds(licenseRow.removeFromRight(64));
     licenseRow.removeFromRight(8);
     licenseEditor.setBounds(licenseRow);
     area.removeFromTop(6);

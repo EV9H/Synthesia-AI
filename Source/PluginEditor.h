@@ -530,6 +530,7 @@ private:
     juce::ToggleButton advancedToggle;
     juce::Label licenseLabel;
     juce::TextEditor licenseEditor;
+    juce::TextButton pasteLicenseButton;
     juce::TextButton validateLicenseButton;
     juce::Label licenseStatusLabel;
     juce::Label licenseUrlLabel;
