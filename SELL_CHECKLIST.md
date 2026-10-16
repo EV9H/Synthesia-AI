@@ -109,6 +109,10 @@ Product friction (headline stuck at 76.8; arrange already 78.3). GETTING_STARTED
 
 House drums: irregular 16th off-beat hats (not 8th-grid), leftover fill-path chorus crash skipped, off-beat fill claps. Drums **71.8 → 81.0**. House **75.9 → 77.5**. Headline **77.0** loop-v1, legacy **76.2**, arrange **78.4**. Gates green. Other genres held (lofi drums 83.7 from the shared crash skip). Artifacts: `sell-q17-*_s7.{mp3,mid}`.
 
-## Next loop (q18+) if unblocked
+## sell-q18
 
-MIDI: lofi melody 66.6 (pick over pop piano 69.2). Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Do not grid house hats to 8ths. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
+Tried lofi melody (syncopate restated A, fold 60–69) — melody **66.6 → 56.3**, walked back. Tried pop piano velocity 108–32 — piano **69.2 → 61.2** (vel_std 24 → 34), walked back. MIDI matches q17. Headline **77.0**, house drums **81.0**, gates green. Artifacts: `sell-q18-*_s7.{mp3,mid}`.
+
+## Next loop (q19+) if unblocked
+
+MIDI: lofi bass_root warns (38–46%, lint −3) or cinematic drums 73.0. Do not retouch lofi lead rhythm A / fold-69. Do not widen pop piano to 32–108. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
