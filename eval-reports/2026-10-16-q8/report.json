@@ -2419,7 +2419,10 @@
   "mp3s": [
     "lofi_s7.mp3",
     "house_s7.mp3",
-    "trap_s7.mp3"
+    "trap_s7.mp3",
+    "pop_s7.mp3",
+    "rnb_s7.mp3",
+    "cinematic_s7.mp3"
   ],
   "pitch_check": {
     "cents_limit": 50.0,
