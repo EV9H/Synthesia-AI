@@ -1917,6 +1917,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 
         const double end = chordEnd(chord);
         const bool trapPiano = ctx.profile.genre == Genre::Trap;
+        const bool popPiano = ctx.profile.genre == Genre::Pop;
         const double rate = trapPiano ? 0.25 : 0.5;
         const double gate = trapPiano ? 0.22 : juce::jmin(1.1, rate + 0.18);
         int index = 0;
@@ -1926,10 +1927,14 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int rotate = bar % 8;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
-            const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
+            // Pop refs want a wider velocity spread (vel_std scored 57 at ~24).
+            const int velocity = popPiano
+                ? (index % 8 == 0 ? 108 : index % 4 == 0 ? 78 : index % 2 == 0 ? 52 : 32)
+                : (index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50);
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
-            notes.push_back({ pitch, beat, noteLen, playedVelocity(velocity, beat, rng, trapPiano ? 14 : 12) });
+            notes.push_back({ pitch, beat, noteLen,
+                              playedVelocity(velocity, beat, rng, popPiano ? 18 : trapPiano ? 14 : 12) });
         }
         if (trapPiano && !voicing.empty())
         {
@@ -2195,16 +2200,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         contourA[2] = uniform(rng) < 0.6 ? contourA[1] : 0;
         contourA[3] = -contourA[1];
     }
-    // Lo-fi restates A at +4 bars. Delay non-downbeat 8ths on A itself so
-    // both phrases stay syncopated (s7 sync was 25.7 after the B skip).
-    if (ctx.profile.genre == Genre::LoFiJazz && !syncPluck)
-    {
-        for (auto& n : rhythmA)
-            if (n.step > 0 && n.step % 4 == 0 && n.step + finest < motifSteps)
-                n.step += finest;
-        std::sort(rhythmA.begin(), rhythmA.end(),
-                  [](const RhythmNote& a, const RhythmNote& b) { return a.step < b.step; });
-    }
     const auto contourA2 = varyEnding(contourA);
     auto rhythmB = syncPluck ? makeSyncPluck(5, 2, 1) : mutateRhythm(rhythmA);
     if (!syncPluck)
@@ -2359,9 +2354,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
                          : (k < 4 && position == 0));
             if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
                 continue;
-            const double shortSkip = syncPluck ? 0.08
-                : (ctx.profile.genre == Genre::Trap ? 0.22
-                : ctx.profile.genre == Genre::LoFiJazz ? 0.22 : 0.58);
+            const double shortSkip = syncPluck ? 0.08 : (ctx.profile.genre == Genre::Trap ? 0.22 : 0.58);
             if (!hookHead && !cadenceNote && k > 0 && rn.length <= 2 * finest
                 && segmentRhythm[k - 1].length <= 2 * finest && uniform(rng) < shortSkip)
                 continue;
@@ -2371,16 +2364,13 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             {
                 if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.40)
                     continue;
-                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong
-                    && ctx.profile.genre != Genre::LoFiJazz && uniform(rng) < 0.34)
+                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.34)
                     continue;
             }
 
             pitch = foldIntoRange(pitch, role.low, role.high);
             // Piano-performance refs live around 66-70; keep the hook there.
-            // Lo-fi was sitting at 72 (register 64) after the 71 fold.
-            const int foldHigh = ctx.profile.genre == Genre::LoFiJazz ? 69 : 71;
-            while (pitch > foldHigh && pitch - 12 >= role.low)
+            while (pitch > 71 && pitch - 12 >= role.low)
                 pitch -= 12;
             while (pitch < 60 && pitch + 12 <= role.high)
                 pitch += 12;

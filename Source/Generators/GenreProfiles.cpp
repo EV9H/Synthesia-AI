@@ -79,8 +79,7 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        // A bit denser than 0.50: part onset_density sat at 37 vs refs.
-        p.leadMelody = { 58, 70, 0.58, 0.58, 0.28, 0.34, 2, true, false, 80 };
+        p.leadMelody = { 58, 70, 0.50, 0.52, 0.36, 0.34, 2, true, false, 80 };
         p.leadMelody.intervalWeights = { 0.1, 0.2, 0.4, 0.9, 1.6, 2.4, 1.4, 2.4, 1.6, 0.9, 0.4, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Comp;
