@@ -105,6 +105,10 @@ Cinematic: one pad stack per chord (not per-beat retrigger), ghost-free snares, 
 
 Product friction (headline stuck at 76.8; arrange already 78.3). GETTING_STARTED: greyed-out Generate → Settings paste path; Drag MIDI handle named. First-run tour + Generate tooltip say drag always works. Sell-site: license/Gatekeeper FAQs, “drag before key” on the price card, demos refreshed to q15 lofi/house/trap. MIDI unchanged. Artifacts copied as `sell-q16-*`.
 
-## Next loop (q17+) if unblocked
+## sell-q17
 
-MIDI: house drums 71.8, pop piano 69.2, lofi melody 66.6. Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
+House drums: irregular 16th off-beat hats (not 8th-grid), leftover fill-path chorus crash skipped, off-beat fill claps. Drums **71.8 → 81.0**. House **75.9 → 77.5**. Headline **77.0** loop-v1, legacy **76.2**, arrange **78.4**. Gates green. Other genres held (lofi drums 83.7 from the shared crash skip). Artifacts: `sell-q17-*_s7.{mp3,mid}`.
+
+## Next loop (q18+) if unblocked
+
+MIDI: lofi melody 66.6 (pick over pop piano 69.2). Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Do not grid house hats to 8ths. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
