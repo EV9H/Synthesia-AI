@@ -1,0 +1,27 @@
+Harmonia — license note (this zip)
+
+Shipping brand: Harmonia. The VST3 bundle may still be named "Synthesia AI"
+until a dedicated rename. Same plugin.
+
+What you bought
+  Arrangement MIDI for your DAW. Preview audio is a cheap sketch.
+
+Activate
+  Settings → paste the key from your receipt → Validate (or tap Paste).
+  Offline format: HRM-XXXXXXXX-CCCC
+  Lemon keys (if your receipt has one) validate over HTTPS when
+  HARMONIA_LICENSE_VALIDATE_URL is set. Offline HRM- keys never leave this machine.
+
+What stays unlocked without a key
+  Drag MIDI and export. Generate locks only on paid (ENFORCE) builds.
+  Tap Generate — Settings opens if the key is missing.
+
+Do not
+  Redistribute this zip or share your key.
+  Expect a synth or sample pack. Load YOUR piano, bass, and drums.
+
+Unsigned builds
+  See UNSIGNED_SMOKE.txt. Gatekeeper / SmartScreen warnings are expected
+  until the developer signs the installer.
+
+Support: the address on your receipt, or sell-site/config.js supportEmail.

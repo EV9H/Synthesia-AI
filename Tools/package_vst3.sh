@@ -48,12 +48,16 @@ out="$DIST/$zipname"
 rm -f "$out"
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
-cp -R "$VST3" "$stage/"
-cp "$ROOT/Tools/GETTING_STARTED.txt" "$stage/GETTING_STARTED.txt"
-cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$stage/UNSIGNED_SMOKE.txt"
+# Buyer-ready folder: docs next to the .vst3, not a loose dump.
+bundle="$stage/Harmonia"
+mkdir -p "$bundle"
+cp -R "$VST3" "$bundle/"
+cp "$ROOT/Tools/GETTING_STARTED.txt" "$bundle/GETTING_STARTED.txt"
+cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$bundle/UNSIGNED_SMOKE.txt"
+cp "$ROOT/Tools/LICENSE_NOTE.txt" "$bundle/LICENSE.txt"
 (
     cd "$stage"
-    zip -r -q "$out" .
+    zip -r -q "$out" Harmonia
 )
 
 cat <<EOF

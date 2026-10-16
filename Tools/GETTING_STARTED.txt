@@ -22,5 +22,8 @@ That is expected until the developer signs the installer. The zip is not malware
 Follow UNSIGNED_SMOKE.txt in this zip (right-click Open / More info → Run anyway,
 copy the .vst3, rescan, Generate, drag MIDI).
 
+This zip should contain: Synthesia AI.vst3, GETTING_STARTED.txt,
+UNSIGNED_SMOKE.txt, and LICENSE.txt.
+
 Support: see sell-site/ and SELL_CHECKLIST.md in the repo.
 Display name: Harmonia. Bundle id is still SynthesiaAI until a dedicated rename.
