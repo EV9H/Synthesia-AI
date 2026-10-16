@@ -1970,10 +1970,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
             const float density = ctx.densityAt(part, beat);
             if (index % 2 == 1 && uniform(rng) > 0.35 + 0.65 * density)
                 continue;
-            // Cinematic verse: drop off-beats so piano answers the chorus lift.
-            if (ctx.profile.genre == Genre::Cinematic && part == Part::Piano
-                && ctx.energyAt(beat) < 0.55f && index % 2 == 1)
-                continue;
             const int rotate = static_cast<int>(std::floor(chord.startBeat / 4.0 + 1.0e-9));
             const int pitch = tones[static_cast<size_t>(shape[(index + rotate) % shape.size()]) % tones.size()];
             const double inBeat = beat - std::floor(beat);
