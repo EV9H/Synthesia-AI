@@ -132,6 +132,9 @@ public:
     void setLicenseKey(const juce::String& key);
     juce::String getLicenseKey() const { return licenseKey; }
     bool isLicensed() const { return LicenseStub::isLicensed(licenseKey); }
+    LicenseStub::Result validateLicense();
+    void setLicenseValidateUrl(const juce::String& url);
+    juce::String getLicenseValidateUrl() const { return licenseValidateUrl; }
 
     void setApiProvider(const juce::String& name);
     juce::String getApiProvider() const { return apiProvider; }
@@ -223,6 +226,7 @@ private:
     juce::String apiModel{ "gpt-4o-mini" };
     juce::String apiProvider{ "OpenAI" };
     juce::String licenseKey;
+    juce::String licenseValidateUrl;
     MidiGenerationParams lastUiParams;
     juce::String currentPresetName;
     int currentProgram{0};

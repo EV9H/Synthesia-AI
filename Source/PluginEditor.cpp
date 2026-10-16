@@ -2184,6 +2184,11 @@ void SynthesiaAIEditor::onPlanClicked()
 
 void SynthesiaAIEditor::onGenerateClicked()
 {
+    if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
+    {
+        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        return;
+    }
     const int engine = engineComboBox.getSelectedId();
     if (engine <= 1)
     {
@@ -2200,6 +2205,11 @@ void SynthesiaAIEditor::onGenerateClicked()
 
 void SynthesiaAIEditor::onInspireClicked()
 {
+    if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
+    {
+        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        return;
+    }
     InspireIdea base;
     if (inspireIndex >= 0 && inspireIndex < (int) inspireHistory.size())
         base = inspireHistory[(size_t) inspireIndex];
@@ -2234,6 +2244,11 @@ void SynthesiaAIEditor::onInspireAgain()
 
 void SynthesiaAIEditor::applyInspireSeed()
 {
+    if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
+    {
+        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        return;
+    }
     const int id = inspireSeedCombo.getSelectedId();
     if (id <= 1)
         return;
@@ -2567,9 +2582,10 @@ void SynthesiaAIEditor::updateUIState()
     const bool busy = audioProcessor.isGenerating();
     const bool hasMidi = !audioProcessor.getGeneratedMidi().isEmpty();
     dragAllButton.setReady(hasMidi && !busy);
-    generateButton.setEnabled(!busy);
-    inspireButton.setEnabled(!busy);
-    inspireSeedCombo.setEnabled(!busy);
+    const bool licensed = audioProcessor.isLicensed() || !LicenseStub::enforceGenerate();
+    generateButton.setEnabled(!busy && licensed);
+    inspireButton.setEnabled(!busy && licensed);
+    inspireSeedCombo.setEnabled(!busy && licensed);
     againButton.setEnabled(!busy);
     previewButton.setEnabled(hasMidi && !busy);
     previewButton.setKind(audioProcessor.isPreviewPlaying() ? IconKind::Stop : IconKind::Play);
@@ -2692,15 +2708,37 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     advancedToggle.setButtonText("Advanced UI");
     addAndMakeVisible(advancedToggle);
 
-    setupLabel(licenseLabel, "License");
+    setupLabel(licenseLabel, "License key");
     addAndMakeVisible(licenseLabel);
     licenseEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
+    licenseEditor.setTextToShowWhenEmpty("HRM-XXXXXXXX-CCCC", Theme::dimText);
     styleEditor(licenseEditor);
     addAndMakeVisible(licenseEditor);
+    validateLicenseButton.setButtonText("Validate");
+    validateLicenseButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.08f));
+    validateLicenseButton.setColour(juce::TextButton::textColourOffId, Theme::label);
+    validateLicenseButton.onClick = [this]()
+    {
+        processor.setLicenseKey(licenseEditor.getText());
+        processor.setLicenseValidateUrl(licenseUrlEditor.getText());
+        const auto result = processor.validateLicense();
+        licenseStatusLabel.setText(result.message, juce::dontSendNotification);
+        licenseStatusLabel.setColour(juce::Label::textColourId,
+                                     result.licensed ? Theme::licensed : Theme::trial);
+    };
+    addAndMakeVisible(validateLicenseButton);
+    licenseStatusLabel.setFont(Theme::regular(12.5f));
+    licenseStatusLabel.setColour(juce::Label::textColourId, Theme::dimText);
+    addAndMakeVisible(licenseStatusLabel);
+    setupLabel(licenseUrlLabel, "Lemon validate URL");
+    addAndMakeVisible(licenseUrlLabel);
+    licenseUrlEditor.setTextToShowWhenEmpty("optional — or HARMONIA_LICENSE_VALIDATE_URL", Theme::dimText);
+    styleEditor(licenseUrlEditor);
+    addAndMakeVisible(licenseUrlEditor);
     advancedToggle.onClick = [this]()
     {
-        licenseLabel.setVisible(advancedToggle.getToggleState());
-        licenseEditor.setVisible(advancedToggle.getToggleState());
+        licenseUrlLabel.setVisible(advancedToggle.getToggleState());
+        licenseUrlEditor.setVisible(advancedToggle.getToggleState());
         resized();
     };
 
@@ -2708,7 +2746,7 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     usageLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(usageLabel);
 
-    hintLabel.setText("Keys stay on this machine. Without a key, Plan uses an offline heuristic.",
+    hintLabel.setText("API and license keys stay on this machine. Offline format HRM-XXXXXXXX-CCCC. Lemon HTTP is optional.",
                       juce::dontSendNotification);
     hintLabel.setFont(Theme::regular(13.0f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
@@ -2744,8 +2782,20 @@ void SettingsOverlay::refreshFromProcessor()
     modelEditor.setText(processor.getApiModel(), juce::dontSendNotification);
     advancedToggle.setToggleState(processor.isAdvancedUi(), juce::dontSendNotification);
     licenseEditor.setText(processor.getLicenseKey(), juce::dontSendNotification);
-    licenseLabel.setVisible(advancedToggle.getToggleState());
-    licenseEditor.setVisible(advancedToggle.getToggleState());
+    licenseUrlEditor.setText(processor.getLicenseValidateUrl(), juce::dontSendNotification);
+    licenseLabel.setVisible(true);
+    licenseEditor.setVisible(true);
+    validateLicenseButton.setVisible(true);
+    licenseStatusLabel.setVisible(true);
+    licenseUrlLabel.setVisible(advancedToggle.getToggleState());
+    licenseUrlEditor.setVisible(advancedToggle.getToggleState());
+    const auto licensed = processor.isLicensed();
+    licenseStatusLabel.setText(licensed ? "Valid offline key."
+                                        : (LicenseStub::enforceGenerate()
+                                               ? "Trial — paste a key to unlock Generate."
+                                               : "Trial — shipping builds can require a key."),
+                               juce::dontSendNotification);
+    licenseStatusLabel.setColour(juce::Label::textColourId, licensed ? Theme::licensed : Theme::trial);
 
     const auto last = processor.getLastTokenUsage();
     const auto session = processor.getSessionTokenUsage();
@@ -2765,6 +2815,8 @@ void SettingsOverlay::save()
     processor.setApiModel(modelEditor.getText());
     processor.setAdvancedUi(advancedToggle.getToggleState());
     processor.setLicenseKey(licenseEditor.getText());
+    processor.setLicenseValidateUrl(licenseUrlEditor.getText());
+    processor.validateLicense();
     if (onClose)
         onClose();
 }
@@ -2786,7 +2838,7 @@ void SettingsOverlay::applyProviderDefaults()
 
 juce::Rectangle<int> SettingsOverlay::cardBounds() const
 {
-    return getLocalBounds().withSizeKeepingCentre(440, advancedToggle.getToggleState() ? 590 : 530);
+    return getLocalBounds().withSizeKeepingCentre(440, advancedToggle.getToggleState() ? 680 : 600);
 }
 
 void SettingsOverlay::paint(juce::Graphics& g)
@@ -2823,8 +2875,17 @@ void SettingsOverlay::resized()
     field(modelLabel, modelEditor);
     advancedToggle.setBounds(area.removeFromTop(24));
     area.removeFromTop(8);
-    if (licenseEditor.isVisible())
-        field(licenseLabel, licenseEditor);
+    licenseLabel.setBounds(area.removeFromTop(16));
+    area.removeFromTop(4);
+    auto licenseRow = area.removeFromTop(30);
+    validateLicenseButton.setBounds(licenseRow.removeFromRight(88));
+    licenseRow.removeFromRight(8);
+    licenseEditor.setBounds(licenseRow);
+    area.removeFromTop(6);
+    licenseStatusLabel.setBounds(area.removeFromTop(20));
+    area.removeFromTop(8);
+    if (licenseUrlEditor.isVisible())
+        field(licenseUrlLabel, licenseUrlEditor);
     usageLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(6);
     hintLabel.setBounds(area.removeFromTop(36));

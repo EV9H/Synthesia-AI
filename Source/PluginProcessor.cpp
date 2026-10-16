@@ -1043,6 +1043,20 @@ void SynthesiaAIProcessor::setLicenseKey(const juce::String& key)
     persistLocalSettings();
 }
 
+void SynthesiaAIProcessor::setLicenseValidateUrl(const juce::String& url)
+{
+    licenseValidateUrl = url.trim();
+    persistLocalSettings();
+}
+
+LicenseStub::Result SynthesiaAIProcessor::validateLicense()
+{
+    auto url = licenseValidateUrl;
+    if (url.isEmpty())
+        url = LicenseStub::defaultValidateUrl();
+    return LicenseStub::validate(licenseKey, url);
+}
+
 void SynthesiaAIProcessor::setApiProvider(const juce::String& name)
 {
     apiProvider = name.trim();
@@ -1086,6 +1100,7 @@ void SynthesiaAIProcessor::persistLocalSettings() const
     xml.setAttribute("apiModel", apiModel);
     xml.setAttribute("apiProvider", apiProvider);
     xml.setAttribute("licenseKey", licenseKey);
+    xml.setAttribute("licenseValidateUrl", licenseValidateUrl);
     xml.setAttribute("advancedUi", advancedUi ? 1 : 0);
     xml.setAttribute("followHostTempo", followHostTempo.load() ? 1 : 0);
     xml.setAttribute("followHostKey", followHostKey.load() ? 1 : 0);
@@ -1105,6 +1120,7 @@ void SynthesiaAIProcessor::loadLocalSettings()
     apiModel = xml->getStringAttribute("apiModel", apiModel);
     apiProvider = xml->getStringAttribute("apiProvider", apiProvider);
     licenseKey = xml->getStringAttribute("licenseKey");
+    licenseValidateUrl = xml->getStringAttribute("licenseValidateUrl", licenseValidateUrl);
     advancedUi = xml->getIntAttribute("advancedUi", 0) != 0;
     followHostTempo.store(xml->getIntAttribute("followHostTempo", 1) != 0);
     followHostKey.store(xml->getIntAttribute("followHostKey", 0) != 0);

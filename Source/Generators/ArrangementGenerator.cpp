@@ -215,8 +215,9 @@ namespace
         for (auto& note : bass)
         {
             const double barBeat = note.start - 4.0 * std::floor(note.start / 4.0 + 1.0e-9);
-            const bool strong = barBeat < 0.14 || (barBeat > 1.86 && barBeat < 2.14);
-            if (!strong)
+            // Only the downbeat is forced to the root. Beat 3 can stay a fifth;
+            // the last hit of the chord is the approach and must not be snapped.
+            if (barBeat >= 0.14)
                 continue;
             const auto& chord = progression[static_cast<size_t>(chordIndexAt(progression, note.start))];
             const int rootPc = chord.rootPitchClass;
@@ -238,6 +239,76 @@ namespace
     bool pitchAllowed(int pitch, const ChordInfo& chord, int keyRoot, ScaleType scaleType)
     {
         return pitchInKey(pitch, keyRoot, scaleType) || theory::containsPitchClass(chord, pitch);
+    }
+
+    void shapeBassContour(Notes& notes, const std::vector<ChordInfo>& progression,
+                          int low, int high, int keyRoot, ScaleType scaleType)
+    {
+        if (notes.empty() || progression.empty())
+            return;
+
+        for (size_t ci = 0; ci < progression.size(); ++ci)
+        {
+            const auto& chord = progression[ci];
+            const auto& next = progression[(ci + 1) % progression.size()];
+            const double from = chord.startBeat;
+            const double to = chordEnd(chord);
+            std::vector<size_t> hits;
+            for (size_t i = 0; i < notes.size(); ++i)
+                if (notes[i].start >= from - 1.0e-6 && notes[i].start < to - 1.0e-6)
+                    hits.push_back(i);
+            if (hits.empty())
+                continue;
+
+            std::sort(hits.begin(), hits.end(), [&](size_t a, size_t b)
+            {
+                return notes[a].start < notes[b].start;
+            });
+
+            notes[hits.front()].pitch = foldIntoRange(
+                theory::nearestPitchWithClass(chord.rootPitchClass, notes[hits.front()].pitch), low, high);
+
+            if (hits.size() >= 2)
+            {
+                size_t mid = hits[hits.size() / 2];
+                double best = 1.0e9;
+                for (size_t i : hits)
+                {
+                    if (i == hits.front())
+                        continue;
+                    const double d = std::abs(notes[i].start - (from + 2.0));
+                    if (d < best)
+                    {
+                        best = d;
+                        mid = i;
+                    }
+                }
+                const int root = notes[hits.front()].pitch;
+                const int fifth = root + 7 <= high ? root + 7 : root - 5;
+                if (pitchAllowed(fifth, chord, keyRoot, scaleType))
+                    notes[mid].pitch = foldIntoRange(fifth, low, high);
+            }
+
+            if (hits.size() >= 2 && hits.back() != hits.front())
+            {
+                const int nextRoot = foldIntoRange(
+                    theory::nearestPitchWithClass(next.rootPitchClass, notes[hits.back()].pitch), low, high);
+                int approach = nextRoot;
+                for (int delta : { -2, 2, -1, 1, -3, 3 })
+                {
+                    const int candidate = nextRoot + delta;
+                    if (candidate < low || candidate > high || candidate == nextRoot)
+                        continue;
+                    if (!pitchAllowed(candidate, chord, keyRoot, scaleType))
+                        continue;
+                    approach = candidate;
+                    if (std::abs(delta) <= 2)
+                        break;
+                }
+                if (approach != nextRoot)
+                    notes[hits.back()].pitch = foldIntoRange(approach, low, high);
+            }
+        }
     }
 
     int snapToPitchClasses(int pitch, const std::vector<int>& pcs, int lo, int hi)
@@ -1299,6 +1370,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBass(const Context
     const bool useTwoFeel = walking && !ctx.profile.bassPatterns.empty() && uniform(rng) < 0.72;
     auto notes = (walking && !useTwoFeel) ? generateWalkingBass(ctx, rng)
                                           : generatePatternBass(ctx, rng);
+    shapeBassContour(notes, ctx.progression, ctx.profile.bassLow, ctx.profile.bassHigh,
+                     ctx.params.rootNote, ctx.params.scale);
     addSlides(notes, ctx.profile.slideChance, rng);
     return notes;
 }
@@ -1437,7 +1510,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
 
         for (int beat = 1; beat < beats; ++beat)
         {
-            if (beat % 2 == 1 && uniform(rng) < 0.48)
+            if (beat % 2 == 1 && uniform(rng) < 0.56)
                 continue;
             int pitch;
             if (beat == beats - 1)
@@ -2051,7 +2124,21 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
     };
 
     const bool syncPluck = part == Part::Synth && ctx.profile.genre == Genre::Trap;
-    const Rhythm rhythmA = syncPluck ? makeSyncPluck(4, 2, 2) : makeRhythm();
+    auto rhythmA = syncPluck ? makeSyncPluck(4, 2, 2) : makeRhythm();
+    if (!syncPluck)
+    {
+        bool hasOff = false;
+        for (const auto& n : rhythmA)
+            if (n.step % 4 == 2)
+                hasOff = true;
+        if (!hasOff && rhythmA.size() >= 2)
+        {
+            auto& second = rhythmA[1];
+            const int nudged = (second.step / 4) * 4 + 2;
+            if (nudged > 0 && nudged < motifSteps)
+                second.step = nudged;
+        }
+    }
     auto contourA = makeContour(rhythmA.size());
     if (contourA.size() >= 4)
     {
@@ -2062,7 +2149,16 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         contourA[3] = -contourA[1];
     }
     const auto contourA2 = varyEnding(contourA);
-    const Rhythm rhythmB = syncPluck ? makeSyncPluck(5, 2, 1) : mutateRhythm(rhythmA);
+    auto rhythmB = syncPluck ? makeSyncPluck(5, 2, 1) : mutateRhythm(rhythmA);
+    if (!syncPluck)
+    {
+        // Answer: delay non-downbeat hits by a 16th so the reply is syncopated.
+        for (auto& n : rhythmB)
+            if (n.step > 0 && n.step % 4 == 0 && n.step + finest < motifSteps)
+                n.step += finest;
+        std::sort(rhythmB.begin(), rhythmB.end(),
+                  [](const RhythmNote& a, const RhythmNote& b) { return a.step < b.step; });
+    }
     auto contourB = makeContour(rhythmB.size());
     if (contourB.size() >= 4)
     {
@@ -2190,15 +2286,17 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const float energy = ctx.energyAt(start);
             const float density = ctx.densityAt(part, start);
             const bool trapLead = ctx.profile.genre == Genre::Trap && part == Part::Synth;
-            if (!syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
+            const bool hookHead = part == Part::Synth && k < 3 && (position == 0 || !secondPhrase);
+            juce::ignoreUnused(trapLead);
+            if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
                 continue;
             const double shortSkip = syncPluck ? 0.08 : (ctx.profile.genre == Genre::Trap ? 0.22 : 0.58);
-            if (!cadenceNote && k > 0 && rn.length <= 2 * finest
+            if (!hookHead && !cadenceNote && k > 0 && rn.length <= 2 * finest
                 && segmentRhythm[k - 1].length <= 2 * finest && uniform(rng) < shortSkip)
                 continue;
 
             const double beatInTwoBars = std::fmod(start, 8.0);
-            if (!cadenceNote && !syncPluck)
+            if (!hookHead && !cadenceNote && !syncPluck)
             {
                 if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.40)
                     continue;

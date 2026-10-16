@@ -75,6 +75,11 @@ juce_add_binary_data(SynthesiaFonts
         Resources/Fonts/SpaceGrotesk-Medium.ttf)
 set_target_properties(SynthesiaFonts PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
+# Shipping builds: cmake -DHARMONIA_LICENSE_ENFORCE=1
+# Gates Generate/Inspire in the editor until a valid HRM- key is saved.
+# SynthesiaRender stays ungated so eval and packaging keep working.
+option(HARMONIA_LICENSE_ENFORCE "Require a license key to Generate in the editor" OFF)
+
 # JUCE modules
 target_compile_definitions(SynthesiaAI
     PUBLIC
@@ -82,6 +87,11 @@ target_compile_definitions(SynthesiaAI
         JUCE_USE_CURL=1
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
+if(HARMONIA_LICENSE_ENFORCE)
+    target_compile_definitions(SynthesiaAI PUBLIC HARMONIA_LICENSE_ENFORCE=1)
+else()
+    target_compile_definitions(SynthesiaAI PUBLIC HARMONIA_LICENSE_ENFORCE=0)
+endif()
 
 # Find CURL
 find_package(CURL REQUIRED)
@@ -110,7 +120,8 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
     target_compile_definitions(SynthesiaRender PRIVATE
         JucePlugin_Name="Harmonia"
         JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=1)
+        JUCE_USE_CURL=1
+        HARMONIA_LICENSE_ENFORCE=0)
     target_link_libraries(SynthesiaRender PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
