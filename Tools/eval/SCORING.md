@@ -12,7 +12,7 @@ Through q8 the headline was an equal-weight percentile of generated 8-bar loops 
 
 loop-v1 (q10) does three things so arrangement work can move the number **without** out-of-key notes:
 
-1. **Reweight** `chord_vocab` and `transition_entropy` to 0.25× inside each chord part score. Other ref keys stay 1.0×.
+1. **Reweight** `chord_vocab` and `transition_entropy` to 0.25× inside each chord part score. Synth `repeat_4` / `variation_8` are 0.35× so a restated 4-bar hook is not punished for looking like a loop. Other ref keys stay 1.0×.
 2. **Score loop craft against genre-loop targets** (not piano refs): hook restatement, call-response, density fit, groove fit, bass contour, section contrast.
 3. **Blend** `0.78 * reweighted_ref + 0.22 * arrangement`, then subtract the same lint penalty.
 
