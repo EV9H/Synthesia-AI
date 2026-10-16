@@ -289,6 +289,7 @@ class FirstRunTour : public juce::Component
 public:
     std::function<void()> onDismiss;
     std::function<void()> onGenerateNow;
+    std::function<void()> onOpenSettings;
 
     FirstRunTour();
     void setNeedsLicense(bool needsLicense);
@@ -304,6 +305,7 @@ private:
     juce::Label licenseNote;
     juce::TextButton gotIt { "Got it" };
     juce::TextButton generateNow { "Generate a loop" };
+    juce::TextButton openSettings { "Open Settings" };
 };
 
 class SettingsOverlay;

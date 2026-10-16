@@ -9,13 +9,14 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 - Do not thin pads to chase critic “space” — that crushed `register_mean` and bass-root lint in q7.
 - Do not treat piano-ref `chord_vocab` / entropy as a quality target. loop-v1 downweights them; see `Tools/eval/SCORING.md`.
 
-## In-repo this round (q10)
+## In-repo this round (q11)
 
 - Marketing site: **`sell-site/`** (Cloudflare Pages static). Demos are sell-q8 lofi/house/trap MP3s; q10 six-genre MP3s live in eval-reports + artifacts.
 - Unsigned VST3 zip: `Tools/package_vst3.sh`
 - Offline license mint: `Tools/make_license_key.sh` → writes `HRM-XXXXXXXX-CCCC`. A local sample may exist at `Tools/sample_license.txt` (**gitignored**). Do not commit Lemon/production secrets.
 - Plugin stub: Settings → License key + Validate. Shipping gate: `cmake -DHARMONIA_LICENSE_ENFORCE=1`
-- First-run tour + empty-state: generate → drag MIDI into the DAW. Preview is labelled a sketch.
+- First-run tour + empty-state: generate → drag MIDI into the DAW. Preview is labelled a sketch. Paid builds: Open Settings from the tour; drag still works without a key.
+- Zip includes `Tools/GETTING_STARTED.txt` (unsigned-build warning + generate→drag).
 - Inspire factory seeds: combo still auto-generates. Keep at least one seed per shipping genre.
 - Eval honesty: headline is `loop-v1` (legacy column still reported so q8 **75.4** stays comparable).
 
@@ -79,3 +80,11 @@ No MIDI change. House/trap `chord_vocab` / entropy stay structurally capped vs p
 ## sell-q10
 
 Shipped: loop-v1 scoring (`Tools/eval/SCORING.md`), genre-true drum templates (house hats kept irregular after a too-grid pass), hook-head skip guard, bass approach every 4 bars, chorus crash / verse-hat thinning, first-run tour, empty-state generate→drag copy. Hard gates green. Headline **76.3** loop-v1 (frozen q8 MIDI on loop-v1 was 76.7). Legacy **75.9** vs q8 **75.4**. Artifacts: `sell-q10-{lofi,house,trap,pop,rnb,cinematic}_s7.{mp3,mid}`.
+
+## sell-q11
+
+Pop broken piano raised to 62–74 (piano 61.8 → **69.2**, pop **79.5**). Trap 2-bar/sustain/fold stack failed (melody 52.6) and was walked back; trap-first-phrase skip-protect recovered melody **63.2 → 69.2**. Headline **76.8** loop-v1, legacy **76.3** (beats q8 75.4). Gates green. Artifacts: `sell-q11-*_s7.{mp3,mid}`.
+
+## sell-q12
+
+Packaging/refund copy: `GETTING_STARTED.txt` inside the VST3 zip; license line states drag MIDI always works; first-run tour can open Settings. MIDI unchanged from q11 (76.8).

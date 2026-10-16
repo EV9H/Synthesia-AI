@@ -1106,13 +1106,23 @@ FirstRunTour::FirstRunTour()
             onDismiss();
     };
     addAndMakeVisible(generateNow);
+
+    openSettings.setColour(juce::TextButton::buttonColourId, Theme::panel);
+    openSettings.setVisible(false);
+    openSettings.onClick = [this]()
+    {
+        if (onOpenSettings)
+            onOpenSettings();
+    };
+    addAndMakeVisible(openSettings);
 }
 
 void FirstRunTour::setNeedsLicense(bool needsLicense)
 {
     licenseNote.setVisible(needsLicense);
+    openSettings.setVisible(needsLicense);
     licenseNote.setText(needsLicense
-                            ? "Paid copy: Settings → paste your HRM- license key, then Generate."
+                            ? "Paid copy: paste your HRM- key in Settings. Drag MIDI still works."
                             : "",
                         juce::dontSendNotification);
     resized();
@@ -1144,9 +1154,14 @@ void FirstRunTour::resized()
         card.removeFromTop(8);
     }
     auto row = card.removeFromBottom(40);
-    generateNow.setBounds(row.removeFromRight(160));
-    row.removeFromRight(10);
-    gotIt.setBounds(row.removeFromRight(100));
+    generateNow.setBounds(row.removeFromRight(150));
+    row.removeFromRight(8);
+    if (openSettings.isVisible())
+    {
+        openSettings.setBounds(row.removeFromRight(120));
+        row.removeFromRight(8);
+    }
+    gotIt.setBounds(row.removeFromRight(90));
 }
 
 SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
@@ -1544,6 +1559,11 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     {
         hideFirstRunTour();
         onGenerateClicked();
+    };
+    firstRunTour->onOpenSettings = [this]()
+    {
+        hideFirstRunTour();
+        openSettings();
     };
     addChildComponent(*firstRunTour);
 
@@ -2919,10 +2939,10 @@ void SettingsOverlay::refreshFromProcessor()
     licenseUrlLabel.setVisible(advancedToggle.getToggleState());
     licenseUrlEditor.setVisible(advancedToggle.getToggleState());
     const auto licensed = processor.isLicensed();
-    licenseStatusLabel.setText(licensed ? "Valid offline key."
+    licenseStatusLabel.setText(licensed ? "Valid offline key. Drag MIDI still works."
                                         : (LicenseStub::enforceGenerate()
-                                               ? "Trial — paste a key to unlock Generate."
-                                               : "Trial — shipping builds can require a key."),
+                                               ? "Paste HRM- key to Generate. Drag MIDI always works."
+                                               : "Trial. Drag MIDI always works; paid builds can lock Generate."),
                                juce::dontSendNotification);
     licenseStatusLabel.setColour(juce::Label::textColourId, licensed ? Theme::licensed : Theme::trial);
 

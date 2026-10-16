@@ -1,0 +1,18 @@
+Harmonia — getting started (30 seconds)
+
+Harmonia is a MIDI generator, not a synth. The product is the notes.
+Preview audio is a cheap sketch so you can hear the shape.
+
+1. Insert Harmonia on a MIDI / instrument track in Ableton, Logic, or FL.
+2. Pick a genre (or an Inspire seed) and tap Generate.
+3. Drag MIDI from the handle into your DAW.
+4. Load YOUR piano, bass, and drums on those tracks.
+
+Unsigned build: macOS Gatekeeper and Windows SmartScreen will warn.
+That is expected until the developer signs the installer. The zip is not malware.
+
+License: paste an HRM-XXXXXXXX-CCCC key in Settings. Drag and export stay
+unlocked even before a key. Generate locks only on paid (ENFORCE) builds.
+
+Support: see sell-site/ and SELL_CHECKLIST.md in the repo.
+Display name: Harmonia. Bundle id is still SynthesiaAI until a dedicated rename.

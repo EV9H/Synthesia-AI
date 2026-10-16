@@ -46,9 +46,13 @@ zipname="Harmonia-${VERSION}-${os}-vst3-unsigned-${stamp}.zip"
 out="$DIST/$zipname"
 
 rm -f "$out"
+stage="$(mktemp -d)"
+trap 'rm -rf "$stage"' EXIT
+cp -R "$VST3" "$stage/"
+cp "$ROOT/Tools/GETTING_STARTED.txt" "$stage/GETTING_STARTED.txt"
 (
-    cd "$(dirname "$VST3")"
-    zip -r -q "$out" "$(basename "$VST3")"
+    cd "$stage"
+    zip -r -q "$out" .
 )
 
 cat <<EOF
