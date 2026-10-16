@@ -1314,7 +1314,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             const double nextHit = hitIndex + 1 < hits.size()
                 ? bar * 4.0 + hits[hitIndex + 1].step * stepBeats
                 : (bar + 1) * 4.0;
-            double length = juce::jmax(hit.length * stepBeats, nextHit - start);
+            // Lo-fi pads keep the written stab length. Extending to the next
+            // hit made 3 of 4 beat-center VL samples identical (score 25).
+            double length = hit.length * stepBeats;
+            if (!(ctx.profile.genre == Genre::LoFiJazz && part == Part::Chords))
+                length = juce::jmax(length, nextHit - start);
             int index = chordIndexAt(progression, start);
 
             bool anticipated = false;

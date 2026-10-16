@@ -67,9 +67,9 @@ namespace
                                 { "67 2h 5D 19 47 1 2h 5D" }, { "1 47 7 3 27 5D 19 67" } };
 
         p.chordStyle = ChordStyle::Comping;
-        // Fewer attacks, same 4-note stacks: unique-onset density was 2.2 vs the
-        // 0.40 loop target because inner-voice motion + pickups + 2-hits/bar.
-        p.chordPatterns = { "X---------------", "X-------x-------", "X-----------x---", "X-----x-........" };
+        // Short two-hit comps, same 4-note stacks. Full-bar holds zeroed VL
+        // (0.9) and stamped variation_8 (verse X == chorus X on a 4-chord loop).
+        p.chordPatterns = { "X---....x---....", "X--.....x--.....", "X---......x--...", "X-..........x---" };
         p.chordVoicing = { 58, 72, 4, false, false };
 
         p.bassStyle = BassStyle::Walking;
