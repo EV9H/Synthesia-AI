@@ -23,7 +23,7 @@ from lint import lint_clip  # noqa: E402
 from midi_parse import load_midi  # noqa: E402
 from paths import GENRES, PARTS, repo_root  # noqa: E402
 from report import write_reports  # noqa: E402
-from score import build_reference_stats, score_clip  # noqa: E402
+from score import METRIC_VERSION, build_reference_stats, score_clip  # noqa: E402
 
 
 def _git_sha() -> str:
@@ -50,7 +50,16 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
     clips = []
     all_issues = []
     critic_rows = []
-    by_genre_acc: dict[str, dict] = {g: {"scores": [], "penalties": [], "parts": {p: [] for p in PARTS}} for g in GENRES}
+    by_genre_acc: dict[str, dict] = {
+        g: {
+            "scores": [],
+            "legacy": [],
+            "arrangement": [],
+            "penalties": [],
+            "parts": {p: [] for p in PARTS},
+        }
+        for g in GENRES
+    }
 
     for path in midis:
         stem = path.stem
@@ -94,6 +103,8 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
         }
         clips.append(row)
         by_genre_acc[genre]["scores"].append(scored["pro_likeness"])
+        by_genre_acc[genre]["legacy"].append(scored.get("legacy_pro_likeness", scored["pro_likeness"]))
+        by_genre_acc[genre]["arrangement"].append((scored.get("arrangement") or {}).get("score", 0.0))
         by_genre_acc[genre]["penalties"].append(scored["lint_penalty"])
         for part in PARTS:
             if part in scored["parts"]:
@@ -108,6 +119,8 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
 
     by_genre = {}
     overall_scores = []
+    overall_legacy = []
+    overall_arr = []
     for genre in GENRES:
         acc = by_genre_acc[genre]
         parts = {
@@ -117,17 +130,24 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
         pro = round(_mean(acc["scores"]), 1)
         by_genre[genre] = {
             "pro_likeness": pro,
+            "legacy_pro_likeness": round(_mean(acc["legacy"]), 1),
+            "arrangement": round(_mean(acc["arrangement"]), 1),
             "lint_penalty": round(_mean(acc["penalties"]), 1),
             "n": len(acc["scores"]),
             "parts": parts,
         }
         overall_scores.extend(acc["scores"])
+        overall_legacy.extend(acc["legacy"])
+        overall_arr.extend(acc["arrangement"])
 
     payload = {
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "git": _git_sha(),
         "n_clips": len(clips),
         "overall": round(_mean(overall_scores), 1),
+        "legacy_overall": round(_mean(overall_legacy), 1),
+        "arrangement_overall": round(_mean(overall_arr), 1),
+        "metric_version": METRIC_VERSION,
         "pluginval": pluginval,
         "steinberg": steinberg,
         "refs": stats.get("n_refs", {}),
@@ -144,7 +164,10 @@ def evaluate_dir(clips_dir: Path, report_dir: Path, pluginval: dict, steinberg: 
     if not critic:
         payload["critic"] = None
     write_reports(payload, report_dir)
-    print(f"overall pro-likeness {payload['overall']:.1f}  ({len(clips)} clips)")
+    print(f"overall pro-likeness {payload['overall']:.1f}  "
+          f"(legacy {payload.get('legacy_overall', 0):.1f}, "
+          f"arrange {payload.get('arrangement_overall', 0):.1f}, "
+          f"{len(clips)} clips, {payload.get('metric_version', '')})")
     in_keys = [c.get("harmony", {}).get("in_key_pct") for c in clips if c.get("harmony")]
     if in_keys:
         print(f"in-key {float(np.mean(in_keys)):.1f}%  "

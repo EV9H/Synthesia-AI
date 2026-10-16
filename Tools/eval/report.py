@@ -27,6 +27,19 @@ def _markdown(p: dict[str, Any]) -> str:
         f"- git: `{git}`",
         f"- clips: {p.get('n_clips', 0)}",
         f"- overall pro-likeness: **{p.get('overall', 0):.1f} / 100**",
+        f"- metric: `{p.get('metric_version', 'legacy')}`",
+    ]
+    if p.get("legacy_overall") is not None:
+        lines += [
+            f"- legacy overall (equal-weight piano-ref percentiles): **{p.get('legacy_overall', 0):.1f} / 100**",
+            f"- arrangement: **{p.get('arrangement_overall', 0):.1f} / 100**",
+        ]
+    lines += [
+        "",
+        "Headline score is loop-v1: reweighted ref percentiles (chord_vocab / "
+        "transition_entropy at 0.25×) blended 78/22 with arrangement targets "
+        "(hook restatement, call-response, density fit, groove fit, bass contour, "
+        "section contrast). Hard in-key gates are unchanged. See `Tools/eval/SCORING.md`.",
         "",
         "## Plugin validation",
         "",
@@ -36,8 +49,8 @@ def _markdown(p: dict[str, Any]) -> str:
         "",
         "## Pro-likeness by genre",
         "",
-        "| Genre | Overall | Chords | Bass | Melody | Piano | Drums | Lint |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Genre | Overall | Legacy | Arrange | Chords | Bass | Melody | Piano | Drums | Lint |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     by = p.get("by_genre", {})
     for genre in GENRES:
@@ -47,7 +60,8 @@ def _markdown(p: dict[str, Any]) -> str:
             val = parts.get(name, {}).get("score")
             return f"{val:.1f}" if isinstance(val, (int, float)) else "—"
         lines.append(
-            f"| {genre} | {row.get('pro_likeness', 0):.1f} | {cell('chords')} | {cell('bass')} "
+            f"| {genre} | {row.get('pro_likeness', 0):.1f} | {row.get('legacy_pro_likeness', 0):.1f} "
+            f"| {row.get('arrangement', 0):.1f} | {cell('chords')} | {cell('bass')} "
             f"| {cell('synth')} | {cell('piano')} | {cell('drums')} | {row.get('lint_penalty', 0):.1f} |"
         )
     lines += [

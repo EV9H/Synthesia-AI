@@ -70,8 +70,8 @@ for genre in "${GENRES[@]}"; do
     done
 done
 
-# 3 listen-checks (keep wav -> mp3).
-MP3_GENRES=(lofi house trap)
+# Listen-checks for every shipping genre (keep wav -> mp3).
+MP3_GENRES=(lofi house trap pop rnb cinematic)
 MP3_ARGS=()
 echo "==> Rendering preview MP3s"
 for genre in "${MP3_GENRES[@]}"; do

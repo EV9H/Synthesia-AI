@@ -255,6 +255,7 @@ def part_features(clip: Clip, part: str) -> dict[str, float]:
     rep4, var8 = repetition_scores(clip, notes)
     feats: dict[str, float] = {
         "onset_density": dens,
+        "onset_events": unique_onset_density(clip, notes),
         "syncopation": sync,
         "swing": swing,
         "microtiming_ms": micro,
@@ -283,7 +284,185 @@ def part_features(clip: Clip, part: str) -> dict[str, float]:
     return feats
 
 
-def clip_features(clip: Clip) -> dict[str, dict[str, float]]:
+def _beat_seconds(clip: Clip) -> float:
+    return 60.0 / max(clip.tempo, 1.0)
+
+
+def _interval_contour(notes: list[Note], t0: float, t1: float, max_notes: int = 6) -> tuple[int, ...]:
+    seq = sorted((n for n in notes if t0 <= n.start < t1), key=lambda n: (n.start, n.pitch))
+    if len(seq) < 3:
+        return tuple()
+    seq = seq[:max_notes]
+    return tuple(seq[i].pitch - seq[i - 1].pitch for i in range(1, len(seq)))
+
+
+def _contour_similarity(a: tuple[int, ...], b: tuple[int, ...]) -> float:
+    if not a or not b:
+        return 0.0
+    n = min(len(a), len(b))
+    score = 0.0
+    for i in range(n):
+        if a[i] == b[i]:
+            score += 1.0
+        elif a[i] != 0 and b[i] != 0 and (a[i] > 0) == (b[i] > 0):
+            score += 0.6
+        elif abs(a[i] - b[i]) == 1:
+            score += 0.4
+    return score / max(len(a), len(b))
+
+
+def hook_memorability(clip: Clip) -> float:
+    """0..1 restatement of a 2-bar melody contour four bars later."""
+    melody = clip.of("synth")
+    n_bars = int(np.floor(clip.bars()))
+    if len(melody) < 6 or n_bars < 4:
+        return 0.0
+    beat_s = _beat_seconds(clip)
+    windows: list[tuple[int, ...]] = []
+    for bar in range(0, n_bars - 1, 2):
+        contour = _interval_contour(melody, bar * 4 * beat_s, (bar + 2) * 4 * beat_s)
+        if contour:
+            windows.append(contour)
+    if len(windows) < 2:
+        return 0.0
+    if len(windows) >= 3:
+        return float(np.clip(_contour_similarity(windows[0], windows[2]), 0.0, 1.0))
+    return float(np.clip(_contour_similarity(windows[0], windows[1]) * 0.7, 0.0, 1.0))
+
+
+def call_response(clip: Clip) -> float:
+    """0..1 complementary bar density between lead and piano (negative correlation)."""
+    lead = clip.of("synth")
+    piano = clip.of("piano")
+    n_bars = int(np.floor(clip.bars()))
+    if n_bars < 4 or not lead or not piano:
+        return 0.0
+    beat_s = _beat_seconds(clip)
+    lead_d: list[float] = []
+    piano_d: list[float] = []
+    for bar in range(n_bars):
+        t0 = bar * 4 * beat_s
+        t1 = (bar + 1) * 4 * beat_s
+        lead_d.append(float(sum(1 for n in lead if t0 <= n.start < t1)))
+        piano_d.append(float(sum(1 for n in piano if t0 <= n.start < t1)))
+    a = np.array(lead_d, dtype=float)
+    b = np.array(piano_d, dtype=float)
+    if float(a.std()) < 1e-6 or float(b.std()) < 1e-6:
+        return 0.0
+    r = float(np.corrcoef(a, b)[0, 1])
+    if not np.isfinite(r):
+        return 0.0
+    return float(np.clip(0.5 - 0.5 * r, 0.0, 1.0))
+
+
+def section_contrast(clip: Clip) -> float:
+    """0..1 relative density change between first and second half (loop A/B or verse/chorus)."""
+    n_bars = int(np.floor(clip.bars()))
+    if n_bars < 8:
+        return 0.0
+    beat_s = _beat_seconds(clip)
+    half = n_bars // 2
+    parts = clip.of("synth") + clip.of("drums") + clip.of("piano")
+    if not parts:
+        return 0.0
+
+    def dens(b0: int, b1: int) -> float:
+        t0 = b0 * 4 * beat_s
+        t1 = b1 * 4 * beat_s
+        return sum(1 for n in parts if t0 <= n.start < t1) / max(t1 - t0, 1e-6)
+
+    d1, d2 = dens(0, half), dens(half, n_bars)
+    rel = abs(d1 - d2) / max(0.5 * (d1 + d2), 1e-6)
+    return float(np.clip(rel, 0.0, 1.0))
+
+
+def bass_contour(clip: Clip) -> float:
+    """0..1 fraction of 4-beat windows whose bass starts low and then moves."""
+    bass = clip.of("bass")
+    if len(bass) < 4:
+        return 0.0
+    beat_s = _beat_seconds(clip)
+    n_beats = int(np.floor(clip.beats()))
+    good = 0.0
+    seen = 0
+    for b in range(0, max(n_beats, 4), 4):
+        t0 = b * beat_s
+        t1 = (b + 4) * beat_s
+        hits = sorted((n for n in bass if t0 <= n.start < t1), key=lambda n: n.start)
+        if len(hits) < 2:
+            continue
+        seen += 1
+        lowest = min(n.pitch for n in hits)
+        rootish = hits[0].pitch <= lowest + 2
+        moved = hits[-1].pitch != hits[0].pitch
+        if rootish and moved:
+            good += 1.0
+        elif moved or rootish:
+            good += 0.45
+    return good / seen if seen else 0.0
+
+
+def unique_onset_density(clip: Clip, notes: list[Note]) -> float:
+    beats = clip.beats()
+    if beats <= 0 or not notes:
+        return 0.0
+    times = {round(n.start, 3) for n in notes}
+    return len(times) / beats
+
+
+# Genre-loop onset targets (notes/beat). Half-width is the "good" band around the target.
+# These are 8-bar DAW-loop priors, not piano-performance refs.
+LOOP_DENSITY_TARGET = {
+    "pop":        {"drums": (1.7, 0.7), "chords": (0.45, 0.35), "bass": (0.50, 0.28),
+                   "synth": (0.90, 0.40), "piano": (1.10, 0.50)},
+    "lofi":       {"drums": (1.4, 0.6), "chords": (0.40, 0.30), "bass": (0.65, 0.35),
+                   "synth": (0.70, 0.40), "piano": (0.80, 0.45)},
+    "house":      {"drums": (2.4, 0.8), "chords": (0.70, 0.45), "bass": (0.70, 0.35),
+                   "synth": (0.80, 0.40), "piano": (0.70, 0.40)},
+    "trap":       {"drums": (2.2, 0.9), "chords": (0.50, 0.40), "bass": (0.45, 0.28),
+                   "synth": (0.90, 0.45), "piano": (1.20, 0.55)},
+    "rnb":        {"drums": (1.8, 0.7), "chords": (0.35, 0.28), "bass": (0.55, 0.30),
+                   "synth": (0.70, 0.40), "piano": (0.70, 0.40)},
+    "cinematic":  {"drums": (1.3, 0.6), "chords": (0.55, 0.40), "bass": (0.30, 0.22),
+                   "synth": (0.70, 0.40), "piano": (1.40, 0.60)},
+}
+
+GROOVE_TARGET = {
+    "pop":        {"kick_density": (0.45, 0.20), "snare_density": (0.45, 0.18), "hat_density": (0.90, 0.50)},
+    "lofi":       {"kick_density": (0.35, 0.18), "snare_density": (0.45, 0.18), "hat_density": (0.70, 0.40)},
+    "house":      {"kick_density": (1.00, 0.18), "snare_density": (0.50, 0.16), "hat_density": (1.20, 0.70)},
+    "trap":       {"kick_density": (0.35, 0.22), "snare_density": (0.28, 0.14), "hat_density": (2.00, 0.90)},
+    "rnb":        {"kick_density": (0.45, 0.22), "snare_density": (0.45, 0.18), "hat_density": (1.10, 0.55)},
+    "cinematic":  {"kick_density": (0.45, 0.22), "snare_density": (0.40, 0.22), "hat_density": (0.55, 0.35)},
+}
+
+
+def groove_fit_vector(clip: Clip, genre: str) -> dict[str, float]:
+    drums = clip.of("drums")
+    stats = drum_pattern_stats(clip, drums) if drums else {}
+    targets = GROOVE_TARGET.get(genre, GROOVE_TARGET["pop"])
+    out: dict[str, float] = {}
+    for key, (ideal, half) in targets.items():
+        out[key] = float(stats.get(key, 0.0))
+        out[f"{key}_target"] = float(ideal)
+        out[f"{key}_half"] = float(half)
+    return out
+
+
+def density_fit_parts(clip: Clip, genre: str) -> dict[str, float]:
+    targets = LOOP_DENSITY_TARGET.get(genre, LOOP_DENSITY_TARGET["pop"])
+    out: dict[str, float] = {}
+    for part, (ideal, half) in targets.items():
+        notes = clip.of(part)
+        dens = unique_onset_density(clip, notes) if part == "chords" else onset_density(clip, notes)
+        out[part] = dens
+        out[f"{part}_target"] = float(ideal)
+        out[f"{part}_half"] = float(half)
+    return out
+
+
+def clip_features(clip: Clip, genre: str = "") -> dict[str, dict[str, float]]:
+    _ = genre
     out = {}
     for part in PARTS:
         feats = part_features(clip, part)
@@ -297,5 +476,9 @@ def clip_features(clip: Clip) -> dict[str, dict[str, float]]:
         "kick_align": bass_kick_alignment(clip),
         "root_conflict": bass_root_conflict(clip),
         "clash_rate": clash_rate(clip, [n for n in clip.notes if not n.is_drum]),
+        "hook_memorability": hook_memorability(clip),
+        "call_response": call_response(clip),
+        "section_contrast": section_contrast(clip),
+        "bass_contour": bass_contour(clip),
     }
     return out
