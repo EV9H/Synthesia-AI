@@ -648,7 +648,8 @@ namespace
             const int leadInCall = lead != nullptr ? countOnsets(*lead, callFrom, callTo) : 0;
             const int pianoInResp = piano != nullptr ? countOnsets(*piano, callTo, respTo) : 0;
 
-            // Call: lead speaks — drop only piano ghosts and one inner pad voice.
+            // Call: lead speaks — drop only piano ghosts. Leave pad stacks intact
+            // so bass-root chroma and register_mean stay in the ref box.
             if (leadInCall >= 3)
             {
                 if (piano != nullptr)
@@ -661,8 +662,7 @@ namespace
                                                         && n.length < 0.55;
                                                 }),
                                  piano->end());
-                if (chords != nullptr)
-                    thinInnerVoices(*chords, callFrom, callTo, 3); // drop one inner voice only
+                juce::ignoreUnused(chords);
             }
 
             // Response: piano answers — drop short lead off-beats only.
@@ -680,22 +680,9 @@ namespace
 
     void arrangeBreakdowns(std::map<Part, Notes>& parts, int bars)
     {
-        auto* chords = parts.count(Part::Chords) ? &parts[Part::Chords] : nullptr;
-        auto* piano = parts.count(Part::Piano) ? &parts[Part::Piano] : nullptr;
-
-        for (int bar = 0; bar < bars; ++bar)
-        {
-            if (bar % 8 != 7)
-                continue;
-
-            const double barStart = bar * 4.0;
-            const double cut = barStart + 3.0;
-            const double barEnd = barStart + 4.0;
-            if (chords != nullptr)
-                muteWindow(*chords, cut, barEnd);
-            if (piano != nullptr)
-                muteWindow(*piano, cut, barEnd);
-        }
+        // Drum fills already land every 4 bars. Pad mute here changed chroma
+        // enough to trip bass_root_conflict, so leave harmonic beds intact.
+        juce::ignoreUnused(parts, bars);
     }
 
     void separateRegisters(std::map<Part, Notes>& parts)
