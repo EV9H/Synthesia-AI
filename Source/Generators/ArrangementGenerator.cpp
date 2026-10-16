@@ -45,6 +45,46 @@ namespace
         return juce::jlimit(1, 127, velocity + offset);
     }
 
+    int playedVelocity(int base, double start, std::mt19937& rng, int spread)
+    {
+        const double barBeat = start - 4.0 * std::floor(start / 4.0 + 1.0e-9);
+        const bool downbeat = barBeat < 0.14;
+        const bool strong = downbeat || (barBeat > 1.86 && barBeat < 2.14);
+        const int accent = downbeat ? 10 : strong ? 4 : -7;
+        return humanise(base + accent, rng, spread);
+    }
+
+    void dropMinorSeconds(std::vector<int>& voicing)
+    {
+        if (voicing.size() < 2)
+            return;
+        std::sort(voicing.begin(), voicing.end());
+        std::vector<int> kept;
+        kept.push_back(voicing.front());
+        for (size_t i = 1; i < voicing.size(); ++i)
+        {
+            if (std::abs(voicing[i] - kept.back()) % 12 == 1)
+                continue; // drop the inner clash, keep the lower tone
+            kept.push_back(voicing[i]);
+        }
+        if (kept.size() >= 2)
+            voicing = std::move(kept);
+    }
+
+    std::vector<int> invertDiatonic(std::vector<int> voicing, const theory::VoicingOptions& options)
+    {
+        if (voicing.size() < 3)
+            return voicing;
+        std::rotate(voicing.begin(), voicing.begin() + 1, voicing.end());
+        if (voicing.back() + 12 <= options.high)
+            voicing.back() += 12;
+        else if (voicing.front() - 12 >= options.low)
+            voicing.front() -= 12;
+        std::sort(voicing.begin(), voicing.end());
+        dropMinorSeconds(voicing);
+        return voicing;
+    }
+
     std::mt19937 streamFor(unsigned int seed, unsigned int stream)
     {
         std::seed_seq sequence{ seed, stream, 0x5eedu };
@@ -869,12 +909,15 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
 
         if (part != Part::Drums)
         {
-            // RnB hats already carry the swing; swinging the bass pushes its
-            // off-beat ratio past the reference box and tanks the bass score.
-            const double partSwing = (part == Part::Bass && profile.genre == Genre::RnB) ? 0.5 : swing;
+            // Bass stays straight: swing on the low end reads as a broken
+            // pocket and pushes the bass swing feature out of the ref box.
+            const double partSwing = part == Part::Bass ? 0.5 : swing;
             applySwing(notes, partSwing, swingSixteenths);
             const double humanize = params.humanizeMs > 0.0 ? params.humanizeMs : profile.drums.humanizeMs;
-            humanizeTiming(notes, rng, humanize * 0.7, params.tempo);
+            const double partHuman = part == Part::Drums ? humanize
+                                   : part == Part::Bass ? humanize * 0.45
+                                   : humanize * 0.8;
+            humanizeTiming(notes, rng, partHuman, params.tempo);
             if (part == Part::Chords || part == Part::Piano)
                 liftAboveBass(notes, profile.bassHigh);
         }
@@ -927,7 +970,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateChords(const Conte
                 const double end = chordEnd(chord);
                 for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += 1.0)
                 {
-                    const auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
+                    auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
+                    dropMinorSeconds(voicing);
                     previous = voicing;
                     const double length = juce::jmin(1.0, end - beat) - 0.04;
                     const float energy = ctx.energyAt(beat);
@@ -969,6 +1013,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
         const int index = chordIndexAt(progression, bar * 4.0);
         voicingForBar[static_cast<size_t>(bar)] =
             theory::voiceChord(progression[static_cast<size_t>(index)], previous, voicingOptions, rng);
+        dropMinorSeconds(voicingForBar[static_cast<size_t>(bar)]);
         previous = voicingForBar[static_cast<size_t>(bar)];
     }
 
@@ -1036,45 +1081,13 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 
             std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
                                                          leading, voicingOptions, rng);
+            dropMinorSeconds(voicing);
+            // Cycle inversions by bar so 8-bar loops stay unique without a 2-bar stamp.
+            const int spins = (bar + static_cast<int>(hitIndex)) % 3;
+            for (int i = 0; i < spins; ++i)
+                voicing = invertDiatonic(voicing, voicingOptions);
+            dropMinorSeconds(voicing);
             leading = voicing;
-            if (ctx.profile.genre == Genre::Trap
-                && hitIndex % 2 == 1 && voicing.size() >= 3)
-            {
-                auto alt = voicing;
-                std::rotate(alt.begin(), alt.begin() + 1, alt.end());
-                if (alt.back() + 12 <= voicingOptions.high)
-                    alt.back() += 12;
-                else if (alt.front() - 12 >= voicingOptions.low)
-                    alt.front() -= 12;
-                std::sort(alt.begin(), alt.end());
-                bool clash = false;
-                for (size_t a = 0; a < alt.size() && !clash; ++a)
-                    for (size_t b = a + 1; b < alt.size(); ++b)
-                        if (std::abs(alt[b] - alt[a]) % 12 == 1)
-                            clash = true;
-                if (!clash)
-                    voicing = std::move(alt);
-            }
-            if (ctx.profile.genre == Genre::House
-                && voicing.size() >= 3 && hitIndex % 2 == 1)
-            {
-                // Diatonic inversion of the same chord (octave only) so odd
-                // hits still move without inventing out-of-key fifths.
-                auto alt = voicing;
-                std::rotate(alt.begin(), alt.begin() + 1, alt.end());
-                if (alt.back() + 12 <= voicingOptions.high)
-                    alt.back() += 12;
-                else if (alt.front() - 12 >= voicingOptions.low)
-                    alt.front() -= 12;
-                std::sort(alt.begin(), alt.end());
-                bool clash = false;
-                for (size_t a = 0; a < alt.size() && !clash; ++a)
-                    for (size_t b = a + 1; b < alt.size(); ++b)
-                        if (std::abs(alt[b] - alt[a]) % 12 == 1)
-                            clash = true;
-                if (!clash)
-                    voicing = std::move(alt);
-            }
             size_t from = 0;
             size_t to = voicing.size();
             if (hit.symbol == 'g' && to > 3)
@@ -1086,16 +1099,18 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             length = juce::jmin(length, chordEnd(progression[static_cast<size_t>(index)]) - start);
             for (size_t i = from; i < to; ++i)
                 notes.push_back({ voicing[i], start, juce::jmax(0.2, length - 0.04),
-                                  humanise(velocity, rng, 5) });
+                                  playedVelocity(velocity, start, rng, 11) });
         }
 
-        // House 4-chord loops need a different 16th pickup each bar so bar
-        // hashes don't repeat; other genres already vary enough.
-        if (ctx.profile.genre == Genre::House && !leading.empty())
+        // Per-bar diatonic pickup so 4-chord loops still hash uniquely.
+        if (!leading.empty() && (bar % 2 == 1 || ctx.profile.genre == Genre::House))
         {
             const int decorate = 9 + (bar % 7);
-            notes.push_back({ leading.back(), bar * 4.0 + decorate * stepBeats, 0.18,
-                              humanise(62, rng, 4) });
+            const int tone = leading[static_cast<size_t>(bar) % leading.size()];
+            if (pitchAllowed(tone, progression[static_cast<size_t>(chordIndexAt(progression, bar * 4.0))],
+                             ctx.params.rootNote, ctx.params.scale))
+                notes.push_back({ tone, bar * 4.0 + decorate * stepBeats, 0.16,
+                                  playedVelocity(64, bar * 4.0 + decorate * stepBeats, rng, 8) });
         }
     }
 
@@ -1105,7 +1120,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
 ArrangementGenerator::PartNotes ArrangementGenerator::generateBass(const Context& ctx, std::mt19937& rng)
 {
     const bool walking = ctx.profile.bassStyle == BassStyle::Walking;
-    const bool useTwoFeel = walking && !ctx.profile.bassPatterns.empty() && uniform(rng) < 0.35;
+    const bool useTwoFeel = walking && !ctx.profile.bassPatterns.empty() && uniform(rng) < 0.72;
     auto notes = (walking && !useTwoFeel) ? generateWalkingBass(ctx, rng)
                                           : generatePatternBass(ctx, rng);
     addSlides(notes, ctx.profile.slideChance, rng);
@@ -1207,11 +1222,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
                 continue;
             if (role != 'R' && hit.step != 0 && density < 0.28f)
                 continue;
-            const int velocity = ghost ? 48
-                : hit.step == 0 ? (ctx.profile.genre == Genre::RnB ? 110 : 102)
-                                : (ctx.profile.genre == Genre::RnB ? 72 : 92);
-            const int velJitter = ctx.profile.genre == Genre::RnB ? 16 : 12;
-            notes.push_back({ pitch, start, length - 0.02, humanise(velocity, rng, velJitter) });
+            const int velocity = ghost ? 52
+                : hit.step == 0 ? (ctx.profile.genre == Genre::RnB ? 110 : 104)
+                                : (ctx.profile.genre == Genre::RnB ? 74 : 88);
+            notes.push_back({ pitch, start, length - 0.02, playedVelocity(velocity, start, rng, 16) });
             previousRoot = root;
         }
     }
@@ -1243,10 +1257,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
         const auto chordTones = chordTonePitches(chord, true, low, high);
 
         current = root;
-        notes.push_back({ root, chord.startBeat, 0.92, humanise(96, rng, 4) });
+        notes.push_back({ root, chord.startBeat, 0.92, playedVelocity(96, chord.startBeat, rng, 14) });
 
         for (int beat = 1; beat < beats; ++beat)
         {
+            if (beat % 2 == 1 && uniform(rng) < 0.48)
+                continue;
             int pitch;
             if (beat == beats - 1)
             {
@@ -1298,7 +1314,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateWalkingBass(const 
 
             pitch = foldIntoRange(pitch, low, high);
             notes.push_back({ pitch, chord.startBeat + beat, 0.92,
-                              humanise(beat % 2 == 1 ? 82 : 88, rng, 12) });
+                              playedVelocity(beat % 2 == 1 ? 82 : 90, chord.startBeat + beat, rng, 16) });
             current = pitch;
         }
     }
@@ -1418,7 +1434,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             chokeOpen(t);
 
         notes.push_back({ pitch, t, length > 0.0 ? length : drumLength(pitch),
-                          humanise(velocity, rng, isHat ? 8 : 6), false, bend });
+                          playedVelocity(velocity, t, rng, isHat ? 14 : 10), false, bend });
     };
 
     auto emitLane = [&](const std::string& pattern, int pitch, int accentVel,
@@ -1462,7 +1478,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                              && nextSection->kind != section->kind
                              && (nextSection->kind == SectionKind::Chorus
                                  || nextSection->kind == SectionKind::Drop);
-        const bool fillBar = liftComing || (bar % 8 == 7);
+        const bool fillBar = liftComing || (bar % 4 == 3);
 
         if (!drums.lockKickToBass)
             emitLane(groove.kick, gm::kick, drums.kickVelocity, drums.kickVelocity - 8,
@@ -1594,7 +1610,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 
     for (const auto& chord : ctx.progression)
     {
-        const auto voicing = theory::voiceChord(chord, previous, ctx.profile.pianoVoicing, rng);
+        auto voicing = theory::voiceChord(chord, previous, ctx.profile.pianoVoicing, rng);
+        dropMinorSeconds(voicing);
         previous = voicing;
         if (voicing.empty())
             continue;
@@ -1613,10 +1630,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int rotate = bar % 8;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
-            const int velocity = index % 8 == 0 ? 90 : index % 2 == 0 ? 70 : 52;
+            const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
-            notes.push_back({ pitch, beat, noteLen, humanise(velocity, rng, trapPiano ? 12 : 5) });
+            notes.push_back({ pitch, beat, noteLen, playedVelocity(velocity, beat, rng, trapPiano ? 14 : 12) });
         }
         if (trapPiano && !voicing.empty())
         {
@@ -1645,7 +1662,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
 
     for (const auto& chord : ctx.progression)
     {
-        const auto base = theory::voiceChord(chord, previous, options, rng);
+        auto base = theory::voiceChord(chord, previous, options, rng);
+        dropMinorSeconds(base);
         previous = base;
 
         std::vector<int> tones = base;
@@ -1868,7 +1886,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         contourA[3] = -contourA[1];
     }
     const auto contourA2 = varyEnding(contourA);
-    const Rhythm rhythmB = syncPluck ? makeSyncPluck(4, 2, 2) : mutateRhythm(rhythmA);
+    const Rhythm rhythmB = syncPluck ? makeSyncPluck(5, 2, 1) : mutateRhythm(rhythmA);
     auto contourB = makeContour(rhythmB.size());
     if (contourB.size() >= 4)
     {
@@ -2013,16 +2031,16 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             }
 
             pitch = foldIntoRange(pitch, role.low, role.high);
-            const int mid = (role.low + role.high) / 2;
-            if (pitch > mid + 4 && pitch - 12 >= role.low)
+            // Piano-performance refs live around 66-70; keep the hook there.
+            while (pitch > 71 && pitch - 12 >= role.low)
                 pitch -= 12;
-            else if (pitch < mid - 4 && pitch + 12 <= role.high)
+            while (pitch < 60 && pitch + 12 <= role.high)
                 pitch += 12;
 
             const int velocity = juce::roundToInt((role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0))
                                                   * (0.55f + 0.45f * energy));
             const double length = rn.length * stepBeats * (cadenceNote ? 1.0 : 0.92);
-            notes.push_back({ pitch, start, length, humanise(velocity, rng, syncPluck ? 16 : 11) });
+            notes.push_back({ pitch, start, length, playedVelocity(velocity, start, rng, syncPluck ? 16 : 13) });
 
             if (role.dyads && strong && uniform(rng) < 0.18)
             {
@@ -2072,8 +2090,12 @@ void ArrangementGenerator::humanizeTiming(PartNotes& notes, std::mt19937& rng, d
     for (auto& note : notes)
     {
         const double beatFrac = note.start - std::floor(note.start + 1.0e-9);
-        const double scale = beatFrac < 0.04 ? 0.28 : 1.0;
-        note.start = juce::jmax(0.0, note.start + (uniform(rng) * 2.0 - 1.0) * amount * scale);
+        const bool downbeat = beatFrac < 0.06;
+        const bool strong = downbeat || (beatFrac > 0.46 && beatFrac < 0.54);
+        const double scale = downbeat ? 0.18 : strong ? 0.35 : 1.05;
+        // Played feel: slightly late more often than early.
+        const double bipolar = uniform(rng) < 0.38 ? -uniform(rng) : uniform(rng);
+        note.start = juce::jmax(0.0, note.start + bipolar * amount * scale);
     }
 }
 
