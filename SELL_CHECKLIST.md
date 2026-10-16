@@ -87,4 +87,12 @@ Pop broken piano raised to 62–74 (piano 61.8 → **69.2**, pop **79.5**). Trap
 
 ## sell-q12
 
-Packaging/refund copy: `GETTING_STARTED.txt` inside the VST3 zip; license line states drag MIDI always works; first-run tour can open Settings. MIDI unchanged from q11 (76.8).
+Packaging/refund copy: `GETTING_STARTED.txt` inside the VST3 zip; license line states drag MIDI always works; first-run tour can open Settings. MIDI unchanged from q11 (76.8). Artifacts copied as `sell-q12-*`.
+
+## sell-q13
+
+House/lo-fi chorus crash skipped (house drums 71.3 → **71.8**, matching q8). Cinematic piano arp 62–76 (piano 67.0 → **71.6**). Headline **76.8** loop-v1, legacy **76.5**. Gates green. Artifacts: `sell-q13-*_s7.{mp3,mid}`.
+
+## Next loop (q14+) if unblocked
+
+MIDI: lofi arrange 68.3 / chords 64.8; trap chords 58.0 are structurally capped vs piano refs — do not chase vocab. Do not retouch trap melody with 2-bar/sustain stacks. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
