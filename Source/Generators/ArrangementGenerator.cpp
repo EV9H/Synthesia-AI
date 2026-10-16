@@ -685,9 +685,7 @@ namespace
 
         for (int bar = 0; bar < bars; ++bar)
         {
-            const bool fourBar = bar % 4 == 3;
-            const bool eightBar = bar % 8 == 7;
-            if (!eightBar && !fourBar)
+            if (bar % 8 != 7)
                 continue;
 
             const double barStart = bar * 4.0;
@@ -695,7 +693,7 @@ namespace
             const double barEnd = barStart + 4.0;
             if (chords != nullptr)
                 muteWindow(*chords, cut, barEnd);
-            if (piano != nullptr && eightBar)
+            if (piano != nullptr)
                 muteWindow(*piano, cut, barEnd);
         }
     }
