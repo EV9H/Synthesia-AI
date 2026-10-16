@@ -2354,7 +2354,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const bool hookHead = part == Part::Synth && (
                 trapLead ? (k < 3 && (position == 0 || !secondPhrase))
                          : (k < 4 && position == 0));
-            if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
+            const bool lofiLead = ctx.profile.genre == Genre::LoFiJazz && part == Part::Synth;
+            // Lo-fi: keep more weak onsets (onset 0.89 scores 37). Other genres
+            // still thin. Do not delay restated rhythm A (q18).
+            const double keepWeak = lofiLead ? 0.72 + 0.28 * energy * density
+                                             : 0.50 + 0.50 * energy * density;
+            if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > keepWeak)
                 continue;
             const double shortSkip = syncPluck ? 0.08 : (ctx.profile.genre == Genre::Trap ? 0.22 : 0.58);
             if (!hookHead && !cadenceNote && k > 0 && rn.length <= 2 * finest
@@ -2366,7 +2371,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             {
                 if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.40)
                     continue;
-                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.34)
+                // Lo-fi: the second-bar skip was dropping off-beats (onset + s7
+                // sync 25.7). Other genres still answer by thinning.
+                if (!lofiLead && part == Part::Synth && beatInTwoBars >= 4.0 && !strong
+                    && uniform(rng) < 0.34)
                     continue;
             }
 
