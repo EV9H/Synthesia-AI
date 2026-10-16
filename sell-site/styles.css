@@ -548,6 +548,71 @@ section {
   line-height: 1.6;
 }
 
+/* Requirements */
+.req-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .req-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.req-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.5rem;
+}
+
+.req-card h3 {
+  font-size: 1.02rem;
+  font-weight: 560;
+  margin-bottom: 0.55rem;
+  letter-spacing: -0.02em;
+}
+
+.req-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.req-card code {
+  font-size: 0.84em;
+}
+
+/* Legal stubs */
+.legal {
+  padding: 2.5rem 0 4rem;
+  max-width: 40rem;
+}
+
+.legal h1 {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: -0.03em;
+  margin: 0.75rem 0 1rem;
+}
+
+.legal h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.legal p, .legal-lead {
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  margin-bottom: 0.85rem;
+}
+
+.legal-lead { color: var(--text); }
+
+.legal a { color: var(--violet-soft); text-decoration: underline; }
+
 /* Footer */
 .footer {
   border-top: 1px solid var(--border);

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy — Harmonia</title>
+  <meta name="description" content="Privacy policy stub for Harmonia, a VST3 MIDI generator." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="aurora-bg" aria-hidden="true"></div>
+  <header>
+    <div class="wrap nav">
+      <a class="logo" href="index.html" aria-label="Harmonia home">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <span data-brand>Harmonia</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html#buy" data-checkout>Buy — $49</a></li>
+      </ul>
+    </div>
+  </header>
+  <main class="legal wrap">
+    <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Stub · replace before charging</p>
+    <h1>Privacy</h1>
+    <p class="legal-lead">
+      Last updated 16 October 2026. This is an in-repo stub so the site can ship footer links.
+      Replace the operator name, address, and support email before you take money.
+    </p>
+    <h2>What Harmonia is</h2>
+    <p>
+      Harmonia is a VST3 MIDI generator that runs on your computer. The product is arrangement MIDI
+      you drag into a DAW. Preview audio is a local sketch, not a cloud render we store.
+    </p>
+    <h2>What we do not collect in the plugin</h2>
+    <p>
+      The plugin does not create a Harmonia account. License keys, optional LLM API keys, and
+      Settings URLs stay in local plugin state on this machine (<code>SynthesiaAI/settings.xml</code>).
+      We do not receive your MIDI, stems, or project files.
+    </p>
+    <h2>Optional cloud calls you turn on</h2>
+    <p>
+      Text-to-arrangement and Inspire send a short prompt to the LLM provider you configure
+      (OpenAI, Groq, or a custom endpoint). That traffic goes to that provider under their terms,
+      not to a Harmonia server. Genre templates work offline.
+    </p>
+    <h2>Payments and licenses</h2>
+    <p>
+      Checkout is handled by <strong>Lemon Squeezy</strong> (merchant of record). They process
+      payment, tax, receipts, and (when enabled) license keys. Their privacy policy applies to
+      that purchase. If you paste a Lemon key in Settings, the plugin may POST that key to the
+      validate URL you set (<code>HARMONIA_LICENSE_VALIDATE_URL</code> or Settings → Advanced).
+      Offline <code>HRM-</code> keys are checked on-device and are never sent anywhere.
+    </p>
+    <h2>This website</h2>
+    <p>
+      The marketing site is static. It does not set an account cookie. Your host (for example
+      Cloudflare Pages) may log standard request metadata. Demo MP3s are illustrative preview
+      audio, not buyer projects.
+    </p>
+    <h2>Contact</h2>
+    <p>
+      Questions: <a href="mailto:hello@example.com" id="supportLink">hello@example.com</a>
+      (replace via <code>sell-site/config.js</code> → <code>supportEmail</code>).
+    </p>
+  </main>
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="terms.html">Terms</a>
+        <a href="index.html#buy">Buy</a>
+      </div>
+      <p class="tm-note">Harmonia is the product name for this MIDI generator. Not affiliated with Synthesia Learning Co.</p>
+    </div>
+  </footer>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
