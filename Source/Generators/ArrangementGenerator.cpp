@@ -1399,6 +1399,24 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBass(const Context
                                           : generatePatternBass(ctx, rng);
     shapeBassContour(notes, ctx.progression, ctx.profile.bassLow, ctx.profile.bassHigh,
                      ctx.params.rootNote, ctx.params.scale);
+    // Lo-fi pads sustain; chromatic approaches tripped bass_root 38–46% (lint −3).
+    if (ctx.profile.genre == Genre::LoFiJazz)
+    {
+        const int low = ctx.profile.bassLow;
+        const int high = ctx.profile.bassHigh;
+        for (auto& n : notes)
+        {
+            const int index = chordIndexAt(ctx.progression, n.start);
+            if (index < 0 || index >= static_cast<int>(ctx.progression.size()))
+                continue;
+            const auto tones = chordTonePitches(ctx.progression[static_cast<size_t>(index)],
+                                                true, low, high);
+            if (tones.empty())
+                continue;
+            n.pitch = nearestOf(tones, n.pitch, n.pitch);
+            n.pitch = foldIntoRange(n.pitch, low, high);
+        }
+    }
     addSlides(notes, ctx.profile.slideChance, rng);
     return notes;
 }
