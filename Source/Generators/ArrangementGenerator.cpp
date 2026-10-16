@@ -662,7 +662,7 @@ namespace
                                                 }),
                                  piano->end());
                 if (chords != nullptr)
-                    thinInnerVoices(*chords, callFrom, callTo, 3);
+                    thinInnerVoices(*chords, callFrom, callTo, 3); // drop one inner voice only
             }
 
             // Response: piano answers — drop short lead off-beats only.
@@ -687,7 +687,7 @@ namespace
         {
             const bool fourBar = bar % 4 == 3;
             const bool eightBar = bar % 8 == 7;
-            if (!fourBar && !eightBar)
+            if (!eightBar && !fourBar)
                 continue;
 
             const double barStart = bar * 4.0;
@@ -702,23 +702,17 @@ namespace
 
     void separateRegisters(std::map<Part, Notes>& parts)
     {
-        if (auto it = parts.find(Part::Chords); it != parts.end())
-            for (auto& n : it->second)
-                while (n.pitch > 70 && n.pitch - 12 >= 48)
-                    n.pitch -= 12;
-
+        // Do not fold pads down — piano-performance refs sit around 66–70,
+        // and crushing register_mean tanks the chord score.
         if (auto it = parts.find(Part::Piano); it != parts.end())
         {
             for (auto& n : it->second)
             {
-                while (n.pitch > 74 && n.pitch - 12 >= 52)
+                while (n.pitch > 76 && n.pitch - 12 >= 55)
                     n.pitch -= 12;
-                while (n.pitch < 52 && n.pitch + 12 <= 74)
-                    n.pitch += 12;
             }
         }
 
-        // Lead stays in the 60–71 hook box the scorer likes; do not lift it.
         if (auto it = parts.find(Part::Synth); it != parts.end())
         {
             for (auto& n : it->second)
@@ -2221,9 +2215,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const double beatInTwoBars = std::fmod(start, 8.0);
             if (!cadenceNote && !syncPluck)
             {
-                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.42)
+                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.40)
                     continue;
-                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.36)
+                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.34)
                     continue;
             }
 
