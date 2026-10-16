@@ -1,0 +1,987 @@
+{
+  "cents_limit": 50.0,
+  "genres": {
+    "lofi": {
+      "ok": true,
+      "n": 32,
+      "failed": 0,
+      "notes": [
+        {
+          "part": "bass",
+          "pitch": 36,
+          "start": 0.0,
+          "expected_hz": 65.40639132514966,
+          "ok": true,
+          "cents": -0.8,
+          "detected_hz": 65.38,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 38,
+          "start": 1.0,
+          "expected_hz": 73.41619197935188,
+          "ok": true,
+          "cents": 5.4,
+          "detected_hz": 73.65,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 40,
+          "start": 2.0,
+          "expected_hz": 82.4068892282175,
+          "ok": true,
+          "cents": -0.2,
+          "detected_hz": 82.4,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 41,
+          "start": 3.0,
+          "expected_hz": 87.30705785825097,
+          "ok": true,
+          "cents": -0.4,
+          "detected_hz": 87.29,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 43,
+          "start": 4.0,
+          "expected_hz": 97.99885899543733,
+          "ok": true,
+          "cents": -1.4,
+          "detected_hz": 97.92,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 45,
+          "start": 5.0,
+          "expected_hz": 110.0,
+          "ok": true,
+          "cents": -2.3,
+          "detected_hz": 109.85,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 47,
+          "start": 6.0,
+          "expected_hz": 123.47082531403103,
+          "ok": true,
+          "cents": -3.2,
+          "detected_hz": 123.24,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 48,
+          "start": 7.0,
+          "expected_hz": 130.8127826502993,
+          "ok": true,
+          "cents": -3.6,
+          "detected_hz": 130.54,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 60,
+          "start": 8.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": 0.7,
+          "detected_hz": 261.73,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 62,
+          "start": 9.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": 0.4,
+          "detected_hz": 293.73,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 64,
+          "start": 10.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": 2.1,
+          "detected_hz": 330.02,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 65,
+          "start": 11.0,
+          "expected_hz": 349.2282314330039,
+          "ok": true,
+          "cents": -1.9,
+          "detected_hz": 348.85,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 67,
+          "start": 12.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": -1.3,
+          "detected_hz": 391.7,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 69,
+          "start": 13.0,
+          "expected_hz": 440.0,
+          "ok": true,
+          "cents": -1.0,
+          "detected_hz": 439.76,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 71,
+          "start": 14.0,
+          "expected_hz": 493.8833012561241,
+          "ok": true,
+          "cents": -0.2,
+          "detected_hz": 493.84,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 72,
+          "start": 15.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": -1.6,
+          "detected_hz": 522.77,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 72,
+          "start": 16.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": 4.4,
+          "detected_hz": 524.58,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 74,
+          "start": 17.0,
+          "expected_hz": 587.3295358348151,
+          "ok": true,
+          "cents": 7.0,
+          "detected_hz": 589.72,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 76,
+          "start": 18.0,
+          "expected_hz": 659.2551138257398,
+          "ok": true,
+          "cents": 4.1,
+          "detected_hz": 660.83,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 77,
+          "start": 19.0,
+          "expected_hz": 698.4564628660078,
+          "ok": true,
+          "cents": -0.3,
+          "detected_hz": 698.35,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 79,
+          "start": 20.0,
+          "expected_hz": 783.9908719634985,
+          "ok": true,
+          "cents": 2.9,
+          "detected_hz": 785.3,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 81,
+          "start": 21.0,
+          "expected_hz": 880.0,
+          "ok": true,
+          "cents": 6.2,
+          "detected_hz": 883.16,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 83,
+          "start": 22.0,
+          "expected_hz": 987.7666025122483,
+          "ok": true,
+          "cents": 6.5,
+          "detected_hz": 991.5,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 84,
+          "start": 23.0,
+          "expected_hz": 1046.5022612023945,
+          "ok": true,
+          "cents": 3.9,
+          "detected_hz": 1048.84,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 55,
+          "start": 24.0,
+          "expected_hz": 195.99771799087463,
+          "ok": true,
+          "cents": 12.1,
+          "detected_hz": 197.37,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 57,
+          "start": 25.0,
+          "expected_hz": 220.0,
+          "ok": true,
+          "cents": 17.8,
+          "detected_hz": 222.27,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 59,
+          "start": 26.0,
+          "expected_hz": 246.94165062806206,
+          "ok": true,
+          "cents": 2.0,
+          "detected_hz": 247.22,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 60,
+          "start": 27.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": 7.2,
+          "detected_hz": 262.72,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 62,
+          "start": 28.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": 7.0,
+          "detected_hz": 294.86,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 64,
+          "start": 29.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": 5.2,
+          "detected_hz": 330.62,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 66,
+          "start": 30.0,
+          "expected_hz": 369.9944227116344,
+          "ok": true,
+          "cents": 2.3,
+          "detected_hz": 370.48,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 67,
+          "start": 31.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": 2.2,
+          "detected_hz": 392.5,
+          "reason": ""
+        }
+      ]
+    },
+    "house": {
+      "ok": true,
+      "n": 32,
+      "failed": 0,
+      "notes": [
+        {
+          "part": "bass",
+          "pitch": 36,
+          "start": 0.0,
+          "expected_hz": 65.40639132514966,
+          "ok": true,
+          "cents": 0.8,
+          "detected_hz": 65.44,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 38,
+          "start": 1.0,
+          "expected_hz": 73.41619197935188,
+          "ok": true,
+          "cents": 0.6,
+          "detected_hz": 73.44,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 40,
+          "start": 2.0,
+          "expected_hz": 82.4068892282175,
+          "ok": true,
+          "cents": -0.7,
+          "detected_hz": 82.37,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 41,
+          "start": 3.0,
+          "expected_hz": 87.30705785825097,
+          "ok": true,
+          "cents": -1.0,
+          "detected_hz": 87.26,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 43,
+          "start": 4.0,
+          "expected_hz": 97.99885899543733,
+          "ok": true,
+          "cents": 1.4,
+          "detected_hz": 98.08,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 45,
+          "start": 5.0,
+          "expected_hz": 110.0,
+          "ok": true,
+          "cents": -1.2,
+          "detected_hz": 109.92,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 47,
+          "start": 6.0,
+          "expected_hz": 123.47082531403103,
+          "ok": true,
+          "cents": 0.5,
+          "detected_hz": 123.51,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 48,
+          "start": 7.0,
+          "expected_hz": 130.8127826502993,
+          "ok": true,
+          "cents": -0.5,
+          "detected_hz": 130.78,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 60,
+          "start": 8.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": -0.7,
+          "detected_hz": 261.53,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 62,
+          "start": 9.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": -0.6,
+          "detected_hz": 293.57,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 64,
+          "start": 10.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": -0.1,
+          "detected_hz": 329.6,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 65,
+          "start": 11.0,
+          "expected_hz": 349.2282314330039,
+          "ok": true,
+          "cents": 0.6,
+          "detected_hz": 349.34,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 67,
+          "start": 12.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": -0.1,
+          "detected_hz": 391.97,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 69,
+          "start": 13.0,
+          "expected_hz": 440.0,
+          "ok": true,
+          "cents": 0.5,
+          "detected_hz": 440.12,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 71,
+          "start": 14.0,
+          "expected_hz": 493.8833012561241,
+          "ok": true,
+          "cents": 0.2,
+          "detected_hz": 493.93,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 72,
+          "start": 15.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": -0.3,
+          "detected_hz": 523.16,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 72,
+          "start": 16.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": -13.3,
+          "detected_hz": 519.24,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 74,
+          "start": 17.0,
+          "expected_hz": 587.3295358348151,
+          "ok": true,
+          "cents": 18.4,
+          "detected_hz": 593.61,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 76,
+          "start": 18.0,
+          "expected_hz": 659.2551138257398,
+          "ok": true,
+          "cents": 1.5,
+          "detected_hz": 659.84,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 77,
+          "start": 19.0,
+          "expected_hz": 698.4564628660078,
+          "ok": true,
+          "cents": 1.7,
+          "detected_hz": 699.15,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 79,
+          "start": 20.0,
+          "expected_hz": 783.9908719634985,
+          "ok": true,
+          "cents": -1.0,
+          "detected_hz": 783.52,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 81,
+          "start": 21.0,
+          "expected_hz": 880.0,
+          "ok": true,
+          "cents": 1.1,
+          "detected_hz": 880.54,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 83,
+          "start": 22.0,
+          "expected_hz": 987.7666025122483,
+          "ok": true,
+          "cents": 0.9,
+          "detected_hz": 988.27,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 84,
+          "start": 23.0,
+          "expected_hz": 1046.5022612023945,
+          "ok": true,
+          "cents": -0.1,
+          "detected_hz": 1046.45,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 55,
+          "start": 24.0,
+          "expected_hz": 195.99771799087463,
+          "ok": true,
+          "cents": 3.7,
+          "detected_hz": 196.42,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 57,
+          "start": 25.0,
+          "expected_hz": 220.0,
+          "ok": true,
+          "cents": 6.5,
+          "detected_hz": 220.83,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 59,
+          "start": 26.0,
+          "expected_hz": 246.94165062806206,
+          "ok": true,
+          "cents": 5.6,
+          "detected_hz": 247.74,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 60,
+          "start": 27.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": 7.7,
+          "detected_hz": 262.79,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 62,
+          "start": 28.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": 7.7,
+          "detected_hz": 294.98,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 64,
+          "start": 29.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": 5.9,
+          "detected_hz": 330.76,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 66,
+          "start": 30.0,
+          "expected_hz": 369.9944227116344,
+          "ok": true,
+          "cents": 6.6,
+          "detected_hz": 371.41,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 67,
+          "start": 31.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": 7.1,
+          "detected_hz": 393.61,
+          "reason": ""
+        }
+      ]
+    },
+    "trap": {
+      "ok": true,
+      "n": 32,
+      "failed": 0,
+      "notes": [
+        {
+          "part": "bass",
+          "pitch": 36,
+          "start": 0.0,
+          "expected_hz": 65.40639132514966,
+          "ok": true,
+          "cents": 24.7,
+          "detected_hz": 66.35,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 38,
+          "start": 1.0,
+          "expected_hz": 73.41619197935188,
+          "ok": true,
+          "cents": 2.2,
+          "detected_hz": 73.51,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 40,
+          "start": 2.0,
+          "expected_hz": 82.4068892282175,
+          "ok": true,
+          "cents": 0.8,
+          "detected_hz": 82.44,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 41,
+          "start": 3.0,
+          "expected_hz": 87.30705785825097,
+          "ok": true,
+          "cents": -1.8,
+          "detected_hz": 87.22,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 43,
+          "start": 4.0,
+          "expected_hz": 97.99885899543733,
+          "ok": true,
+          "cents": -1.0,
+          "detected_hz": 97.94,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 45,
+          "start": 5.0,
+          "expected_hz": 110.0,
+          "ok": true,
+          "cents": 1.0,
+          "detected_hz": 110.07,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 47,
+          "start": 6.0,
+          "expected_hz": 123.47082531403103,
+          "ok": true,
+          "cents": 1.1,
+          "detected_hz": 123.55,
+          "reason": ""
+        },
+        {
+          "part": "bass",
+          "pitch": 48,
+          "start": 7.0,
+          "expected_hz": 130.8127826502993,
+          "ok": true,
+          "cents": -1.2,
+          "detected_hz": 130.72,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 60,
+          "start": 8.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": 0.7,
+          "detected_hz": 261.73,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 62,
+          "start": 9.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": -0.0,
+          "detected_hz": 293.66,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 64,
+          "start": 10.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": -2.1,
+          "detected_hz": 329.22,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 65,
+          "start": 11.0,
+          "expected_hz": 349.2282314330039,
+          "ok": true,
+          "cents": -3.5,
+          "detected_hz": 348.53,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 67,
+          "start": 12.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": -1.7,
+          "detected_hz": 391.61,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 69,
+          "start": 13.0,
+          "expected_hz": 440.0,
+          "ok": true,
+          "cents": 1.0,
+          "detected_hz": 440.25,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 71,
+          "start": 14.0,
+          "expected_hz": 493.8833012561241,
+          "ok": true,
+          "cents": 4.1,
+          "detected_hz": 495.06,
+          "reason": ""
+        },
+        {
+          "part": "piano",
+          "pitch": 72,
+          "start": 15.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": 3.1,
+          "detected_hz": 524.18,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 72,
+          "start": 16.0,
+          "expected_hz": 523.2511306011972,
+          "ok": true,
+          "cents": -0.0,
+          "detected_hz": 523.25,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 74,
+          "start": 17.0,
+          "expected_hz": 587.3295358348151,
+          "ok": true,
+          "cents": -0.2,
+          "detected_hz": 587.26,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 76,
+          "start": 18.0,
+          "expected_hz": 659.2551138257398,
+          "ok": true,
+          "cents": 0.0,
+          "detected_hz": 659.27,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 77,
+          "start": 19.0,
+          "expected_hz": 698.4564628660078,
+          "ok": true,
+          "cents": -0.1,
+          "detected_hz": 698.43,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 79,
+          "start": 20.0,
+          "expected_hz": 783.9908719634985,
+          "ok": true,
+          "cents": -0.2,
+          "detected_hz": 783.91,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 81,
+          "start": 21.0,
+          "expected_hz": 880.0,
+          "ok": true,
+          "cents": -0.1,
+          "detected_hz": 879.93,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 83,
+          "start": 22.0,
+          "expected_hz": 987.7666025122483,
+          "ok": true,
+          "cents": 0.0,
+          "detected_hz": 987.78,
+          "reason": ""
+        },
+        {
+          "part": "synth",
+          "pitch": 84,
+          "start": 23.0,
+          "expected_hz": 1046.5022612023945,
+          "ok": true,
+          "cents": 0.0,
+          "detected_hz": 1046.51,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 55,
+          "start": 24.0,
+          "expected_hz": 195.99771799087463,
+          "ok": true,
+          "cents": 7.1,
+          "detected_hz": 196.8,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 57,
+          "start": 25.0,
+          "expected_hz": 220.0,
+          "ok": true,
+          "cents": 10.0,
+          "detected_hz": 221.28,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 59,
+          "start": 26.0,
+          "expected_hz": 246.94165062806206,
+          "ok": true,
+          "cents": -2.0,
+          "detected_hz": 246.66,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 60,
+          "start": 27.0,
+          "expected_hz": 261.6255653005986,
+          "ok": true,
+          "cents": 2.0,
+          "detected_hz": 261.92,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 62,
+          "start": 28.0,
+          "expected_hz": 293.6647679174076,
+          "ok": true,
+          "cents": 0.9,
+          "detected_hz": 293.82,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 64,
+          "start": 29.0,
+          "expected_hz": 329.6275569128699,
+          "ok": true,
+          "cents": -1.0,
+          "detected_hz": 329.44,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 66,
+          "start": 30.0,
+          "expected_hz": 369.9944227116344,
+          "ok": true,
+          "cents": -3.3,
+          "detected_hz": 369.29,
+          "reason": ""
+        },
+        {
+          "part": "chords",
+          "pitch": 67,
+          "start": 31.0,
+          "expected_hz": 391.99543598174927,
+          "ok": true,
+          "cents": -2.4,
+          "detected_hz": 391.44,
+          "reason": ""
+        }
+      ]
+    }
+  },
+  "ok": true
+}
