@@ -1353,10 +1353,8 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                                          leading, voicingOptions, rng);
             dropMinorSeconds(voicing);
             // Cycle inversions by bar so 8-bar loops stay unique without a 2-bar stamp.
-            // Lo-fi (bar+hit)%3 jumped ~2 semitones/voice (VL 44); flip every 2 bars.
-            const int spins = ctx.profile.genre == Genre::LoFiJazz
-                ? (bar / 2) % 2
-                : (bar + static_cast<int>(hitIndex)) % 3;
+            // Keep per-bar spins on lo-fi: (bar/2)%2 stamped variation_8 to 0.875.
+            const int spins = (bar + static_cast<int>(hitIndex)) % 3;
             for (int i = 0; i < spins; ++i)
                 voicing = invertDiatonic(voicing, voicingOptions);
             dropMinorSeconds(voicing);
