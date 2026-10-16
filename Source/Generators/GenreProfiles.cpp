@@ -163,11 +163,9 @@ namespace
         p.minorProgressions = { { "2h 5D 1 67 47 3 2h 5D" }, { "1 47 67 5D 2h 1 67 4" },
                                 { "1 2h 67 5D 1 47 2h 5D" }, { "67 2h 5D 19 1 47 67 5D" } };
 
-        // Trap pads hold; busy comps stacked the unique-onset density and
-        // sat under the piano-ref register box.
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X---------------", "X-------x-------", "X-----------x---", "X-------X-------" };
-        p.chordVoicing = { 58, 76, 4, false, false };
+        p.chordPatterns = { "X---x---X---x---", "X---x---X---x-x-", "x---X---x---X---", "X-x-X---x---X---" };
+        p.chordVoicing = { 55, 74, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         p.bassPatterns = { "R-------..R---R-", "R-----R-----O---", "R---------R-.R--", "R-------R---..A-" };
@@ -176,7 +174,7 @@ namespace
         p.slideChance = 0.45;
 
         p.leadStyle = LeadStyle::Melody;
-        p.leadMelody = { 60, 70, 0.52, 0.34, 0.22, 0.22, 2, false, false, 88 };
+        p.leadMelody = { 60, 72, 0.68, 0.42, 0.14, 0.18, 1, false, false, 88 };
         p.leadMelody.intervalWeights = { 0.15, 0.2, 0.35, 0.6, 1.1, 1.8, 1.8, 1.8, 1.1, 0.6, 0.35, 0.2, 0.15 };
 
         p.pianoStyle = PianoStyle::Broken;
