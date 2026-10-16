@@ -6,9 +6,10 @@ preview piano sounds thin, that is expected — load your own sounds.
 
 1. Insert Harmonia on a MIDI / instrument track in Ableton, Logic, or FL.
 2. Pick a genre (or an Inspire seed — the combo generates immediately).
-3. Tap Generate. You get five tracks: Chords, Bass, Synth, Piano, Drums.
+3. Tap Generate. You get five tracks: Chords (ch 1), Bass (ch 2), Synth (ch 3),
+   Piano (ch 4), Drums (ch 10 / GM).
 4. Drag the handle labelled "Drag MIDI" into your DAW (not the piano-roll).
-5. Load YOUR piano, bass, and drums on those tracks.
+5. Load YOUR piano, bass, and drums on those tracks. Route ch 10 to a drum kit.
 
 If Generate is greyed out: Settings → paste HRM-XXXXXXXX-CCCC → Validate.
 Drag and export stay unlocked even before a key. Generate locks only on

@@ -113,6 +113,10 @@ House drums: irregular 16th off-beat hats (not 8th-grid), leftover fill-path cho
 
 Tried lofi melody (syncopate restated A, fold 60–69) — melody **66.6 → 56.3**, walked back. Tried pop piano velocity 108–32 — piano **69.2 → 61.2** (vel_std 24 → 34), walked back. MIDI matches q17. Headline **77.0**, house drums **81.0**, gates green. Artifacts: `sell-q18-*_s7.{mp3,mid}`.
 
-## Next loop (q19+) if unblocked
+## sell-q19
 
-MIDI: lofi bass_root warns (38–46%, lint −3) or cinematic drums 73.0. Do not retouch lofi lead rhythm A / fold-69. Do not widen pop piano to 32–108. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Tried lo-fi bass_root (snap approaches; force pad root after invert). Lint stayed 38–42% and lofi dipped 73.3 → 72.8 — walked back. Product: GETTING_STARTED names GM channels (1–4 + ch 10 drums); sell-site FAQ “preview piano is a sketch.” MIDI = q17/q18. Headline **77.0**. Artifacts: `sell-q19-*_s7.{mp3,mid}`.
+
+## Next loop (q20+) if unblocked
+
+MIDI: lofi melody 66.6, pop piano 69.2, cinematic drums 73.0, lofi bass_root warns (do not chase the same snap/root-insert). Do not retouch lofi lead rhythm A / fold-69. Do not widen pop piano to 32–108. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
