@@ -1359,28 +1359,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             for (int i = 0; i < spins; ++i)
                 voicing = invertDiatonic(voicing, voicingOptions);
             dropMinorSeconds(voicing);
-            // Inversions can drop the root PC; bass then "conflicts" with the
-            // sounding stack (lo-fi lint 38–46%) even when the bass is the root.
-            if (ctx.profile.genre == Genre::LoFiJazz && part == Part::Chords)
-            {
-                const int rootPc = progression[static_cast<size_t>(index)].rootPitchClass;
-                bool hasRoot = false;
-                for (int p : voicing)
-                    if (((p % 12) + 12) % 12 == rootPc)
-                        hasRoot = true;
-                if (!hasRoot)
-                {
-                    const int anchor = voicing.empty() ? voicingOptions.low + 4 : voicing.front();
-                    int root = theory::nearestPitchWithClass(rootPc, anchor);
-                    while (root < voicingOptions.low)
-                        root += 12;
-                    while (root > voicingOptions.high && root - 12 >= voicingOptions.low)
-                        root -= 12;
-                    if (root >= voicingOptions.low && root <= voicingOptions.high)
-                        voicing.insert(voicing.begin(), root);
-                    dropMinorSeconds(voicing);
-                }
-            }
             leading = voicing;
             size_t from = 0;
             size_t to = voicing.size();
@@ -1421,24 +1399,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBass(const Context
                                           : generatePatternBass(ctx, rng);
     shapeBassContour(notes, ctx.progression, ctx.profile.bassLow, ctx.profile.bassHigh,
                      ctx.params.rootNote, ctx.params.scale);
-    // Lo-fi pads sustain; chromatic approaches tripped bass_root 38–46% (lint −3).
-    if (ctx.profile.genre == Genre::LoFiJazz)
-    {
-        const int low = ctx.profile.bassLow;
-        const int high = ctx.profile.bassHigh;
-        for (auto& n : notes)
-        {
-            const int index = chordIndexAt(ctx.progression, n.start);
-            if (index < 0 || index >= static_cast<int>(ctx.progression.size()))
-                continue;
-            const auto tones = chordTonePitches(ctx.progression[static_cast<size_t>(index)],
-                                                true, low, high);
-            if (tones.empty())
-                continue;
-            n.pitch = nearestOf(tones, n.pitch, n.pitch);
-            n.pitch = foldIntoRange(n.pitch, low, high);
-        }
-    }
     addSlides(notes, ctx.profile.slideChance, rng);
     return notes;
 }
