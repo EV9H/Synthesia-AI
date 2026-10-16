@@ -1926,11 +1926,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int rotate = bar % 8;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
-            // Pop: widen 96/74/50 slightly (not the banned 108/32 + spread-18 stack).
-            // Target vel_std ~28–30; 24 scored low, 34 overshot.
-            const int velocity = trapPiano
-                ? (index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50)
-                : (index % 8 == 0 ? 102 : index % 2 == 0 ? 74 : 46);
+            const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
             notes.push_back({ pitch, beat, noteLen, playedVelocity(velocity, beat, rng, trapPiano ? 14 : 12) });

@@ -121,6 +121,10 @@ Tried lo-fi bass_root (snap approaches; force pad root after invert). Lint staye
 
 Tried cinematic one-ghost-per-backbeat snares. Drums **73.0 → 74.8** but arrange **77.0 → 75.4** and cinematic **74.2 → 74.1** — walked back (do not retry sparse cinematic ghosts). MIDI = q17/q18/q19. Headline **77.0**, arrange **78.4**, gates green. Product: visible license paste + sanitise/auto-Validate; `UNSIGNED_SMOKE.txt` in the VST3 zip; first-run status “Generate then drag.” Artifacts: `sell-q20-*_s7.{mp3,mid}`.
 
-## Next loop (q21+) if unblocked
+## sell-q21
 
-MIDI: lofi melody 66.6 (not rhythm-A / fold-69), pop piano 69.2 (not 32–108 accents; modest spread-only is untried), cinematic drums 73.0 (ghosts walked back). Do not chase lofi bass_root snap/root-insert. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Tried pop broken piano 102/74/46 (not the banned 108/32 stack). Piano **69.2 → 66.9** (vel_std 24 → 28, score 57 → 45). Pop 79.5 → 79.2. Walked back — refs p90 is 19.9, so 24 is already high. MIDI = q17. Headline **77.0**. Artifacts: `sell-q21-*_s7.{mp3,mid}`.
+
+## Next loop (q22+) if unblocked
+
+MIDI: lofi melody 66.6 (not rhythm-A / fold-69), pop piano 69.2 (not 32–108 and not 102/46 widen; compress toward ref p50 15.4 is untried), cinematic drums 73.0 (ghosts walked back). Do not chase lofi bass_root snap/root-insert. Trap vocab / trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
