@@ -1917,7 +1917,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
 
         const double end = chordEnd(chord);
         const bool trapPiano = ctx.profile.genre == Genre::Trap;
-        const bool popPiano = ctx.profile.genre == Genre::Pop;
         const double rate = trapPiano ? 0.25 : 0.5;
         const double gate = trapPiano ? 0.22 : juce::jmin(1.1, rate + 0.18);
         int index = 0;
@@ -1927,14 +1926,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
             const int rotate = bar % 8;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
-            // Pop refs want a wider velocity spread (vel_std scored 57 at ~24).
-            const int velocity = popPiano
-                ? (index % 8 == 0 ? 108 : index % 4 == 0 ? 78 : index % 2 == 0 ? 52 : 32)
-                : (index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50);
+            const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
             const int pitch = sequence[(index + rotate) % 8];
             const double noteLen = juce::jmin(gate, end - beat);
-            notes.push_back({ pitch, beat, noteLen,
-                              playedVelocity(velocity, beat, rng, popPiano ? 18 : trapPiano ? 14 : 12) });
+            notes.push_back({ pitch, beat, noteLen, playedVelocity(velocity, beat, rng, trapPiano ? 14 : 12) });
         }
         if (trapPiano && !voicing.empty())
         {
