@@ -1167,7 +1167,8 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
         {
             // One inner-voice step on lo-fi pads: full motion crushed density,
             // none zeroed voice_leading on long holds.
-            const int maxInner = (part == Part::Chords && profile.genre == Genre::LoFiJazz) ? 1 : 8;
+            const int maxInner = (part == Part::Chords
+                && (profile.genre == Genre::LoFiJazz || profile.genre == Genre::Cinematic)) ? 1 : 8;
             const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
             addInnerVoiceMotion(notes, padScale, rng, maxInner);
         }
@@ -1230,24 +1231,23 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateChords(const Conte
     {
         case ChordStyle::Sustained:
         {
+            // One stack per chord. Retriggering every beat made unique-onset
+            // density ~2.8 vs the cinematic loop target 0.55 (density_chords 18).
             PartNotes notes;
             std::vector<int> previous;
             for (const auto& chord : ctx.progression)
             {
-                const double end = chordEnd(chord);
-                for (double beat = chord.startBeat; beat < end - 1.0e-6; beat += 1.0)
+                auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
+                dropMinorSeconds(voicing);
+                previous = voicing;
+                const double start = chord.startBeat;
+                const double length = juce::jmax(0.2, chordEnd(chord) - start - 0.04);
+                const float energy = ctx.energyAt(start);
+                for (size_t i = 0; i < voicing.size(); ++i)
                 {
-                    auto voicing = theory::voiceChord(chord, previous, profile.chordVoicing, rng);
-                    dropMinorSeconds(voicing);
-                    previous = voicing;
-                    const double length = juce::jmin(1.0, end - beat) - 0.04;
-                    const float energy = ctx.energyAt(beat);
-                    for (size_t i = 0; i < voicing.size(); ++i)
-                    {
-                        const bool top = i + 1 == voicing.size();
-                        notes.push_back({ voicing[i], beat, length,
-                                          humanise(juce::roundToInt((top ? 80 : 70) * (0.55f + 0.45f * energy)), rng, 4) });
-                    }
+                    const bool top = i + 1 == voicing.size();
+                    notes.push_back({ voicing[i], start, length,
+                                      humanise(juce::roundToInt((top ? 80 : 70) * (0.55f + 0.45f * energy)), rng, 4) });
                 }
             }
             return notes;
@@ -1969,6 +1969,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateArp(const Context&
         {
             const float density = ctx.densityAt(part, beat);
             if (index % 2 == 1 && uniform(rng) > 0.35 + 0.65 * density)
+                continue;
+            // Cinematic verse: drop off-beats so piano answers the chorus lift.
+            if (ctx.profile.genre == Genre::Cinematic && part == Part::Piano
+                && ctx.energyAt(beat) < 0.55f && index % 2 == 1)
                 continue;
             const int rotate = static_cast<int>(std::floor(chord.startBeat / 4.0 + 1.0e-9));
             const int pitch = tones[static_cast<size_t>(shape[(index + rotate) % shape.size()]) % tones.size()];
