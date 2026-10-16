@@ -1162,8 +1162,13 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
 
         if (part == Part::Chords || part == Part::Piano)
         {
-            const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
-            addInnerVoiceMotion(notes, padScale, rng);
+            // Lo-fi pads already hold; extra inner-voice onsets crush density_chords.
+            const bool skipInner = part == Part::Chords && profile.genre == Genre::LoFiJazz;
+            if (!skipInner)
+            {
+                const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
+                addInnerVoiceMotion(notes, padScale, rng);
+            }
         }
 
         if (part != Part::Drums)
@@ -1334,6 +1339,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 continue;
             if (ctx.energyAt(start) < 0.28f && hit.step % 4 != 0 && hit.symbol != 'X')
                 continue;
+            // Lo-fi verse (energy 0.42) keeps the downbeat; chorus (1.0) keeps ghosts.
+            if (ctx.profile.genre == Genre::LoFiJazz && ctx.energyAt(start) < 0.55f
+                && hit.symbol != 'X')
+                continue;
 
             const float energy = ctx.energyAt(start);
             const int velocity = juce::roundToInt((hit.symbol == 'X' ? baseVelocity + 10
@@ -1344,7 +1353,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                                          leading, voicingOptions, rng);
             dropMinorSeconds(voicing);
             // Cycle inversions by bar so 8-bar loops stay unique without a 2-bar stamp.
-            const int spins = (bar + static_cast<int>(hitIndex)) % 3;
+            // Lo-fi (bar+hit)%3 jumped ~2 semitones/voice (VL 44); flip every 2 bars.
+            const int spins = ctx.profile.genre == Genre::LoFiJazz
+                ? (bar / 2) % 2
+                : (bar + static_cast<int>(hitIndex)) % 3;
             for (int i = 0; i < spins; ++i)
                 voicing = invertDiatonic(voicing, voicingOptions);
             dropMinorSeconds(voicing);
@@ -1364,7 +1376,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
         }
 
         // Per-bar diatonic pickup so 4-chord loops still hash uniquely.
-        if (!leading.empty() && (bar % 2 == 1 || ctx.profile.genre == Genre::House))
+        // Lo-fi skips it: extra unique onsets were the density_chords cliff.
+        if (!leading.empty() && ctx.profile.genre != Genre::LoFiJazz
+            && (bar % 2 == 1 || ctx.profile.genre == Genre::House))
         {
             const int decorate = 9 + (bar % 7);
             const int tone = leading[static_cast<size_t>(bar) % leading.size()];
@@ -2230,8 +2244,13 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
         }
         else if (secondPhrase)
         {
-            rhythm = &rhythmB;
-            contour = &contourB;
+            // Lo-fi 2-bar: restate contour A at +4 bars (hook was 0 vs inverted B).
+            // Keep A2 on pos1 so this is not an A/B/A/B stamp.
+            if (ctx.profile.genre != Genre::LoFiJazz)
+            {
+                rhythm = &rhythmB;
+                contour = &contourB;
+            }
         }
 
         Rhythm segmentRhythm = *rhythm;

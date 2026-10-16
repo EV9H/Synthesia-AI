@@ -67,7 +67,9 @@ namespace
                                 { "67 2h 5D 19 47 1 2h 5D" }, { "1 47 7 3 27 5D 19 67" } };
 
         p.chordStyle = ChordStyle::Comping;
-        p.chordPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....", "X---------..x---" };
+        // Fewer attacks, same 4-note stacks: unique-onset density was 2.2 vs the
+        // 0.40 loop target because inner-voice motion + pickups + 2-hits/bar.
+        p.chordPatterns = { "X---------------", "X-------x-------", "X-----------x---", "X-----x-........" };
         p.chordVoicing = { 58, 72, 4, false, false };
 
         p.bassStyle = BassStyle::Walking;
@@ -81,7 +83,8 @@ namespace
         p.leadMelody.intervalWeights = { 0.1, 0.2, 0.4, 0.9, 1.6, 2.4, 1.4, 2.4, 1.6, 0.9, 0.4, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Comp;
-        p.pianoPatterns = { "X-----x-........", "X--.....x---....", "..x-----..x-....", "X---------..x---" };
+        // Answer the pads instead of doubling their rhythm (call_response ~0.25).
+        p.pianoPatterns = { "........X-----x-", "........X-------", "....X-----------", "..x-----X-------" };
         p.pianoVoicing = { 58, 72, 4, false, false };
 
         p.drums.grooves = {
