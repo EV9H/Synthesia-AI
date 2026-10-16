@@ -1,0 +1,4202 @@
+{
+  "date": "2026-10-16",
+  "git": "b3f7946",
+  "n_clips": 12,
+  "overall": 76.3,
+  "legacy_overall": 75.9,
+  "arrangement_overall": 75.9,
+  "metric_version": "loop-v1",
+  "pluginval": {
+    "status": "SKIP"
+  },
+  "steinberg": {
+    "status": "SKIP"
+  },
+  "refs": {
+    "pop": {
+      "drums": 16,
+      "harmony": 15
+    },
+    "lofi": {
+      "drums": 16,
+      "harmony": 4
+    },
+    "house": {
+      "drums": 16,
+      "harmony": 4
+    },
+    "trap": {
+      "drums": 16,
+      "harmony": 4
+    },
+    "rnb": {
+      "drums": 16,
+      "harmony": 10
+    },
+    "cinematic": {
+      "drums": 16,
+      "harmony": 16
+    }
+  },
+  "by_genre": {
+    "pop": {
+      "pro_likeness": 77.9,
+      "legacy_pro_likeness": 76.8,
+      "arrangement": 82.3,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 80.3
+        },
+        "bass": {
+          "score": 87.6
+        },
+        "synth": {
+          "score": 72.0
+        },
+        "piano": {
+          "score": 61.8
+        },
+        "drums": {
+          "score": 81.7
+        }
+      }
+    },
+    "lofi": {
+      "pro_likeness": 73.5,
+      "legacy_pro_likeness": 74.0,
+      "arrangement": 68.3,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 64.8
+        },
+        "bass": {
+          "score": 75.8
+        },
+        "synth": {
+          "score": 69.3
+        },
+        "piano": {
+          "score": 81.7
+        },
+        "drums": {
+          "score": 83.7
+        }
+      }
+    },
+    "house": {
+      "pro_likeness": 75.9,
+      "legacy_pro_likeness": 73.9,
+      "arrangement": 77.2,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 74.9
+        },
+        "bass": {
+          "score": 81.6
+        },
+        "synth": {
+          "score": 76.4
+        },
+        "piano": {
+          "score": 73.4
+        },
+        "drums": {
+          "score": 71.3
+        }
+      }
+    },
+    "trap": {
+      "pro_likeness": 73.7,
+      "legacy_pro_likeness": 72.2,
+      "arrangement": 75.7,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 58.0
+        },
+        "bass": {
+          "score": 86.7
+        },
+        "synth": {
+          "score": 63.2
+        },
+        "piano": {
+          "score": 72.2
+        },
+        "drums": {
+          "score": 85.3
+        }
+      }
+    },
+    "rnb": {
+      "pro_likeness": 83.1,
+      "legacy_pro_likeness": 85.1,
+      "arrangement": 79.2,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 92.6
+        },
+        "bass": {
+          "score": 83.6
+        },
+        "synth": {
+          "score": 83.2
+        },
+        "piano": {
+          "score": 83.8
+        },
+        "drums": {
+          "score": 77.8
+        }
+      }
+    },
+    "cinematic": {
+      "pro_likeness": 73.8,
+      "legacy_pro_likeness": 73.3,
+      "arrangement": 72.6,
+      "lint_penalty": 0.0,
+      "n": 2,
+      "parts": {
+        "chords": {
+          "score": 72.7
+        },
+        "bass": {
+          "score": 77.7
+        },
+        "synth": {
+          "score": 69.7
+        },
+        "piano": {
+          "score": 67.0
+        },
+        "drums": {
+          "score": 83.6
+        }
+      }
+    }
+  },
+  "clips": [
+    {
+      "file": "cinematic_s23.mid",
+      "genre": "cinematic",
+      "pro_likeness": 72.6,
+      "legacy_pro_likeness": 72.7,
+      "raw": 72.6,
+      "ref_raw": 73.6,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 69.0,
+        "features": {
+          "hook_memorability": 0.36,
+          "call_response": 0.4018,
+          "section_contrast": 0.0,
+          "bass_contour": 1.0
+        },
+        "vs_target": {
+          "hook_memorability": 82.3,
+          "call_response": 71.5,
+          "section_contrast": 69.5,
+          "bass_contour": 76.4,
+          "density_drums": 22.5,
+          "density_chords": 18.0,
+          "density_bass": 95.9,
+          "density_synth": 89.3,
+          "density_piano": 97.0,
+          "density_fit": 64.5,
+          "groove_kick_density": 50.0,
+          "groove_snare_density": 25.5,
+          "groove_hat_density": 74.3,
+          "groove_fit": 49.9
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 72.7,
+          "legacy_score": 64.3,
+          "features": {
+            "onset_density": 3.8758,
+            "onset_events": 2.8443,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.7813,
+            "vel_mean": 63.5726,
+            "vel_std": 10.3075,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 67.2258,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 124.0,
+            "chord_vocab": 8.0,
+            "transition_entropy": 3.4662,
+            "voice_leading": 2.9138,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 93.9,
+            "chord_vocab": 59.4,
+            "transition_entropy": 7.5,
+            "voice_leading": 57.0,
+            "clash_rate": 62.6,
+            "register_mean": 87.0,
+            "variation_8": 82.6
+          }
+        },
+        "bass": {
+          "score": 73.3,
+          "legacy_score": 73.3,
+          "features": {
+            "onset_density": 0.25,
+            "onset_events": 0.25,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.3906,
+            "vel_mean": 111.625,
+            "vel_std": 8.8732,
+            "register_low": 33.0,
+            "register_high": 43.0,
+            "register_mean": 38.0,
+            "repeat_4": 1.0,
+            "variation_8": 0.5714,
+            "n_notes": 8.0,
+            "kick_align": 0.25,
+            "root_conflict": 0.0323
+          },
+          "vs_ref": {
+            "onset_density": 71.0,
+            "register_mean": 70.3,
+            "kick_align": 95.0,
+            "root_conflict": 41.3,
+            "swing": 99.3,
+            "vel_std": 62.7
+          }
+        },
+        "synth": {
+          "score": 73.6,
+          "legacy_score": 77.4,
+          "features": {
+            "onset_density": 0.9377,
+            "onset_events": 0.9377,
+            "syncopation": 0.6333,
+            "swing": 0.5,
+            "microtiming_ms": 2.3438,
+            "vel_mean": 62.9333,
+            "vel_std": 15.5047,
+            "register_low": 62.0,
+            "register_high": 81.0,
+            "register_mean": 73.5667,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 30.0,
+            "clash_rate": 0.1
+          },
+          "vs_ref": {
+            "onset_density": 60.7,
+            "syncopation": 85.6,
+            "register_mean": 46.9,
+            "repeat_4": 100.0,
+            "variation_8": 82.6,
+            "vel_std": 88.9
+          }
+        },
+        "piano": {
+          "score": 66.6,
+          "legacy_score": 66.6,
+          "features": {
+            "onset_density": 1.5003,
+            "onset_events": 1.5003,
+            "syncopation": 0.1771,
+            "swing": 0.5021,
+            "microtiming_ms": 1.5625,
+            "vel_mean": 80.8125,
+            "vel_std": 7.3134,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 65.8542,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 48.0,
+            "chord_vocab": 5.0,
+            "transition_entropy": 2.585,
+            "voice_leading": 0.0,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 65.1,
+            "register_mean": 69.7,
+            "variation_8": 82.6,
+            "vel_std": 52.8,
+            "clash_rate": 62.6
+          }
+        },
+        "drums": {
+          "score": 82.0,
+          "legacy_score": 82.0,
+          "features": {
+            "onset_density": 3.657,
+            "onset_events": 3.6257,
+            "syncopation": 0.453,
+            "swing": 0.499,
+            "microtiming_ms": 7.0312,
+            "vel_mean": 74.641,
+            "vel_std": 29.7642,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 39.3846,
+            "repeat_4": 0.0,
+            "variation_8": 0.8571,
+            "n_notes": 117.0,
+            "kick_density": 1.0002,
+            "snare_density": 1.219,
+            "hat_density": 1.0002,
+            "kick_sync": 0.125,
+            "hat_ioi_cv": 0.3545,
+            "hat_vel_std": 10.1788
+          },
+          "vs_ref": {
+            "onset_density": 89.0,
+            "syncopation": 73.6,
+            "swing": 57.3,
+            "microtiming_ms": 63.8,
+            "vel_std": 93.6,
+            "kick_density": 94.5,
+            "snare_density": 92.5,
+            "hat_density": 93.3,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 98.7,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 124,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 8,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 30,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 33.3,
+            "strong_off_chord_pct": 25.0
+          },
+          "piano": {
+            "n": 48,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "cinematic_s7.mid",
+      "genre": "cinematic",
+      "pro_likeness": 75.0,
+      "legacy_pro_likeness": 74.0,
+      "raw": 75.0,
+      "ref_raw": 74.6,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 76.2,
+        "features": {
+          "hook_memorability": 0.44,
+          "call_response": 0.639,
+          "section_contrast": 0.0196,
+          "bass_contour": 0.8429
+        },
+        "vs_target": {
+          "hook_memorability": 87.8,
+          "call_response": 98.2,
+          "section_contrast": 71.5,
+          "bass_contour": 92.0,
+          "density_drums": 18.3,
+          "density_chords": 18.0,
+          "density_bass": 83.6,
+          "density_synth": 90.7,
+          "density_piano": 92.3,
+          "density_fit": 60.6,
+          "groove_kick_density": 50.0,
+          "groove_snare_density": 18.0,
+          "groove_hat_density": 74.3,
+          "groove_fit": 47.4
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 72.7,
+          "legacy_score": 64.0,
+          "features": {
+            "onset_density": 3.875,
+            "onset_events": 2.7812,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.7813,
+            "vel_mean": 62.9113,
+            "vel_std": 10.414,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 67.2258,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 124.0,
+            "chord_vocab": 6.0,
+            "transition_entropy": 3.1493,
+            "voice_leading": 3.0167,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 93.9,
+            "chord_vocab": 59.2,
+            "transition_entropy": 5.0,
+            "voice_leading": 57.9,
+            "clash_rate": 62.6,
+            "register_mean": 87.0,
+            "variation_8": 82.6
+          }
+        },
+        "bass": {
+          "score": 82.0,
+          "legacy_score": 82.0,
+          "features": {
+            "onset_density": 0.5,
+            "onset_events": 0.5,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.7812,
+            "vel_mean": 102.125,
+            "vel_std": 14.439,
+            "register_low": 33.0,
+            "register_high": 43.0,
+            "register_mean": 37.625,
+            "repeat_4": 0.75,
+            "variation_8": 0.625,
+            "n_notes": 16.0,
+            "kick_align": 0.5,
+            "root_conflict": 0.0968
+          },
+          "vs_ref": {
+            "onset_density": 94.3,
+            "register_mean": 67.2,
+            "kick_align": 95.0,
+            "root_conflict": 51.8,
+            "swing": 99.3,
+            "vel_std": 84.1
+          }
+        },
+        "synth": {
+          "score": 65.7,
+          "legacy_score": 71.2,
+          "features": {
+            "onset_density": 0.9062,
+            "onset_events": 0.9062,
+            "syncopation": 0.6552,
+            "swing": 0.4974,
+            "microtiming_ms": 3.125,
+            "vel_mean": 68.5862,
+            "vel_std": 14.5472,
+            "register_low": 62.0,
+            "register_high": 81.0,
+            "register_mean": 73.6552,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 29.0,
+            "clash_rate": 0.0323
+          },
+          "vs_ref": {
+            "onset_density": 60.4,
+            "syncopation": 55.3,
+            "register_mean": 46.0,
+            "repeat_4": 100.0,
+            "variation_8": 82.6,
+            "vel_std": 83.0
+          }
+        },
+        "piano": {
+          "score": 67.4,
+          "legacy_score": 67.4,
+          "features": {
+            "onset_density": 1.6562,
+            "onset_events": 1.6562,
+            "syncopation": 0.2075,
+            "swing": 0.4995,
+            "microtiming_ms": 0.7813,
+            "vel_mean": 81.1132,
+            "vel_std": 8.2956,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 65.7925,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 53.0,
+            "chord_vocab": 3.0,
+            "transition_entropy": 1.0,
+            "voice_leading": 0.0,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 66.3,
+            "register_mean": 69.1,
+            "variation_8": 82.6,
+            "vel_std": 56.1,
+            "clash_rate": 62.6
+          }
+        },
+        "drums": {
+          "score": 85.2,
+          "legacy_score": 85.2,
+          "features": {
+            "onset_density": 3.8125,
+            "onset_events": 3.75,
+            "syncopation": 0.5738,
+            "swing": 0.4974,
+            "microtiming_ms": 7.0312,
+            "vel_mean": 74.623,
+            "vel_std": 29.3823,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 39.418,
+            "repeat_4": 0.25,
+            "variation_8": 0.875,
+            "n_notes": 122.0,
+            "kick_density": 1.0,
+            "snare_density": 1.3438,
+            "hat_density": 1.0,
+            "kick_sync": 0.5,
+            "hat_ioi_cv": 0.3536,
+            "hat_vel_std": 9.2532
+          },
+          "vs_ref": {
+            "onset_density": 90.4,
+            "syncopation": 97.2,
+            "swing": 58.6,
+            "microtiming_ms": 63.8,
+            "vel_std": 94.4,
+            "kick_density": 94.5,
+            "snare_density": 94.4,
+            "hat_density": 93.4,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 124,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 16,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 29,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 27.6,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 53,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "house_s23.mid",
+      "genre": "house",
+      "pro_likeness": 73.5,
+      "legacy_pro_likeness": 72.1,
+      "raw": 73.5,
+      "ref_raw": 73.2,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 74.4,
+        "features": {
+          "hook_memorability": 0.32,
+          "call_response": 0.2744,
+          "section_contrast": 0.018,
+          "bass_contour": 0.475
+        },
+        "vs_target": {
+          "hook_memorability": 77.7,
+          "call_response": 57.8,
+          "section_contrast": 71.4,
+          "bass_contour": 84.0,
+          "density_drums": 74.1,
+          "density_chords": 18.0,
+          "density_bass": 97.4,
+          "density_synth": 88.2,
+          "density_piano": 49.1,
+          "density_fit": 65.3,
+          "groove_kick_density": 96.9,
+          "groove_snare_density": 96.5,
+          "groove_hat_density": 77.1,
+          "groove_fit": 90.2
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 73.3,
+          "legacy_score": 61.9,
+          "features": {
+            "onset_density": 4.625,
+            "onset_events": 3.4688,
+            "syncopation": 0.5709,
+            "swing": 0.4969,
+            "microtiming_ms": 1.0081,
+            "vel_mean": 61.223,
+            "vel_std": 17.4235,
+            "register_low": 55.0,
+            "register_high": 79.0,
+            "register_mean": 69.4459,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 148.0,
+            "chord_vocab": 10.0,
+            "transition_entropy": 3.8144,
+            "voice_leading": 4.9545,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 86.4,
+            "chord_vocab": 35.7,
+            "transition_entropy": 5.0,
+            "voice_leading": 62.5,
+            "clash_rate": 59.1,
+            "register_mean": 99.4,
+            "variation_8": 85.5
+          }
+        },
+        "bass": {
+          "score": 82.1,
+          "legacy_score": 82.1,
+          "features": {
+            "onset_density": 0.75,
+            "onset_events": 0.75,
+            "syncopation": 0.375,
+            "swing": 0.5,
+            "microtiming_ms": 0.504,
+            "vel_mean": 86.4583,
+            "vel_std": 13.5769,
+            "register_low": 34.0,
+            "register_high": 45.0,
+            "register_mean": 40.25,
+            "repeat_4": 1.0,
+            "variation_8": 0.5,
+            "n_notes": 24.0,
+            "kick_align": 0.1818,
+            "root_conflict": 0.0833
+          },
+          "vs_ref": {
+            "onset_density": 66.4,
+            "register_mean": 95.7,
+            "kick_align": 95.0,
+            "root_conflict": 51.8,
+            "swing": 98.7,
+            "vel_std": 85.1
+          }
+        },
+        "synth": {
+          "score": 65.8,
+          "legacy_score": 71.6,
+          "features": {
+            "onset_density": 1.0625,
+            "onset_events": 1.0625,
+            "syncopation": 0.4706,
+            "swing": 0.501,
+            "microtiming_ms": 1.0081,
+            "vel_mean": 72.5882,
+            "vel_std": 17.6304,
+            "register_low": 60.0,
+            "register_high": 79.0,
+            "register_mean": 70.5,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 34.0,
+            "clash_rate": 0.125
+          },
+          "vs_ref": {
+            "onset_density": 55.0,
+            "syncopation": 8.0,
+            "register_mean": 83.2,
+            "repeat_4": 100.0,
+            "variation_8": 85.5,
+            "vel_std": 98.0
+          }
+        },
+        "piano": {
+          "score": 72.1,
+          "legacy_score": 72.1,
+          "features": {
+            "onset_density": 2.2812,
+            "onset_events": 1.7188,
+            "syncopation": 0.363,
+            "swing": 0.7385,
+            "microtiming_ms": 1.0081,
+            "vel_mean": 59.9589,
+            "vel_std": 15.899,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 67.5479,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 73.0,
+            "chord_vocab": 5.0,
+            "transition_entropy": 2.9736,
+            "voice_leading": 1.9524,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 66.2,
+            "register_mean": 57.2,
+            "variation_8": 85.5,
+            "vel_std": 92.7,
+            "clash_rate": 59.1
+          }
+        },
+        "drums": {
+          "score": 72.9,
+          "legacy_score": 72.9,
+          "features": {
+            "onset_density": 3.5938,
+            "onset_events": 3.4375,
+            "syncopation": 0.1522,
+            "swing": 0.4984,
+            "microtiming_ms": 4.5363,
+            "vel_mean": 67.5478,
+            "vel_std": 34.4826,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 40.4522,
+            "repeat_4": 0.0,
+            "variation_8": 0.875,
+            "n_notes": 115.0,
+            "kick_density": 1.0312,
+            "snare_density": 0.5312,
+            "hat_density": 2.0,
+            "kick_sync": 0.0303,
+            "hat_ioi_cv": 0.5052,
+            "hat_vel_std": 9.8884
+          },
+          "vs_ref": {
+            "onset_density": 80.0,
+            "syncopation": 8.0,
+            "swing": 75.0,
+            "microtiming_ms": 62.6,
+            "vel_std": 98.7,
+            "kick_density": 94.8,
+            "snare_density": 73.7,
+            "hat_density": 73.6,
+            "hat_ioi_cv": 89.6
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 95.3,
+        "out_of_key_not_chord_pct": 0.4,
+        "strong_chord_tone_pct": 97.3,
+        "chromatic_passing_pct": 1.4,
+        "parts": {
+          "chords": {
+            "n": 148,
+            "out_of_key_pct": 4.1,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 24,
+            "out_of_key_pct": 8.3,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 34,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 26.5,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 73,
+            "out_of_key_pct": 6.8,
+            "out_of_chord_pct": 5.5,
+            "strong_off_chord_pct": 5.3
+          }
+        }
+      }
+    },
+    {
+      "file": "house_s7.mid",
+      "genre": "house",
+      "pro_likeness": 78.3,
+      "legacy_pro_likeness": 75.7,
+      "raw": 78.3,
+      "ref_raw": 77.8,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 80.1,
+        "features": {
+          "hook_memorability": 0.84,
+          "call_response": 0.5964,
+          "section_contrast": 0.0237,
+          "bass_contour": 0.475
+        },
+        "vs_target": {
+          "hook_memorability": 85.1,
+          "call_response": 97.7,
+          "section_contrast": 72.0,
+          "bass_contour": 84.0,
+          "density_drums": 57.7,
+          "density_chords": 18.0,
+          "density_bass": 97.4,
+          "density_synth": 84.0,
+          "density_piano": 31.9,
+          "density_fit": 57.8,
+          "groove_kick_density": 96.9,
+          "groove_snare_density": 93.0,
+          "groove_hat_density": 62.9,
+          "groove_fit": 84.2
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 76.6,
+          "legacy_score": 64.6,
+          "features": {
+            "onset_density": 4.5625,
+            "onset_events": 3.3438,
+            "syncopation": 0.4178,
+            "swing": 0.501,
+            "microtiming_ms": 1.0081,
+            "vel_mean": 61.1712,
+            "vel_std": 16.4851,
+            "register_low": 55.0,
+            "register_high": 79.0,
+            "register_mean": 69.1507,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 146.0,
+            "chord_vocab": 11.0,
+            "transition_entropy": 3.9489,
+            "voice_leading": 6.1458,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 85.7,
+            "chord_vocab": 36.1,
+            "transition_entropy": 5.0,
+            "voice_leading": 84.4,
+            "clash_rate": 59.1,
+            "register_mean": 96.1,
+            "variation_8": 85.5
+          }
+        },
+        "bass": {
+          "score": 81.1,
+          "legacy_score": 81.1,
+          "features": {
+            "onset_density": 0.75,
+            "onset_events": 0.75,
+            "syncopation": 0.375,
+            "swing": 0.5005,
+            "microtiming_ms": 0.504,
+            "vel_mean": 83.0417,
+            "vel_std": 10.8608,
+            "register_low": 34.0,
+            "register_high": 45.0,
+            "register_mean": 40.25,
+            "repeat_4": 1.0,
+            "variation_8": 0.5,
+            "n_notes": 24.0,
+            "kick_align": 0.1818,
+            "root_conflict": 0.1364
+          },
+          "vs_ref": {
+            "onset_density": 66.4,
+            "register_mean": 95.7,
+            "kick_align": 95.0,
+            "root_conflict": 59.3,
+            "swing": 98.0,
+            "vel_std": 72.3
+          }
+        },
+        "synth": {
+          "score": 87.0,
+          "legacy_score": 88.2,
+          "features": {
+            "onset_density": 1.1562,
+            "onset_events": 1.1562,
+            "syncopation": 0.6216,
+            "swing": 0.35,
+            "microtiming_ms": 2.0161,
+            "vel_mean": 74.7568,
+            "vel_std": 16.4455,
+            "register_low": 60.0,
+            "register_high": 79.0,
+            "register_mean": 69.5946,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 37.0,
+            "clash_rate": 0.1667
+          },
+          "vs_ref": {
+            "onset_density": 55.9,
+            "syncopation": 95.3,
+            "register_mean": 97.1,
+            "repeat_4": 100.0,
+            "variation_8": 85.5,
+            "vel_std": 95.6
+          }
+        },
+        "piano": {
+          "score": 74.7,
+          "legacy_score": 74.7,
+          "features": {
+            "onset_density": 2.5938,
+            "onset_events": 2.0625,
+            "syncopation": 0.3855,
+            "swing": 0.7365,
+            "microtiming_ms": 1.0081,
+            "vel_mean": 63.1928,
+            "vel_std": 17.0021,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 67.8072,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 83.0,
+            "chord_vocab": 6.0,
+            "transition_entropy": 3.3842,
+            "voice_leading": 2.0167,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 69.1,
+            "register_mean": 61.2,
+            "variation_8": 85.5,
+            "vel_std": 98.6,
+            "clash_rate": 59.1
+          }
+        },
+        "drums": {
+          "score": 69.7,
+          "legacy_score": 69.7,
+          "features": {
+            "onset_density": 4.1562,
+            "onset_events": 4.0938,
+            "syncopation": 0.312,
+            "swing": 0.5094,
+            "microtiming_ms": 4.5363,
+            "vel_mean": 65.2481,
+            "vel_std": 32.0496,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 41.1729,
+            "repeat_4": 0.0,
+            "variation_8": 0.875,
+            "n_notes": 133.0,
+            "kick_density": 1.0312,
+            "snare_density": 0.5625,
+            "hat_density": 2.5,
+            "kick_sync": 0.0303,
+            "hat_ioi_cv": 0.3091,
+            "hat_vel_std": 9.5159
+          },
+          "vs_ref": {
+            "onset_density": 83.6,
+            "syncopation": 40.1,
+            "swing": 63.0,
+            "microtiming_ms": 62.6,
+            "vel_std": 92.9,
+            "kick_density": 94.8,
+            "snare_density": 74.4,
+            "hat_density": 60.8,
+            "hat_ioi_cv": 55.4
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 95.2,
+        "out_of_key_not_chord_pct": 0.3,
+        "strong_chord_tone_pct": 94.7,
+        "chromatic_passing_pct": 1.7,
+        "parts": {
+          "chords": {
+            "n": 146,
+            "out_of_key_pct": 4.1,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 24,
+            "out_of_key_pct": 8.3,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 37,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 21.6,
+            "strong_off_chord_pct": 10.0
+          },
+          "piano": {
+            "n": 83,
+            "out_of_key_pct": 7.2,
+            "out_of_chord_pct": 9.6,
+            "strong_off_chord_pct": 7.7
+          }
+        }
+      }
+    },
+    {
+      "file": "lofi_s23.mid",
+      "genre": "lofi",
+      "pro_likeness": 73.6,
+      "legacy_pro_likeness": 74.7,
+      "raw": 73.6,
+      "ref_raw": 75.7,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 66.2,
+        "features": {
+          "hook_memorability": 0.0,
+          "call_response": 0.2774,
+          "section_contrast": 0.0,
+          "bass_contour": 0.8429
+        },
+        "vs_target": {
+          "hook_memorability": 53.6,
+          "call_response": 58.1,
+          "section_contrast": 69.5,
+          "bass_contour": 92.0,
+          "density_drums": 47.7,
+          "density_chords": 18.0,
+          "density_bass": 98.7,
+          "density_synth": 93.5,
+          "density_piano": 50.8,
+          "density_fit": 61.8,
+          "groove_kick_density": 55.6,
+          "groove_snare_density": 66.7,
+          "groove_hat_density": 64.7,
+          "groove_fit": 62.3
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 64.8,
+          "legacy_score": 54.1,
+          "features": {
+            "onset_density": 2.9063,
+            "onset_events": 2.2188,
+            "syncopation": 0.0323,
+            "swing": 0.6208,
+            "microtiming_ms": 82.5892,
+            "vel_mean": 55.4624,
+            "vel_std": 14.1037,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 65.5161,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 93.0,
+            "chord_vocab": 11.0,
+            "transition_entropy": 4.0994,
+            "voice_leading": 1.9483,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 61.3,
+            "chord_vocab": 24.5,
+            "transition_entropy": 5.0,
+            "voice_leading": 44.5,
+            "clash_rate": 64.9,
+            "register_mean": 93.2,
+            "variation_8": 85.3
+          }
+        },
+        "bass": {
+          "score": 77.9,
+          "legacy_score": 77.9,
+          "features": {
+            "onset_density": 0.625,
+            "onset_events": 0.625,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.0,
+            "vel_mean": 99.1,
+            "vel_std": 17.3202,
+            "register_low": 33.0,
+            "register_high": 43.0,
+            "register_mean": 38.0,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 20.0,
+            "kick_align": 0.6667,
+            "root_conflict": 0.1667
+          },
+          "vs_ref": {
+            "onset_density": 89.5,
+            "register_mean": 69.7,
+            "kick_align": 95.0,
+            "root_conflict": 40.0,
+            "swing": 83.3,
+            "vel_std": 89.9
+          }
+        },
+        "synth": {
+          "score": 68.4,
+          "legacy_score": 73.7,
+          "features": {
+            "onset_density": 0.8438,
+            "onset_events": 0.8438,
+            "syncopation": 0.5714,
+            "swing": 0.4661,
+            "microtiming_ms": 41.6666,
+            "vel_mean": 66.6667,
+            "vel_std": 16.894,
+            "register_low": 60.0,
+            "register_high": 79.0,
+            "register_mean": 71.9259,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 27.0,
+            "clash_rate": 0.0333
+          },
+          "vs_ref": {
+            "onset_density": 35.8,
+            "syncopation": 70.7,
+            "register_mean": 65.4,
+            "repeat_4": 100.0,
+            "variation_8": 85.3,
+            "vel_std": 84.7
+          }
+        },
+        "piano": {
+          "score": 84.8,
+          "legacy_score": 84.8,
+          "features": {
+            "onset_density": 2.2813,
+            "onset_events": 1.9063,
+            "syncopation": 0.0286,
+            "swing": 0.6208,
+            "microtiming_ms": 77.3809,
+            "vel_mean": 68.726,
+            "vel_std": 19.0279,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 66.1781,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 73.0,
+            "chord_vocab": 14.0,
+            "transition_entropy": 4.3866,
+            "voice_leading": 1.4195,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 81.9,
+            "register_mean": 97.3,
+            "variation_8": 85.3,
+            "vel_std": 94.4,
+            "clash_rate": 64.9
+          }
+        },
+        "drums": {
+          "score": 82.8,
+          "legacy_score": 82.8,
+          "features": {
+            "onset_density": 3.0001,
+            "onset_events": 2.9688,
+            "syncopation": 0.1198,
+            "swing": 0.5271,
+            "microtiming_ms": 18.6012,
+            "vel_mean": 64.4375,
+            "vel_std": 26.9443,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 40.0729,
+            "repeat_4": 0.3333,
+            "variation_8": 0.5714,
+            "n_notes": 96.0,
+            "kick_density": 0.75,
+            "snare_density": 0.75,
+            "hat_density": 1.4063,
+            "kick_sync": 0.1667,
+            "hat_ioi_cv": 0.5383,
+            "hat_vel_std": 11.0506
+          },
+          "vs_ref": {
+            "onset_density": 97.0,
+            "syncopation": 68.5,
+            "swing": 96.0,
+            "microtiming_ms": 91.7,
+            "vel_std": 91.0,
+            "kick_density": 72.7,
+            "snare_density": 93.6,
+            "hat_density": 47.2,
+            "hat_ioi_cv": 87.3
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 98.5,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 93,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 20,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 27,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 25.9,
+            "strong_off_chord_pct": 14.3
+          },
+          "piano": {
+            "n": 73,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 15.1,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "lofi_s7.mid",
+      "genre": "lofi",
+      "pro_likeness": 73.5,
+      "legacy_pro_likeness": 73.2,
+      "raw": 73.5,
+      "ref_raw": 74.4,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 70.5,
+        "features": {
+          "hook_memorability": 0.12,
+          "call_response": 0.243,
+          "section_contrast": 0.0198,
+          "bass_contour": 0.725
+        },
+        "vs_target": {
+          "hook_memorability": 62.6,
+          "call_response": 54.4,
+          "section_contrast": 71.6,
+          "bass_contour": 99.7,
+          "density_drums": 66.5,
+          "density_chords": 18.0,
+          "density_bass": 91.6,
+          "density_synth": 86.5,
+          "density_piano": 27.2,
+          "density_fit": 58.0,
+          "groove_kick_density": 85.0,
+          "groove_snare_density": 73.6,
+          "groove_hat_density": 72.5,
+          "groove_fit": 77.0
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 64.9,
+          "legacy_score": 54.1,
+          "features": {
+            "onset_density": 2.9062,
+            "onset_events": 2.4062,
+            "syncopation": 0.0323,
+            "swing": 0.6219,
+            "microtiming_ms": 81.8452,
+            "vel_mean": 55.3011,
+            "vel_std": 15.2526,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 65.6667,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 93.0,
+            "chord_vocab": 10.0,
+            "transition_entropy": 3.9749,
+            "voice_leading": 1.9368,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 61.3,
+            "chord_vocab": 24.1,
+            "transition_entropy": 5.0,
+            "voice_leading": 44.3,
+            "clash_rate": 64.9,
+            "register_mean": 94.1,
+            "variation_8": 85.3
+          }
+        },
+        "bass": {
+          "score": 73.6,
+          "legacy_score": 73.6,
+          "features": {
+            "onset_density": 0.8125,
+            "onset_events": 0.8125,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.744,
+            "vel_mean": 92.4615,
+            "vel_std": 15.8484,
+            "register_low": 33.0,
+            "register_high": 43.0,
+            "register_mean": 38.0,
+            "repeat_4": 0.5,
+            "variation_8": 0.75,
+            "n_notes": 26.0,
+            "kick_align": 1.0,
+            "root_conflict": 0.3333
+          },
+          "vs_ref": {
+            "onset_density": 69.2,
+            "register_mean": 69.7,
+            "kick_align": 95.0,
+            "root_conflict": 40.0,
+            "swing": 83.3,
+            "vel_std": 84.6
+          }
+        },
+        "synth": {
+          "score": 70.3,
+          "legacy_score": 75.2,
+          "features": {
+            "onset_density": 1.0,
+            "onset_events": 1.0,
+            "syncopation": 0.6333,
+            "swing": 0.6146,
+            "microtiming_ms": 42.7827,
+            "vel_mean": 66.0625,
+            "vel_std": 13.7589,
+            "register_low": 60.0,
+            "register_high": 81.0,
+            "register_mean": 69.9375,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 32.0,
+            "clash_rate": 0.1333
+          },
+          "vs_ref": {
+            "onset_density": 42.7,
+            "syncopation": 71.0,
+            "register_mean": 80.0,
+            "repeat_4": 100.0,
+            "variation_8": 85.3,
+            "vel_std": 71.9
+          }
+        },
+        "piano": {
+          "score": 78.6,
+          "legacy_score": 78.6,
+          "features": {
+            "onset_density": 2.7812,
+            "onset_events": 2.4375,
+            "syncopation": 0.0323,
+            "swing": 0.6219,
+            "microtiming_ms": 82.5892,
+            "vel_mean": 56.7416,
+            "vel_std": 16.4163,
+            "register_low": 59.0,
+            "register_high": 72.0,
+            "register_mean": 65.573,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 89.0,
+            "chord_vocab": 9.0,
+            "transition_entropy": 3.9102,
+            "voice_leading": 1.8095,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 66.8,
+            "register_mean": 93.5,
+            "variation_8": 85.3,
+            "vel_std": 82.5,
+            "clash_rate": 64.9
+          }
+        },
+        "drums": {
+          "score": 84.6,
+          "legacy_score": 84.6,
+          "features": {
+            "onset_density": 2.5312,
+            "onset_events": 2.4062,
+            "syncopation": 0.0494,
+            "swing": 0.5167,
+            "microtiming_ms": 14.8809,
+            "vel_mean": 64.3827,
+            "vel_std": 25.968,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 40.284,
+            "repeat_4": 0.0,
+            "variation_8": 0.625,
+            "n_notes": 81.0,
+            "kick_density": 0.5,
+            "snare_density": 0.6875,
+            "hat_density": 1.25,
+            "kick_sync": 0.0,
+            "hat_ioi_cv": 0.471,
+            "hat_vel_std": 12.3044
+          },
+          "vs_ref": {
+            "onset_density": 96.1,
+            "syncopation": 63.7,
+            "swing": 98.3,
+            "microtiming_ms": 85.4,
+            "vel_std": 94.0,
+            "kick_density": 86.5,
+            "snare_density": 92.1,
+            "hat_density": 56.1,
+            "hat_ioi_cv": 89.5
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 97.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 93,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 26,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 32,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 43.8,
+            "strong_off_chord_pct": 20.0
+          },
+          "piano": {
+            "n": 89,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 3.4,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "pop_s23.mid",
+      "genre": "pop",
+      "pro_likeness": 79.6,
+      "legacy_pro_likeness": 78.9,
+      "raw": 79.6,
+      "ref_raw": 78.8,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 82.2,
+        "features": {
+          "hook_memorability": 0.44,
+          "call_response": 0.7481,
+          "section_contrast": 0.0,
+          "bass_contour": 0.8429
+        },
+        "vs_target": {
+          "hook_memorability": 87.8,
+          "call_response": 87.5,
+          "section_contrast": 69.5,
+          "bass_contour": 92.0,
+          "density_drums": 78.0,
+          "density_chords": 18.0,
+          "density_bass": 96.0,
+          "density_synth": 98.9,
+          "density_piano": 75.2,
+          "density_fit": 73.2,
+          "groove_kick_density": 70.0,
+          "groove_snare_density": 91.9,
+          "groove_hat_density": 87.4,
+          "groove_fit": 83.1
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 86.1,
+          "legacy_score": 83.2,
+          "features": {
+            "onset_density": 2.6252,
+            "onset_events": 2.2189,
+            "syncopation": 0.2738,
+            "swing": 0.501,
+            "microtiming_ms": 0.8523,
+            "vel_mean": 69.0119,
+            "vel_std": 19.6035,
+            "register_low": 55.0,
+            "register_high": 74.0,
+            "register_mean": 66.8571,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 84.0,
+            "chord_vocab": 15.0,
+            "transition_entropy": 4.6961,
+            "voice_leading": 3.6061,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 88.5,
+            "chord_vocab": 65.0,
+            "transition_entropy": 80.0,
+            "voice_leading": 86.1,
+            "clash_rate": 71.8,
+            "register_mean": 95.1,
+            "variation_8": 95.5
+          }
+        },
+        "bass": {
+          "score": 87.4,
+          "legacy_score": 87.4,
+          "features": {
+            "onset_density": 0.5625,
+            "onset_events": 0.5625,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.5682,
+            "vel_mean": 101.8333,
+            "vel_std": 15.9661,
+            "register_low": 36.0,
+            "register_high": 45.0,
+            "register_mean": 40.7778,
+            "repeat_4": 0.6667,
+            "variation_8": 0.7143,
+            "n_notes": 18.0,
+            "kick_align": 0.6667,
+            "root_conflict": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 99.3,
+            "register_mean": 95.9,
+            "kick_align": 95.0,
+            "root_conflict": 40.0,
+            "swing": 98.6,
+            "vel_std": 95.3
+          }
+        },
+        "synth": {
+          "score": 75.3,
+          "legacy_score": 78.7,
+          "features": {
+            "onset_density": 0.8751,
+            "onset_events": 0.8751,
+            "syncopation": 0.6071,
+            "swing": 0.4979,
+            "microtiming_ms": 1.7045,
+            "vel_mean": 76.0,
+            "vel_std": 15.7933,
+            "register_low": 64.0,
+            "register_high": 81.0,
+            "register_mean": 72.0,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 28.0,
+            "clash_rate": 0.0667
+          },
+          "vs_ref": {
+            "onset_density": 54.8,
+            "syncopation": 71.5,
+            "register_mean": 71.7,
+            "repeat_4": 100.0,
+            "variation_8": 81.9,
+            "vel_std": 92.4
+          }
+        },
+        "piano": {
+          "score": 63.4,
+          "legacy_score": 63.4,
+          "features": {
+            "onset_density": 1.7189,
+            "onset_events": 1.7189,
+            "syncopation": 0.2182,
+            "swing": 0.5016,
+            "microtiming_ms": 1.1364,
+            "vel_mean": 64.2364,
+            "vel_std": 22.9458,
+            "register_low": 60.0,
+            "register_high": 72.0,
+            "register_mean": 65.6909,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 55.0,
+            "chord_vocab": 5.0,
+            "transition_entropy": 3.027,
+            "voice_leading": 4.3571,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 63.8,
+            "register_mean": 61.7,
+            "variation_8": 80.0,
+            "vel_std": 63.8,
+            "clash_rate": 47.7
+          }
+        },
+        "drums": {
+          "score": 82.0,
+          "legacy_score": 82.0,
+          "features": {
+            "onset_density": 2.5627,
+            "onset_events": 2.4689,
+            "syncopation": 0.0671,
+            "swing": 0.5063,
+            "microtiming_ms": 4.5454,
+            "vel_mean": 74.0366,
+            "vel_std": 31.381,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 39.8902,
+            "repeat_4": 0.3333,
+            "variation_8": 0.5714,
+            "n_notes": 82.0,
+            "kick_density": 0.75,
+            "snare_density": 0.5313,
+            "hat_density": 1.2501,
+            "kick_sync": 0.1667,
+            "hat_ioi_cv": 0.5002,
+            "hat_vel_std": 9.5642
+          },
+          "vs_ref": {
+            "onset_density": 82.9,
+            "syncopation": 65.2,
+            "swing": 98.0,
+            "microtiming_ms": 70.1,
+            "vel_std": 97.4,
+            "kick_density": 98.3,
+            "snare_density": 86.6,
+            "hat_density": 59.6,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 84,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 18,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 28,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 50.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 55,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 3.6,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "pop_s7.mid",
+      "genre": "pop",
+      "pro_likeness": 76.3,
+      "legacy_pro_likeness": 74.6,
+      "raw": 76.3,
+      "ref_raw": 74.5,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 82.5,
+        "features": {
+          "hook_memorability": 0.92,
+          "call_response": 0.4376,
+          "section_contrast": 0.1205,
+          "bass_contour": 0.8167
+        },
+        "vs_target": {
+          "hook_memorability": 77.0,
+          "call_response": 75.4,
+          "section_contrast": 88.7,
+          "bass_contour": 93.7,
+          "density_drums": 82.6,
+          "density_chords": 27.5,
+          "density_bass": 96.0,
+          "density_synth": 96.9,
+          "density_piano": 75.2,
+          "density_fit": 75.7,
+          "groove_kick_density": 95.5,
+          "groove_snare_density": 70.1,
+          "groove_hat_density": 87.4,
+          "groove_fit": 84.3
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 74.6,
+          "legacy_score": 70.2,
+          "features": {
+            "onset_density": 2.7812,
+            "onset_events": 1.7188,
+            "syncopation": 0.0449,
+            "swing": 0.501,
+            "microtiming_ms": 0.5682,
+            "vel_mean": 71.8876,
+            "vel_std": 18.8742,
+            "register_low": 55.0,
+            "register_high": 74.0,
+            "register_mean": 67.1236,
+            "repeat_4": 0.25,
+            "variation_8": 0.875,
+            "n_notes": 89.0,
+            "chord_vocab": 12.0,
+            "transition_entropy": 3.8314,
+            "voice_leading": 2.0387,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 89.7,
+            "chord_vocab": 64.5,
+            "transition_entropy": 43.5,
+            "voice_leading": 71.2,
+            "clash_rate": 71.8,
+            "register_mean": 96.0,
+            "variation_8": 54.5
+          }
+        },
+        "bass": {
+          "score": 87.7,
+          "legacy_score": 87.7,
+          "features": {
+            "onset_density": 0.5625,
+            "onset_events": 0.5625,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.5682,
+            "vel_mean": 98.1667,
+            "vel_std": 17.3469,
+            "register_low": 36.0,
+            "register_high": 45.0,
+            "register_mean": 40.5556,
+            "repeat_4": 0.5,
+            "variation_8": 0.75,
+            "n_notes": 18.0,
+            "kick_align": 1.0,
+            "root_conflict": 0.1154
+          },
+          "vs_ref": {
+            "onset_density": 99.3,
+            "register_mean": 94.2,
+            "kick_align": 95.0,
+            "root_conflict": 40.0,
+            "swing": 98.6,
+            "vel_std": 98.9
+          }
+        },
+        "synth": {
+          "score": 68.8,
+          "legacy_score": 73.6,
+          "features": {
+            "onset_density": 0.9688,
+            "onset_events": 0.9688,
+            "syncopation": 0.5968,
+            "swing": 0.499,
+            "microtiming_ms": 2.2727,
+            "vel_mean": 78.3226,
+            "vel_std": 15.5924,
+            "register_low": 60.0,
+            "register_high": 81.0,
+            "register_mean": 73.9355,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 31.0,
+            "clash_rate": 0.0323
+          },
+          "vs_ref": {
+            "onset_density": 55.6,
+            "syncopation": 61.3,
+            "register_mean": 51.7,
+            "repeat_4": 100.0,
+            "variation_8": 81.9,
+            "vel_std": 91.4
+          }
+        },
+        "piano": {
+          "score": 60.1,
+          "legacy_score": 60.1,
+          "features": {
+            "onset_density": 1.7188,
+            "onset_events": 1.7188,
+            "syncopation": 0.2182,
+            "swing": 0.5,
+            "microtiming_ms": 0.5682,
+            "vel_mean": 63.6,
+            "vel_std": 22.3099,
+            "register_low": 60.0,
+            "register_high": 71.0,
+            "register_mean": 64.3818,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 55.0,
+            "chord_vocab": 5.0,
+            "transition_entropy": 3.0221,
+            "voice_leading": 4.35,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 63.8,
+            "register_mean": 42.9,
+            "variation_8": 80.0,
+            "vel_std": 66.1,
+            "clash_rate": 47.7
+          }
+        },
+        "drums": {
+          "score": 81.4,
+          "legacy_score": 81.4,
+          "features": {
+            "onset_density": 2.5,
+            "onset_events": 2.375,
+            "syncopation": 0.0563,
+            "swing": 0.4964,
+            "microtiming_ms": 5.1136,
+            "vel_mean": 70.55,
+            "vel_std": 30.6406,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 40.1375,
+            "repeat_4": 0.0,
+            "variation_8": 0.875,
+            "n_notes": 80.0,
+            "kick_density": 0.5,
+            "snare_density": 0.7188,
+            "hat_density": 1.25,
+            "kick_sync": 0.0,
+            "hat_ioi_cv": 0.5034,
+            "hat_vel_std": 12.2086
+          },
+          "vs_ref": {
+            "onset_density": 82.3,
+            "syncopation": 63.9,
+            "swing": 99.1,
+            "microtiming_ms": 70.7,
+            "vel_std": 95.5,
+            "kick_density": 91.9,
+            "snare_density": 89.4,
+            "hat_density": 59.6,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 95.9,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 89,
+            "out_of_key_pct": 5.6,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 18,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 31,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 25.8,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 55,
+            "out_of_key_pct": 5.5,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "rnb_s23.mid",
+      "genre": "rnb",
+      "pro_likeness": 83.7,
+      "legacy_pro_likeness": 85.9,
+      "raw": 83.7,
+      "ref_raw": 85.0,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 79.0,
+        "features": {
+          "hook_memorability": 0.32,
+          "call_response": 0.7549,
+          "section_contrast": 0.0,
+          "bass_contour": 0.725
+        },
+        "vs_target": {
+          "hook_memorability": 77.7,
+          "call_response": 86.9,
+          "section_contrast": 69.5,
+          "bass_contour": 99.7,
+          "density_drums": 59.5,
+          "density_chords": 18.0,
+          "density_bass": 88.0,
+          "density_synth": 89.3,
+          "density_piano": 94.9,
+          "density_fit": 69.9,
+          "groove_kick_density": 50.0,
+          "groove_snare_density": 73.6,
+          "groove_hat_density": 86.9,
+          "groove_fit": 70.2
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 92.6,
+          "legacy_score": 93.8,
+          "features": {
+            "onset_density": 2.1875,
+            "onset_events": 1.5938,
+            "syncopation": 0.1857,
+            "swing": 0.501,
+            "microtiming_ms": 0.7102,
+            "vel_mean": 74.3714,
+            "vel_std": 19.7868,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 68.2,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 70.0,
+            "chord_vocab": 14.0,
+            "transition_entropy": 4.4817,
+            "voice_leading": 1.1467,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 97.1,
+            "chord_vocab": 97.9,
+            "transition_entropy": 98.2,
+            "voice_leading": 80.0,
+            "clash_rate": 90.5,
+            "register_mean": 94.4,
+            "variation_8": 98.2
+          }
+        },
+        "bass": {
+          "score": 87.3,
+          "legacy_score": 87.3,
+          "features": {
+            "onset_density": 0.75,
+            "onset_events": 0.75,
+            "syncopation": 0.0208,
+            "swing": 0.5,
+            "microtiming_ms": 0.3551,
+            "vel_mean": 89.2917,
+            "vel_std": 24.2048,
+            "register_low": 36.0,
+            "register_high": 47.0,
+            "register_mean": 41.0,
+            "repeat_4": 0.6667,
+            "variation_8": 0.7143,
+            "n_notes": 24.0,
+            "kick_align": 0.5,
+            "root_conflict": 0.1935
+          },
+          "vs_ref": {
+            "onset_density": 97.6,
+            "register_mean": 92.3,
+            "kick_align": 95.0,
+            "root_conflict": 80.0,
+            "swing": 94.0,
+            "vel_std": 64.7
+          }
+        },
+        "synth": {
+          "score": 85.6,
+          "legacy_score": 88.5,
+          "features": {
+            "onset_density": 0.9375,
+            "onset_events": 0.9375,
+            "syncopation": 0.6333,
+            "swing": 0.5,
+            "microtiming_ms": 2.1307,
+            "vel_mean": 64.4,
+            "vel_std": 16.1258,
+            "register_low": 62.0,
+            "register_high": 81.0,
+            "register_mean": 73.1333,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 30.0,
+            "clash_rate": 0.0333
+          },
+          "vs_ref": {
+            "onset_density": 74.5,
+            "syncopation": 99.0,
+            "register_mean": 61.9,
+            "repeat_4": 100.0,
+            "variation_8": 97.4,
+            "vel_std": 98.0
+          }
+        },
+        "piano": {
+          "score": 83.0,
+          "legacy_score": 83.0,
+          "features": {
+            "onset_density": 0.9063,
+            "onset_events": 0.8125,
+            "syncopation": 0.1897,
+            "swing": 0.501,
+            "microtiming_ms": 0.7102,
+            "vel_mean": 68.4138,
+            "vel_std": 13.0318,
+            "register_low": 57.0,
+            "register_high": 67.0,
+            "register_mean": 63.6897,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 29.0,
+            "chord_vocab": 2.0,
+            "transition_entropy": -0.0,
+            "voice_leading": 0.5,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 72.2,
+            "register_mean": 69.1,
+            "variation_8": 97.4,
+            "vel_std": 90.5,
+            "clash_rate": 85.7
+          }
+        },
+        "drums": {
+          "score": 76.7,
+          "legacy_score": 76.7,
+          "features": {
+            "onset_density": 3.2188,
+            "onset_events": 3.2188,
+            "syncopation": 0.1942,
+            "swing": 0.5312,
+            "microtiming_ms": 17.0454,
+            "vel_mean": 68.6796,
+            "vel_std": 28.6489,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 39.6602,
+            "repeat_4": 0.0,
+            "variation_8": 0.5714,
+            "n_notes": 103.0,
+            "kick_density": 1.0,
+            "snare_density": 0.6875,
+            "hat_density": 1.5,
+            "kick_sync": 0.375,
+            "hat_ioi_cv": 0.5606,
+            "hat_vel_std": 10.0788
+          },
+          "vs_ref": {
+            "onset_density": 92.3,
+            "syncopation": 30.9,
+            "swing": 64.7,
+            "microtiming_ms": 96.4,
+            "vel_std": 94.5,
+            "kick_density": 73.7,
+            "snare_density": 85.4,
+            "hat_density": 72.5,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 96.7,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 70,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 24,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 30,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 26.7,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 29,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 13.8,
+            "strong_off_chord_pct": 13.3
+          }
+        }
+      }
+    },
+    {
+      "file": "rnb_s7.mid",
+      "genre": "rnb",
+      "pro_likeness": 82.5,
+      "legacy_pro_likeness": 84.3,
+      "raw": 82.5,
+      "ref_raw": 83.3,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 79.3,
+        "features": {
+          "hook_memorability": 0.24,
+          "call_response": 0.6642,
+          "section_contrast": 0.0,
+          "bass_contour": 0.725
+        },
+        "vs_target": {
+          "hook_memorability": 71.7,
+          "call_response": 95.7,
+          "section_contrast": 69.5,
+          "bass_contour": 99.7,
+          "density_drums": 62.1,
+          "density_chords": 18.0,
+          "density_bass": 70.0,
+          "density_synth": 92.1,
+          "density_piano": 93.5,
+          "density_fit": 67.2,
+          "groove_kick_density": 72.7,
+          "groove_snare_density": 66.7,
+          "groove_hat_density": 76.4,
+          "groove_fit": 71.9
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 92.6,
+          "legacy_score": 93.5,
+          "features": {
+            "onset_density": 2.8438,
+            "onset_events": 1.8125,
+            "syncopation": 0.1593,
+            "swing": 0.501,
+            "microtiming_ms": 0.7102,
+            "vel_mean": 69.8681,
+            "vel_std": 19.2109,
+            "register_low": 60.0,
+            "register_high": 76.0,
+            "register_mean": 67.6703,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 91.0,
+            "chord_vocab": 10.0,
+            "transition_entropy": 3.9474,
+            "voice_leading": 1.25,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 96.7,
+            "chord_vocab": 97.7,
+            "transition_entropy": 96.1,
+            "voice_leading": 80.0,
+            "clash_rate": 90.5,
+            "register_mean": 95.6,
+            "variation_8": 98.2
+          }
+        },
+        "bass": {
+          "score": 79.9,
+          "legacy_score": 79.9,
+          "features": {
+            "onset_density": 1.0,
+            "onset_events": 1.0,
+            "syncopation": 0.0,
+            "swing": 0.5,
+            "microtiming_ms": 0.0,
+            "vel_mean": 81.0625,
+            "vel_std": 23.2553,
+            "register_low": 36.0,
+            "register_high": 47.0,
+            "register_mean": 41.25,
+            "repeat_4": 0.6667,
+            "variation_8": 0.7143,
+            "n_notes": 32.0,
+            "kick_align": 0.6667,
+            "root_conflict": 0.2
+          },
+          "vs_ref": {
+            "onset_density": 50.6,
+            "register_mean": 89.8,
+            "kick_align": 95.0,
+            "root_conflict": 80.0,
+            "swing": 94.0,
+            "vel_std": 70.1
+          }
+        },
+        "synth": {
+          "score": 80.8,
+          "legacy_score": 84.7,
+          "features": {
+            "onset_density": 0.875,
+            "onset_events": 0.875,
+            "syncopation": 0.7679,
+            "swing": 0.6349,
+            "microtiming_ms": 20.5966,
+            "vel_mean": 71.2857,
+            "vel_std": 14.0073,
+            "register_low": 60.0,
+            "register_high": 83.0,
+            "register_mean": 71.4286,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 28.0,
+            "clash_rate": 0.0333
+          },
+          "vs_ref": {
+            "onset_density": 74.1,
+            "syncopation": 70.1,
+            "register_mean": 72.7,
+            "repeat_4": 100.0,
+            "variation_8": 97.4,
+            "vel_std": 93.8
+          }
+        },
+        "piano": {
+          "score": 84.6,
+          "legacy_score": 84.6,
+          "features": {
+            "onset_density": 0.9063,
+            "onset_events": 0.8438,
+            "syncopation": 0.4483,
+            "swing": 0.5005,
+            "microtiming_ms": 0.7102,
+            "vel_mean": 63.7931,
+            "vel_std": 17.6134,
+            "register_low": 55.0,
+            "register_high": 69.0,
+            "register_mean": 63.6207,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 29.0,
+            "chord_vocab": 1.0,
+            "transition_entropy": 0.0,
+            "voice_leading": 4.7,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 72.2,
+            "register_mean": 68.6,
+            "variation_8": 97.4,
+            "vel_std": 99.4,
+            "clash_rate": 85.7
+          }
+        },
+        "drums": {
+          "score": 78.8,
+          "legacy_score": 78.8,
+          "features": {
+            "onset_density": 3.2813,
+            "onset_events": 3.125,
+            "syncopation": 0.2,
+            "swing": 0.5292,
+            "microtiming_ms": 16.3352,
+            "vel_mean": 63.2952,
+            "vel_std": 29.2464,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 40.0857,
+            "repeat_4": 0.6667,
+            "variation_8": 0.5714,
+            "n_notes": 105.0,
+            "kick_density": 0.75,
+            "snare_density": 0.75,
+            "hat_density": 1.75,
+            "kick_sync": 0.3333,
+            "hat_ioi_cv": 0.5406,
+            "hat_vel_std": 10.7062
+          },
+          "vs_ref": {
+            "onset_density": 93.1,
+            "syncopation": 32.9,
+            "swing": 65.7,
+            "microtiming_ms": 94.7,
+            "vel_std": 96.0,
+            "kick_density": 93.8,
+            "snare_density": 87.3,
+            "hat_density": 66.0,
+            "hat_ioi_cv": 80.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 91,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 32,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 28,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 35.7,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 29,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 10.3,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "trap_s23.mid",
+      "genre": "trap",
+      "pro_likeness": 72.4,
+      "legacy_pro_likeness": 71.6,
+      "raw": 72.4,
+      "ref_raw": 72.4,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 72.4,
+        "features": {
+          "hook_memorability": 0.0,
+          "call_response": 0.9361,
+          "section_contrast": 0.0581,
+          "bass_contour": 0.6
+        },
+        "vs_target": {
+          "hook_memorability": 53.6,
+          "call_response": 70.7,
+          "section_contrast": 75.6,
+          "bass_contour": 92.1,
+          "density_drums": 67.6,
+          "density_chords": 20.3,
+          "density_bass": 78.6,
+          "density_synth": 83.5,
+          "density_piano": 52.7,
+          "density_fit": 60.6,
+          "groove_kick_density": 90.3,
+          "groove_snare_density": 68.6,
+          "groove_hat_density": 86.2,
+          "groove_fit": 81.7
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 57.0,
+          "legacy_score": 45.9,
+          "features": {
+            "onset_density": 3.4688,
+            "onset_events": 2.0938,
+            "syncopation": 0.018,
+            "swing": 0.5021,
+            "microtiming_ms": 0.8929,
+            "vel_mean": 70.3964,
+            "vel_std": 17.1723,
+            "register_low": 55.0,
+            "register_high": 74.0,
+            "register_mean": 66.1892,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 111.0,
+            "chord_vocab": 7.0,
+            "transition_entropy": 3.509,
+            "voice_leading": 3.4425,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 71.5,
+            "chord_vocab": 5.0,
+            "transition_entropy": 5.0,
+            "voice_leading": 52.4,
+            "clash_rate": 40.0,
+            "register_mean": 59.6,
+            "variation_8": 87.6
+          }
+        },
+        "bass": {
+          "score": 86.6,
+          "legacy_score": 86.6,
+          "features": {
+            "onset_density": 0.75,
+            "onset_events": 0.75,
+            "syncopation": 0.2917,
+            "swing": 0.5,
+            "microtiming_ms": 0.8929,
+            "vel_mean": 94.6667,
+            "vel_std": 17.0359,
+            "register_low": 36.0,
+            "register_high": 45.0,
+            "register_mean": 40.5833,
+            "repeat_4": 0.5,
+            "variation_8": 0.75,
+            "n_notes": 24.0,
+            "kick_align": 1.0,
+            "root_conflict": 0.2
+          },
+          "vs_ref": {
+            "onset_density": 90.5,
+            "register_mean": 91.7,
+            "kick_align": 95.0,
+            "root_conflict": 57.7,
+            "swing": 98.7,
+            "vel_std": 86.1
+          }
+        },
+        "synth": {
+          "score": 61.9,
+          "legacy_score": 68.8,
+          "features": {
+            "onset_density": 1.3125,
+            "onset_events": 1.3125,
+            "syncopation": 0.5714,
+            "swing": 0.4958,
+            "microtiming_ms": 1.7857,
+            "vel_mean": 72.9048,
+            "vel_std": 18.3495,
+            "register_low": 60.0,
+            "register_high": 79.0,
+            "register_mean": 70.8095,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 42.0,
+            "clash_rate": 0.2333
+          },
+          "vs_ref": {
+            "onset_density": 51.5,
+            "syncopation": 8.0,
+            "register_mean": 74.2,
+            "repeat_4": 100.0,
+            "variation_8": 87.6,
+            "vel_std": 91.7
+          }
+        },
+        "piano": {
+          "score": 71.0,
+          "legacy_score": 71.0,
+          "features": {
+            "onset_density": 2.5,
+            "onset_events": 2.5,
+            "syncopation": 0.5125,
+            "swing": 0.5036,
+            "microtiming_ms": 1.3393,
+            "vel_mean": 66.0875,
+            "vel_std": 20.6786,
+            "register_low": 64.0,
+            "register_high": 72.0,
+            "register_mean": 67.925,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 80.0,
+            "chord_vocab": 3.0,
+            "transition_entropy": 2.0382,
+            "voice_leading": 0.0,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 62.5,
+            "register_mean": 94.6,
+            "variation_8": 87.6,
+            "vel_std": 70.4,
+            "clash_rate": 40.0
+          }
+        },
+        "drums": {
+          "score": 85.6,
+          "legacy_score": 85.6,
+          "features": {
+            "onset_density": 3.7188,
+            "onset_events": 3.6562,
+            "syncopation": 0.2432,
+            "swing": 0.4969,
+            "microtiming_ms": 6.25,
+            "vel_mean": 59.0504,
+            "vel_std": 31.8605,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 41.1597,
+            "repeat_4": 0.0,
+            "variation_8": 0.875,
+            "n_notes": 119.0,
+            "kick_density": 0.4688,
+            "snare_density": 0.5,
+            "hat_density": 2.6875,
+            "kick_sync": 0.1667,
+            "hat_ioi_cv": 0.5113,
+            "hat_vel_std": 9.9869
+          },
+          "vs_ref": {
+            "onset_density": 92.2,
+            "syncopation": 67.6,
+            "swing": 93.6,
+            "microtiming_ms": 71.6,
+            "vel_std": 81.8,
+            "kick_density": 94.5,
+            "snare_density": 88.8,
+            "hat_density": 81.3,
+            "hat_ioi_cv": 99.0
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 111,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 24,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 42,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 42.9,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 80,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 1.2,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    },
+    {
+      "file": "trap_s7.mid",
+      "genre": "trap",
+      "pro_likeness": 74.9,
+      "legacy_pro_likeness": 72.7,
+      "raw": 74.9,
+      "ref_raw": 73.8,
+      "lint_penalty": 0.0,
+      "metric_version": "loop-v1",
+      "arrangement": {
+        "score": 79.0,
+        "features": {
+          "hook_memorability": 0.52,
+          "call_response": 0.927,
+          "section_contrast": 0.0,
+          "bass_contour": 0.6563
+        },
+        "vs_target": {
+          "hook_memorability": 93.2,
+          "call_response": 71.7,
+          "section_contrast": 69.5,
+          "bass_contour": 95.8,
+          "density_drums": 70.4,
+          "density_chords": 18.0,
+          "density_bass": 78.6,
+          "density_synth": 76.1,
+          "density_piano": 58.4,
+          "density_fit": 60.3,
+          "groove_kick_density": 95.4,
+          "groove_snare_density": 68.6,
+          "groove_hat_density": 86.2,
+          "groove_fit": 83.4
+        }
+      },
+      "parts": {
+        "chords": {
+          "score": 59.1,
+          "legacy_score": 47.5,
+          "features": {
+            "onset_density": 4.0943,
+            "onset_events": 2.7816,
+            "syncopation": 0.0878,
+            "swing": 0.501,
+            "microtiming_ms": 0.8929,
+            "vel_mean": 69.4351,
+            "vel_std": 19.7098,
+            "register_low": 55.0,
+            "register_high": 74.0,
+            "register_mean": 66.2137,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 131.0,
+            "chord_vocab": 8.0,
+            "transition_entropy": 3.5645,
+            "voice_leading": 3.3494,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 83.9,
+            "chord_vocab": 5.0,
+            "transition_entropy": 5.0,
+            "voice_leading": 51.3,
+            "clash_rate": 40.0,
+            "register_mean": 59.9,
+            "variation_8": 87.6
+          }
+        },
+        "bass": {
+          "score": 86.8,
+          "legacy_score": 86.8,
+          "features": {
+            "onset_density": 0.7501,
+            "onset_events": 0.7501,
+            "syncopation": 0.4167,
+            "swing": 0.4974,
+            "microtiming_ms": 0.8929,
+            "vel_mean": 91.1667,
+            "vel_std": 17.0335,
+            "register_low": 36.0,
+            "register_high": 45.0,
+            "register_mean": 40.5833,
+            "repeat_4": 0.3333,
+            "variation_8": 0.8571,
+            "n_notes": 24.0,
+            "kick_align": 1.0,
+            "root_conflict": 0.2
+          },
+          "vs_ref": {
+            "onset_density": 90.5,
+            "register_mean": 91.7,
+            "kick_align": 95.0,
+            "root_conflict": 57.7,
+            "swing": 99.7,
+            "vel_std": 86.1
+          }
+        },
+        "synth": {
+          "score": 64.4,
+          "legacy_score": 70.8,
+          "features": {
+            "onset_density": 1.4377,
+            "onset_events": 1.4377,
+            "syncopation": 0.6413,
+            "swing": 0.4958,
+            "microtiming_ms": 3.125,
+            "vel_mean": 73.0,
+            "vel_std": 14.8953,
+            "register_low": 62.0,
+            "register_high": 83.0,
+            "register_mean": 71.9783,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 46.0,
+            "clash_rate": 0.2333
+          },
+          "vs_ref": {
+            "onset_density": 52.7,
+            "syncopation": 49.9,
+            "register_mean": 61.2,
+            "repeat_4": 100.0,
+            "variation_8": 87.6,
+            "vel_std": 73.2
+          }
+        },
+        "piano": {
+          "score": 73.5,
+          "legacy_score": 73.5,
+          "features": {
+            "onset_density": 2.3441,
+            "onset_events": 2.3441,
+            "syncopation": 0.5133,
+            "swing": 0.5,
+            "microtiming_ms": 1.3393,
+            "vel_mean": 66.0,
+            "vel_std": 19.3577,
+            "register_low": 64.0,
+            "register_high": 72.0,
+            "register_mean": 68.0267,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 75.0,
+            "chord_vocab": 2.0,
+            "transition_entropy": 1.7842,
+            "voice_leading": 0.0,
+            "clash_rate": 0.0
+          },
+          "vs_ref": {
+            "onset_density": 61.1,
+            "register_mean": 95.9,
+            "variation_8": 87.6,
+            "vel_std": 82.7,
+            "clash_rate": 40.0
+          }
+        },
+        "drums": {
+          "score": 85.1,
+          "legacy_score": 85.1,
+          "features": {
+            "onset_density": 3.6255,
+            "onset_events": 3.5317,
+            "syncopation": 0.2454,
+            "swing": 0.499,
+            "microtiming_ms": 6.6964,
+            "vel_mean": 57.569,
+            "vel_std": 31.1867,
+            "register_low": 36.0,
+            "register_high": 49.0,
+            "register_mean": 41.181,
+            "repeat_4": 0.0,
+            "variation_8": 1.0,
+            "n_notes": 116.0,
+            "kick_density": 0.4063,
+            "snare_density": 0.5001,
+            "hat_density": 2.6878,
+            "kick_sync": 0.1538,
+            "hat_ioi_cv": 0.5185,
+            "hat_vel_std": 9.7045
+          },
+          "vs_ref": {
+            "onset_density": 91.3,
+            "syncopation": 67.8,
+            "swing": 93.1,
+            "microtiming_ms": 72.0,
+            "vel_std": 80.0,
+            "kick_density": 92.8,
+            "snare_density": 88.8,
+            "hat_density": 81.3,
+            "hat_ioi_cv": 98.7
+          }
+        }
+      },
+      "lint": [],
+      "harmony": {
+        "in_key_pct": 100.0,
+        "out_of_key_not_chord_pct": 0.0,
+        "strong_chord_tone_pct": 100.0,
+        "chromatic_passing_pct": 0.0,
+        "parts": {
+          "chords": {
+            "n": 131,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "bass": {
+            "n": 24,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "synth": {
+            "n": 46,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 37.0,
+            "strong_off_chord_pct": 0.0
+          },
+          "piano": {
+            "n": 75,
+            "out_of_key_pct": 0.0,
+            "out_of_chord_pct": 0.0,
+            "strong_off_chord_pct": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "lint": [],
+  "mp3s": [
+    "lofi_s7.mp3",
+    "house_s7.mp3",
+    "trap_s7.mp3",
+    "pop_s7.mp3",
+    "rnb_s7.mp3",
+    "cinematic_s7.mp3"
+  ],
+  "pitch_check": {
+    "cents_limit": 50.0,
+    "genres": {
+      "lofi": {
+        "ok": true,
+        "n": 32,
+        "failed": 0,
+        "notes": [
+          {
+            "part": "bass",
+            "pitch": 36,
+            "start": 0.0,
+            "expected_hz": 65.40639132514966,
+            "ok": true,
+            "cents": -0.8,
+            "detected_hz": 65.38,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 38,
+            "start": 1.0,
+            "expected_hz": 73.41619197935188,
+            "ok": true,
+            "cents": 5.4,
+            "detected_hz": 73.65,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 40,
+            "start": 2.0,
+            "expected_hz": 82.4068892282175,
+            "ok": true,
+            "cents": -0.2,
+            "detected_hz": 82.4,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 41,
+            "start": 3.0,
+            "expected_hz": 87.30705785825097,
+            "ok": true,
+            "cents": -0.4,
+            "detected_hz": 87.29,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 43,
+            "start": 4.0,
+            "expected_hz": 97.99885899543733,
+            "ok": true,
+            "cents": -1.4,
+            "detected_hz": 97.92,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 45,
+            "start": 5.0,
+            "expected_hz": 110.0,
+            "ok": true,
+            "cents": -2.3,
+            "detected_hz": 109.85,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 47,
+            "start": 6.0,
+            "expected_hz": 123.47082531403103,
+            "ok": true,
+            "cents": -3.2,
+            "detected_hz": 123.24,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 48,
+            "start": 7.0,
+            "expected_hz": 130.8127826502993,
+            "ok": true,
+            "cents": -3.6,
+            "detected_hz": 130.54,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 60,
+            "start": 8.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": 0.7,
+            "detected_hz": 261.73,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 62,
+            "start": 9.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": 0.4,
+            "detected_hz": 293.73,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 64,
+            "start": 10.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": 2.1,
+            "detected_hz": 330.02,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 65,
+            "start": 11.0,
+            "expected_hz": 349.2282314330039,
+            "ok": true,
+            "cents": -1.9,
+            "detected_hz": 348.85,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 67,
+            "start": 12.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": -1.3,
+            "detected_hz": 391.7,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 69,
+            "start": 13.0,
+            "expected_hz": 440.0,
+            "ok": true,
+            "cents": -1.0,
+            "detected_hz": 439.76,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 71,
+            "start": 14.0,
+            "expected_hz": 493.8833012561241,
+            "ok": true,
+            "cents": -0.2,
+            "detected_hz": 493.84,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 72,
+            "start": 15.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": -1.6,
+            "detected_hz": 522.77,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 72,
+            "start": 16.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": 4.4,
+            "detected_hz": 524.58,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 74,
+            "start": 17.0,
+            "expected_hz": 587.3295358348151,
+            "ok": true,
+            "cents": 7.0,
+            "detected_hz": 589.72,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 76,
+            "start": 18.0,
+            "expected_hz": 659.2551138257398,
+            "ok": true,
+            "cents": 4.1,
+            "detected_hz": 660.83,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 77,
+            "start": 19.0,
+            "expected_hz": 698.4564628660078,
+            "ok": true,
+            "cents": -0.3,
+            "detected_hz": 698.35,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 79,
+            "start": 20.0,
+            "expected_hz": 783.9908719634985,
+            "ok": true,
+            "cents": 2.9,
+            "detected_hz": 785.3,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 81,
+            "start": 21.0,
+            "expected_hz": 880.0,
+            "ok": true,
+            "cents": 6.2,
+            "detected_hz": 883.16,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 83,
+            "start": 22.0,
+            "expected_hz": 987.7666025122483,
+            "ok": true,
+            "cents": 6.5,
+            "detected_hz": 991.5,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 84,
+            "start": 23.0,
+            "expected_hz": 1046.5022612023945,
+            "ok": true,
+            "cents": 3.9,
+            "detected_hz": 1048.84,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 55,
+            "start": 24.0,
+            "expected_hz": 195.99771799087463,
+            "ok": true,
+            "cents": 12.1,
+            "detected_hz": 197.37,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 57,
+            "start": 25.0,
+            "expected_hz": 220.0,
+            "ok": true,
+            "cents": 17.8,
+            "detected_hz": 222.27,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 59,
+            "start": 26.0,
+            "expected_hz": 246.94165062806206,
+            "ok": true,
+            "cents": 2.0,
+            "detected_hz": 247.22,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 60,
+            "start": 27.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": 7.2,
+            "detected_hz": 262.72,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 62,
+            "start": 28.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": 7.0,
+            "detected_hz": 294.86,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 64,
+            "start": 29.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": 5.2,
+            "detected_hz": 330.62,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 66,
+            "start": 30.0,
+            "expected_hz": 369.9944227116344,
+            "ok": true,
+            "cents": 2.3,
+            "detected_hz": 370.48,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 67,
+            "start": 31.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": 2.2,
+            "detected_hz": 392.5,
+            "reason": ""
+          }
+        ]
+      },
+      "house": {
+        "ok": true,
+        "n": 32,
+        "failed": 0,
+        "notes": [
+          {
+            "part": "bass",
+            "pitch": 36,
+            "start": 0.0,
+            "expected_hz": 65.40639132514966,
+            "ok": true,
+            "cents": 0.8,
+            "detected_hz": 65.44,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 38,
+            "start": 1.0,
+            "expected_hz": 73.41619197935188,
+            "ok": true,
+            "cents": 0.6,
+            "detected_hz": 73.44,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 40,
+            "start": 2.0,
+            "expected_hz": 82.4068892282175,
+            "ok": true,
+            "cents": -0.7,
+            "detected_hz": 82.37,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 41,
+            "start": 3.0,
+            "expected_hz": 87.30705785825097,
+            "ok": true,
+            "cents": -1.0,
+            "detected_hz": 87.26,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 43,
+            "start": 4.0,
+            "expected_hz": 97.99885899543733,
+            "ok": true,
+            "cents": 1.4,
+            "detected_hz": 98.08,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 45,
+            "start": 5.0,
+            "expected_hz": 110.0,
+            "ok": true,
+            "cents": -1.2,
+            "detected_hz": 109.92,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 47,
+            "start": 6.0,
+            "expected_hz": 123.47082531403103,
+            "ok": true,
+            "cents": 0.5,
+            "detected_hz": 123.51,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 48,
+            "start": 7.0,
+            "expected_hz": 130.8127826502993,
+            "ok": true,
+            "cents": -0.5,
+            "detected_hz": 130.78,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 60,
+            "start": 8.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": -0.7,
+            "detected_hz": 261.53,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 62,
+            "start": 9.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": -0.6,
+            "detected_hz": 293.57,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 64,
+            "start": 10.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": -0.1,
+            "detected_hz": 329.6,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 65,
+            "start": 11.0,
+            "expected_hz": 349.2282314330039,
+            "ok": true,
+            "cents": 0.6,
+            "detected_hz": 349.34,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 67,
+            "start": 12.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": -0.1,
+            "detected_hz": 391.97,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 69,
+            "start": 13.0,
+            "expected_hz": 440.0,
+            "ok": true,
+            "cents": 0.5,
+            "detected_hz": 440.12,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 71,
+            "start": 14.0,
+            "expected_hz": 493.8833012561241,
+            "ok": true,
+            "cents": 0.2,
+            "detected_hz": 493.93,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 72,
+            "start": 15.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": -0.3,
+            "detected_hz": 523.16,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 72,
+            "start": 16.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": -13.3,
+            "detected_hz": 519.24,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 74,
+            "start": 17.0,
+            "expected_hz": 587.3295358348151,
+            "ok": true,
+            "cents": 18.4,
+            "detected_hz": 593.61,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 76,
+            "start": 18.0,
+            "expected_hz": 659.2551138257398,
+            "ok": true,
+            "cents": 1.5,
+            "detected_hz": 659.84,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 77,
+            "start": 19.0,
+            "expected_hz": 698.4564628660078,
+            "ok": true,
+            "cents": 1.7,
+            "detected_hz": 699.15,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 79,
+            "start": 20.0,
+            "expected_hz": 783.9908719634985,
+            "ok": true,
+            "cents": -1.0,
+            "detected_hz": 783.52,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 81,
+            "start": 21.0,
+            "expected_hz": 880.0,
+            "ok": true,
+            "cents": 1.1,
+            "detected_hz": 880.54,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 83,
+            "start": 22.0,
+            "expected_hz": 987.7666025122483,
+            "ok": true,
+            "cents": 0.9,
+            "detected_hz": 988.27,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 84,
+            "start": 23.0,
+            "expected_hz": 1046.5022612023945,
+            "ok": true,
+            "cents": -0.1,
+            "detected_hz": 1046.45,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 55,
+            "start": 24.0,
+            "expected_hz": 195.99771799087463,
+            "ok": true,
+            "cents": 3.7,
+            "detected_hz": 196.42,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 57,
+            "start": 25.0,
+            "expected_hz": 220.0,
+            "ok": true,
+            "cents": 6.5,
+            "detected_hz": 220.83,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 59,
+            "start": 26.0,
+            "expected_hz": 246.94165062806206,
+            "ok": true,
+            "cents": 5.6,
+            "detected_hz": 247.74,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 60,
+            "start": 27.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": 7.7,
+            "detected_hz": 262.79,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 62,
+            "start": 28.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": 7.7,
+            "detected_hz": 294.98,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 64,
+            "start": 29.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": 5.9,
+            "detected_hz": 330.76,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 66,
+            "start": 30.0,
+            "expected_hz": 369.9944227116344,
+            "ok": true,
+            "cents": 6.6,
+            "detected_hz": 371.41,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 67,
+            "start": 31.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": 7.1,
+            "detected_hz": 393.61,
+            "reason": ""
+          }
+        ]
+      },
+      "trap": {
+        "ok": true,
+        "n": 32,
+        "failed": 0,
+        "notes": [
+          {
+            "part": "bass",
+            "pitch": 36,
+            "start": 0.0,
+            "expected_hz": 65.40639132514966,
+            "ok": true,
+            "cents": 24.7,
+            "detected_hz": 66.35,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 38,
+            "start": 1.0,
+            "expected_hz": 73.41619197935188,
+            "ok": true,
+            "cents": 2.2,
+            "detected_hz": 73.51,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 40,
+            "start": 2.0,
+            "expected_hz": 82.4068892282175,
+            "ok": true,
+            "cents": 0.8,
+            "detected_hz": 82.44,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 41,
+            "start": 3.0,
+            "expected_hz": 87.30705785825097,
+            "ok": true,
+            "cents": -1.8,
+            "detected_hz": 87.22,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 43,
+            "start": 4.0,
+            "expected_hz": 97.99885899543733,
+            "ok": true,
+            "cents": -1.0,
+            "detected_hz": 97.94,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 45,
+            "start": 5.0,
+            "expected_hz": 110.0,
+            "ok": true,
+            "cents": 1.0,
+            "detected_hz": 110.07,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 47,
+            "start": 6.0,
+            "expected_hz": 123.47082531403103,
+            "ok": true,
+            "cents": 1.1,
+            "detected_hz": 123.55,
+            "reason": ""
+          },
+          {
+            "part": "bass",
+            "pitch": 48,
+            "start": 7.0,
+            "expected_hz": 130.8127826502993,
+            "ok": true,
+            "cents": -1.2,
+            "detected_hz": 130.72,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 60,
+            "start": 8.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": 0.7,
+            "detected_hz": 261.73,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 62,
+            "start": 9.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": -0.0,
+            "detected_hz": 293.66,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 64,
+            "start": 10.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": -2.1,
+            "detected_hz": 329.22,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 65,
+            "start": 11.0,
+            "expected_hz": 349.2282314330039,
+            "ok": true,
+            "cents": -3.5,
+            "detected_hz": 348.53,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 67,
+            "start": 12.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": -1.7,
+            "detected_hz": 391.61,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 69,
+            "start": 13.0,
+            "expected_hz": 440.0,
+            "ok": true,
+            "cents": 1.0,
+            "detected_hz": 440.25,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 71,
+            "start": 14.0,
+            "expected_hz": 493.8833012561241,
+            "ok": true,
+            "cents": 4.1,
+            "detected_hz": 495.06,
+            "reason": ""
+          },
+          {
+            "part": "piano",
+            "pitch": 72,
+            "start": 15.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": 3.1,
+            "detected_hz": 524.18,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 72,
+            "start": 16.0,
+            "expected_hz": 523.2511306011972,
+            "ok": true,
+            "cents": -0.0,
+            "detected_hz": 523.25,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 74,
+            "start": 17.0,
+            "expected_hz": 587.3295358348151,
+            "ok": true,
+            "cents": -0.2,
+            "detected_hz": 587.26,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 76,
+            "start": 18.0,
+            "expected_hz": 659.2551138257398,
+            "ok": true,
+            "cents": 0.0,
+            "detected_hz": 659.27,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 77,
+            "start": 19.0,
+            "expected_hz": 698.4564628660078,
+            "ok": true,
+            "cents": -0.1,
+            "detected_hz": 698.43,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 79,
+            "start": 20.0,
+            "expected_hz": 783.9908719634985,
+            "ok": true,
+            "cents": -0.2,
+            "detected_hz": 783.91,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 81,
+            "start": 21.0,
+            "expected_hz": 880.0,
+            "ok": true,
+            "cents": -0.1,
+            "detected_hz": 879.93,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 83,
+            "start": 22.0,
+            "expected_hz": 987.7666025122483,
+            "ok": true,
+            "cents": 0.0,
+            "detected_hz": 987.78,
+            "reason": ""
+          },
+          {
+            "part": "synth",
+            "pitch": 84,
+            "start": 23.0,
+            "expected_hz": 1046.5022612023945,
+            "ok": true,
+            "cents": 0.0,
+            "detected_hz": 1046.51,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 55,
+            "start": 24.0,
+            "expected_hz": 195.99771799087463,
+            "ok": true,
+            "cents": 7.1,
+            "detected_hz": 196.8,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 57,
+            "start": 25.0,
+            "expected_hz": 220.0,
+            "ok": true,
+            "cents": 10.0,
+            "detected_hz": 221.28,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 59,
+            "start": 26.0,
+            "expected_hz": 246.94165062806206,
+            "ok": true,
+            "cents": -2.0,
+            "detected_hz": 246.66,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 60,
+            "start": 27.0,
+            "expected_hz": 261.6255653005986,
+            "ok": true,
+            "cents": 2.0,
+            "detected_hz": 261.92,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 62,
+            "start": 28.0,
+            "expected_hz": 293.6647679174076,
+            "ok": true,
+            "cents": 0.9,
+            "detected_hz": 293.82,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 64,
+            "start": 29.0,
+            "expected_hz": 329.6275569128699,
+            "ok": true,
+            "cents": -1.0,
+            "detected_hz": 329.44,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 66,
+            "start": 30.0,
+            "expected_hz": 369.9944227116344,
+            "ok": true,
+            "cents": -3.3,
+            "detected_hz": 369.29,
+            "reason": ""
+          },
+          {
+            "part": "chords",
+            "pitch": 67,
+            "start": 31.0,
+            "expected_hz": 391.99543598174927,
+            "ok": true,
+            "cents": -2.4,
+            "detected_hz": 391.44,
+            "reason": ""
+          }
+        ]
+      }
+    },
+    "ok": true
+  },
+  "critic": {
+    "model": "openai/gpt-oss-120b",
+    "clips": [
+      {
+        "clip": "cinematic_s23.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Add smoother voice leading and occasional inversions."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Introduce rhythmic variation and passing tones."
+        },
+        "melody": {
+          "score": 6,
+          "fix": "Add syncopation and interval leaps for interest."
+        },
+        "piano": {
+          "score": 5,
+          "fix": "Reduce density, highlight chord tones."
+        },
+        "drums": {
+          "score": 6,
+          "fix": "Vary hi\u2011hat patterns and add ghost notes."
+        },
+        "overall": 6,
+        "summary": "Solid base but needs more dynamic variation and clearer voice leading across parts.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "cinematic_s7.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Thin out chord density to avoid overcrowding each beat."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Add more rhythmic notes and include the missing F root."
+        },
+        "melody": {
+          "score": 6,
+          "fix": "Introduce the missing B note and vary note lengths."
+        },
+        "piano": {
+          "score": 7,
+          "fix": "Add dynamic accents and richer voicings for expression."
+        },
+        "drums": {
+          "score": 7,
+          "fix": "Insert occasional drum fills to keep momentum."
+        },
+        "overall": 6,
+        "summary": "Solid foundation but needs clearer spacing, fuller bass, melodic completeness, expressive piano, and more drum variation.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "house_s23.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Simplify voicings and reduce note density per bar."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Add syncopated rhythm and occasional octave jumps."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Expand range and develop a clear motif."
+        },
+        "piano": {
+          "score": 4,
+          "fix": "Thin out chords; use rhythmic stabs instead of constant notes."
+        },
+        "drums": {
+          "score": 7,
+          "fix": "Add subtle percussion layers and tighten hi\u2011hat timing."
+        },
+        "overall": 5,
+        "summary": "The track has a solid house foundation but needs clearer harmonic focus, more dynamic bass, and a stronger melodic hook.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "house_s7.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Trim notes to basic triads for clearer harmony."
+        },
+        "bass": {
+          "score": 7,
+          "fix": "Add occasional octave jumps for more drive."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Introduce rhythmic variation and larger interval leaps."
+        },
+        "piano": {
+          "score": 7,
+          "fix": "Simplify voicings, avoid overlapping registers."
+        },
+        "drums": {
+          "score": 6,
+          "fix": "Add syncopated snare fills and varied hi\u2011hat patterns."
+        },
+        "overall": 6,
+        "summary": "Solid foundation but needs less clutter in chords, more melodic interest, and varied drum accents.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "lofi_s23.mid",
+        "chords": {
+          "score": 8,
+          "fix": "Thin out voicings; keep fewer notes per beat for clearer texture."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Add rhythmic variation and occasional octave jumps."
+        },
+        "melody": {
+          "score": 6,
+          "fix": "Create more contour; use passing tones and interval jumps."
+        },
+        "piano": {
+          "score": 7,
+          "fix": "Vary inversions and dynamics to avoid monotony."
+        },
+        "drums": {
+          "score": 7,
+          "fix": "Insert subtle ghost notes and slight velocity changes."
+        },
+        "overall": 7,
+        "summary": "A solid lo\u2011fi foundation with good chord and drum work, but bass and melody need more movement and variation.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "lofi_s7.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Thin out voicings; keep 3-4 notes per bar for smoother lofi feel."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Tie bass roots to chord changes and use steadier rhythm."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Introduce a simple, repeating motif and limit large interval jumps."
+        },
+        "piano": {
+          "score": 5,
+          "fix": "Use piano for rhythmic comping, not duplicate full chord textures."
+        },
+        "drums": {
+          "score": 7,
+          "fix": "Add slight swing and reduce hi\u2011hat density for laid\u2011back groove."
+        },
+        "overall": 6,
+        "summary": "Decent foundation but needs cleaner voicings, tighter bass, a clear melodic hook, and a more relaxed drum groove.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "pop_s23.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Reduce note density; keep 3\u20114 notes per chord for clarity."
+        },
+        "bass": {
+          "score": 7,
+          "fix": "Add occasional octave jumps for more movement."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Introduce varied rhythmic motifs and wider interval leaps."
+        },
+        "piano": {
+          "score": 7,
+          "fix": "Simplify voicings; avoid overlapping registers."
+        },
+        "drums": {
+          "score": 5,
+          "fix": "Cut extra kicks/snare; tighten pattern to one kick and snare per bar."
+        },
+        "overall": 6,
+        "summary": "Solid foundation but overly busy chords and drums; streamline parts and add melodic interest.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "pop_s7.mid",
+        "chords": {
+          "score": 7,
+          "fix": "Thin out bar 2 notes for clearer harmony."
+        },
+        "bass": {
+          "score": 6,
+          "fix": "Introduce occasional octave jumps for more drive."
+        },
+        "melody": {
+          "score": 7,
+          "fix": "Smooth the large interval jumps between 76 and 81."
+        },
+        "piano": {
+          "score": 7,
+          "fix": "Lower velocity on repeated chords to add dynamic contrast."
+        },
+        "drums": {
+          "score": 8,
+          "fix": "Add a simple fill at the end of bar 8."
+        },
+        "overall": 7,
+        "summary": "Solid pop foundation with room for tighter harmonic spacing, more bass movement, smoother melodic leaps, dynamic piano, and a drum fill.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "rnb_s23.mid",
+        "chords": {
+          "score": 7,
+          "fix": "Add a secondary dominant for more movement."
+        },
+        "bass": {
+          "score": 6,
+          "fix": "Smooth out large interval jumps."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Introduce more rhythmic variation."
+        },
+        "piano": {
+          "score": 6,
+          "fix": "Add chord inversions for richer texture."
+        },
+        "drums": {
+          "score": 7,
+          "fix": "Add ghost notes on snare for groove."
+        },
+        "overall": 6,
+        "summary": "Overall solid R&B foundation but needs more harmonic and rhythmic interest.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "rnb_s7.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Reduce note density; use simpler voicings for clearer harmony."
+        },
+        "bass": {
+          "score": 5,
+          "fix": "Add rhythmic syncopation and occasional octave jumps for more groove."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Introduce a distinct melodic contour and vary rhythm."
+        },
+        "piano": {
+          "score": 5,
+          "fix": "Limit chord repetitions; add dynamic accents."
+        },
+        "drums": {
+          "score": 6,
+          "fix": "Vary hi\u2011hat patterns and add ghost snares for interest."
+        },
+        "overall": 6,
+        "summary": "Solid foundation but needs less clutter and more rhythmic/melodic variation.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "trap_s23.mid",
+        "chords": {
+          "score": 5,
+          "fix": "Trim to a simple two\u2011chord minor loop for trap vibe."
+        },
+        "bass": {
+          "score": 7,
+          "fix": "Sync bass notes with kick hits for tighter low\u2011end."
+        },
+        "melody": {
+          "score": 6,
+          "fix": "Cut note density, repeat a clear motif."
+        },
+        "piano": {
+          "score": 6,
+          "fix": "Shift piano voicings lower, avoid clashing with synth."
+        },
+        "drums": {
+          "score": 8,
+          "fix": "Add occasional 1/32 hi\u2011hat rolls for texture."
+        },
+        "overall": 6,
+        "summary": "Decent trap foundation, but chords and melody need simplification; tighten bass\u2011drum lock and refine piano placement.",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "clip": "trap_s7.mid",
+        "chords": {
+          "score": 6,
+          "fix": "Add more chord inversions for movement."
+        },
+        "bass": {
+          "score": 7,
+          "fix": "Introduce occasional octave jumps."
+        },
+        "melody": {
+          "score": 5,
+          "fix": "Add variation and syncopation."
+        },
+        "piano": {
+          "score": 6,
+          "fix": "Use higher voicings for contrast."
+        },
+        "drums": {
+          "score": 8,
+          "fix": "Add subtle hi-hat rolls."
+        },
+        "overall": 6,
+        "summary": "Solid trap foundation, but needs more harmonic and melodic variation.",
+        "model": "openai/gpt-oss-120b"
+      }
+    ]
+  }
+}

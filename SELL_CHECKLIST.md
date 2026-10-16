@@ -78,4 +78,4 @@ No MIDI change. House/trap `chord_vocab` / entropy stay structurally capped vs p
 
 ## sell-q10
 
-Shipped: loop-v1 scoring (`Tools/eval/SCORING.md`), genre-true drum templates, hook restatement every 4 bars, bass approach every 4 bars, chorus crash / verse-hat thinning, first-run tour, empty-state generate→drag copy. Hard gates unchanged. Headline is loop-v1; `legacy_pro_likeness` is the q8-comparable column. Artifacts: `sell-q10-{lofi,house,trap,pop,rnb,cinematic}_s7.{mp3,mid}`.
+Shipped: loop-v1 scoring (`Tools/eval/SCORING.md`), genre-true drum templates (house hats kept irregular after a too-grid pass), hook-head skip guard, bass approach every 4 bars, chorus crash / verse-hat thinning, first-run tour, empty-state generate→drag copy. Hard gates green. Headline **76.3** loop-v1 (frozen q8 MIDI on loop-v1 was 76.7). Legacy **75.9** vs q8 **75.4**. Artifacts: `sell-q10-{lofi,house,trap,pop,rnb,cinematic}_s7.{mp3,mid}`.
