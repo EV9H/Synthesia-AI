@@ -302,6 +302,7 @@ private:
     juce::Label step1;
     juce::Label step2;
     juce::Label step3;
+    juce::Label step4;
     juce::Label licenseNote;
     juce::TextButton gotIt { "Got it" };
     juce::TextButton generateNow { "Generate a loop" };

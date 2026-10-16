@@ -965,13 +965,13 @@ void TrackLanes::paint(juce::Graphics& g)
         g.setColour(Theme::label);
         g.setFont(Theme::medium(16.0f));
         g.drawText("Generate MIDI, then drag it into your DAW.",
-                   getLocalBounds().translated(0, -18), juce::Justification::centred);
+                   getLocalBounds().translated(0, -22), juce::Justification::centred);
         g.setColour(Theme::dimText);
         g.setFont(Theme::regular(13.0f));
         g.drawText("Preview is a sketch — play the notes with your own piano.",
-                   getLocalBounds().translated(0, 4), juce::Justification::centred);
-        g.drawText("Pick a genre, tap Generate, or choose an Inspire seed.",
-                   getLocalBounds().translated(0, 24), juce::Justification::centred);
+                   getLocalBounds().translated(0, 0), juce::Justification::centred);
+        g.drawText("Chords · Bass · Synth · Piano · Drums (ch 10). Tap Generate or Inspire.",
+                   getLocalBounds().translated(0, 22), juce::Justification::centred);
         return;
     }
 
@@ -1081,10 +1081,12 @@ FirstRunTour::FirstRunTour()
     };
     styleStep(step1, "1.  Pick a genre, or an Inspire seed for a finished plan.");
     styleStep(step2, "2.  Tap Generate. You get an 8-bar arrangement as MIDI.");
-    styleStep(step3, "3.  Drag the Drag MIDI handle into your DAW. Load your piano.");
+    styleStep(step3, "3.  Drag the Drag MIDI handle into your DAW (not the piano-roll).");
+    styleStep(step4, "4.  Load YOUR piano / bass / drums. Preview is a sketch.");
     addAndMakeVisible(step1);
     addAndMakeVisible(step2);
     addAndMakeVisible(step3);
+    addAndMakeVisible(step4);
 
     licenseNote.setFont(Theme::regular(12.5f));
     licenseNote.setColour(juce::Label::textColourId, Theme::trial);
@@ -1132,22 +1134,24 @@ void FirstRunTour::paint(juce::Graphics& g)
 {
     g.setColour(juce::Colours::black.withAlpha(0.58f));
     g.fillRect(getLocalBounds());
-    Theme::fillGlass(g, getLocalBounds().withSizeKeepingCentre(460, 360).toFloat(), 18.0f);
+    Theme::fillGlass(g, getLocalBounds().withSizeKeepingCentre(480, 400).toFloat(), 18.0f);
 }
 
 void FirstRunTour::resized()
 {
-    auto card = getLocalBounds().withSizeKeepingCentre(460, 360).reduced(28, 24);
+    auto card = getLocalBounds().withSizeKeepingCentre(480, 400).reduced(28, 24);
     title.setBounds(card.removeFromTop(28));
     card.removeFromTop(8);
     body.setBounds(card.removeFromTop(36));
-    card.removeFromTop(16);
-    step1.setBounds(card.removeFromTop(24));
-    card.removeFromTop(6);
-    step2.setBounds(card.removeFromTop(24));
-    card.removeFromTop(6);
-    step3.setBounds(card.removeFromTop(24));
     card.removeFromTop(12);
+    step1.setBounds(card.removeFromTop(22));
+    card.removeFromTop(4);
+    step2.setBounds(card.removeFromTop(22));
+    card.removeFromTop(4);
+    step3.setBounds(card.removeFromTop(22));
+    card.removeFromTop(4);
+    step4.setBounds(card.removeFromTop(22));
+    card.removeFromTop(10);
     if (licenseNote.isVisible())
     {
         licenseNote.setBounds(card.removeFromTop(28));

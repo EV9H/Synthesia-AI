@@ -16,43 +16,104 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 - Offline license mint: `Tools/make_license_key.sh` → writes `HRM-XXXXXXXX-CCCC`. A local sample may exist at `Tools/sample_license.txt` (**gitignored**). Do not commit Lemon/production secrets.
 - Plugin stub: Settings → License key + Validate. Shipping gate: `cmake -DHARMONIA_LICENSE_ENFORCE=1`
 - First-run tour + empty-state: generate → drag MIDI into the DAW. Preview is labelled a sketch. Paid builds: Open Settings from the tour; drag still works without a key.
-- Zip includes `Tools/GETTING_STARTED.txt` and `Tools/UNSIGNED_SMOKE.txt` (Gatekeeper/SmartScreen bypass + generate→drag).
+- Zip includes `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, and `LICENSE.txt` inside a `Harmonia/` folder (`Tools/package_vst3.sh`).
+- MIDI export smoke: `Tools/verify_midi_export.py` (960 PPQ, named parts, drums ch 10).
 - Inspire factory seeds: combo still auto-generates. Keep at least one seed per shipping genre.
 - Eval honesty: headline is `loop-v1` (legacy column still reported so q8 **75.4** stays comparable).
 
-## Remaining sell blockers (human steps)
+## Remaining sell blockers (human steps — this is what still blocks taking money)
 
-1. **Cloudflare Pages** — site is in-repo; **YOU** still connect it.
+1. **Cloudflare Pages is not live.** Site files are in `sell-site/` (Privacy, Terms, Download section). **YOU** still connect Git.
    - CF → Workers & Pages → Create → Connect Git → `EV9H/Synthesia-AI`
-   - Build output directory: **`sell-site`** (no build command)
-   - Then custom domain + `supportEmail` in `sell-site/config.js`
+   - Framework: None. Build command: empty. Output directory: **`sell-site`**
+   - Custom domain, then set `supportEmail` in `sell-site/config.js` (still `hello@example.com`)
 
-2. **Lemon Squeezy product URL** — stub is in; live product is not.
-   - Create the $49 product, enable license keys, copy checkout URL
-   - Paste into `sell-site/config.js` → `lemonCheckoutUrl`
-   - Set plugin `HARMONIA_LICENSE_VALIDATE_URL` or Settings → Advanced URL
-   - **Do not put Lemon API keys in the repo**
-   - Offline grace: export/drag stay unlocked; Generate locks only when ENFORCE=1
-   - **Refund risk:** if you ship `HARMONIA_LICENSE_ENFORCE=1` without the buyer’s key paste path being obvious, Generate is dead on first launch. The first-run tour now tells them Settings → paste `HRM-` when enforce is on. Confirm that copy against the real checkout email.
+2. **Lemon Squeezy product does not exist.** Checkout button is `href="#"` until you paste a URL. Follow **Lemon Squeezy — finish in 30 minutes** below. Payouts / tax onboarding is on you. **Do not put Lemon API keys in the repo.**
 
-3. **Signed installers** — you must supply certs.
-   - Linux/Windows unsigned zip: `Tools/package_vst3.sh`
-   - **macOS:** Developer ID Application + notarytool profile (commands in `package_vst3.sh`)
-   - **Windows:** Authenticode `.pfx` + `signtool` (same script)
-   - pluginval + Steinberg on the **signed** binary
-   - **Refund risk:** unsigned VST3 trips Gatekeeper / SmartScreen. Buyers will think the plugin is malware.
+3. **Installers are unsigned.** `Tools/package_vst3.sh` writes a buyer-ready *unsigned* zip. Gatekeeper / SmartScreen will scare buyers — #1 malware-refund risk until you sign (commands printed by the script).
 
-4. **Real DAW drag test** — 960 PPQ, tracks Chords/Bass/Synth/Piano/Drums, GM drum ch 10, in Ableton / Logic / FL.
-   - Confirm “Drag MIDI” (not the piano-roll preview) is what lands in the DAW.
-   - Confirm a first-time user finds the handle without the tour (tour persists `firstRunTourSeen` in `SynthesiaAI/settings.xml`).
+4. **No human DAW drag proof.** Automated check: `Tools/verify_midi_export.py` (960 PPQ, named tracks, drums ch 10). **YOU** still drop Drag MIDI into Ableton / FL / Reaper and load a stock piano.
 
-5. **Manual / first-run** — tour is in-plugin. Still do a 30-second human pass: generate → drag MIDI → load a stock piano. If that path is unclear, people refund because they think Harmonia is a cheap synth.
+5. **Receipt email does not exist.** Lemon will send it. The body must say: MIDI for your sounds; preview is a sketch; paste the key (or tap Generate → Settings); unsigned warning until signed.
 
-6. **Bundle-id rename** — only in a dedicated release (see below).
+6. **Privacy / Terms are stubs.** Pages exist and are linked. They still say “replace operator name/address before charging.” Have counsel (or at least your real legal name) in those files.
 
-7. **Support / refund copy (discovered)** — landing + receipt must say “MIDI for your sounds; preview audio is a sketch.” Cheap preview vs the buyer’s piano is the #1 “this is a scam” trigger. Site hero already says it; checkout email does not exist yet.
+7. **Bundle still says Synthesia AI.** Display name is Harmonia. Dedicated rename only (see below) — not a launch blocker if the landing page is clear.
 
-8. **Inspire seeds still generate** — combo `onChange` fires `inspireIdeaFromSeed` + Generate. If a seed fails silently after a license gate, that is a refund. Smoke one seed per genre before a paid build.
+8. **Inspire seeds** — combo still auto-generates. Smoke one seed per genre on an `ENFORCE=1` build after the key path works.
+
+## Lemon Squeezy — finish in 30 minutes
+
+No secrets in git. Two compatible key paths: **Lemon HTTP** (buyer pastes the Lemon key) and **offline HRM-** (you mint with `Tools/make_license_key.sh`). The plugin tries offline first, then HTTP.
+
+### A. Product + checkout (site) — ~10 min
+
+1. https://lemonsqueezy.com/ → create store → finish payouts/tax (MoR).
+2. Products → New product
+   - Name: **Harmonia**
+   - Price: **$49** one-time
+   - Type: digital / software
+3. Variants → enable **License keys** (Lemon will email its own key format).
+4. Files → attach `dist/Harmonia-*-vst3-unsigned-*.zip` from `Tools/package_vst3.sh` (replace later with signed Mac/Win zips).
+5. Share → copy the checkout URL (`https://YOURSTORE.lemonsqueezy.com/checkout/buy/...`).
+6. Paste into `sell-site/config.js`:
+
+```js
+lemonCheckoutUrl: "https://YOURSTORE.lemonsqueezy.com/checkout/buy/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+supportEmail: "you@yourdomain.com",
+```
+
+7. Commit that one file (or edit it only on Pages if you prefer not to commit the live URL). Reload the site — Buy must open Lemon, not the “URL not set” alert.
+
+### B. Plugin validate URL — ~5 min
+
+Lemon’s public validate endpoint (no API key in the binary):
+
+```
+https://api.lemonsqueezy.com/v1/licenses/validate
+```
+
+The stub POSTs `license_key=...` (`application/x-www-form-urlencoded`) and treats HTTP 200 plus `"valid":true` / `"status":"active"` as licensed.
+
+Ship it as a compile default **or** tell buyers to ignore it and use an offline `HRM-` key you email:
+
+```bash
+# CMake (your release machine) — still no Lemon secret
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DHARMONIA_LICENSE_ENFORCE=1
+# Optional: bake the validate URL into docs only; runtime override:
+#   env HARMONIA_LICENSE_VALIDATE_URL=https://api.lemonsqueezy.com/v1/licenses/validate
+#   or Settings → Advanced → Lemon validate URL
+```
+
+Offline grace is unchanged: **Drag MIDI / export never lock.** Generate locks only when `HARMONIA_LICENSE_ENFORCE=1`.
+
+### C. Receipt copy — ~5 min
+
+Lemon → Settings → Emails. Receipt / license mail must include:
+
+- “Harmonia writes MIDI. Preview piano is a sketch. Load yours.”
+- The license key and the zip
+- “Tap Generate → Settings → paste the key (or Paste). Drag MIDI works before that.”
+- “macOS/Windows may warn on an unsigned build. See UNSIGNED_SMOKE.txt.”
+
+### D. Webhook (optional — skip if Lemon emails keys)
+
+Only if you want to mint **your** `HRM-` keys on each sale instead of Lemon’s:
+
+1. Lemon → Settings → Webhooks → URL on **your** server (not this repo).
+2. Events: `order_created` and/or `license_key_created`.
+3. Signing secret stays on that server. **Never commit it.**
+4. Handler: verify signature → run `Tools/make_license_key.sh` → email `HRM-XXXXXXXX-CCCC` to the buyer.
+5. Plugin then unlocks offline with no HTTP.
+
+You do **not** need a webhook to take money. Path A+B is enough.
+
+### E. 5-minute smoke after A–C
+
+1. Test-mode checkout → you receive a key + zip.
+2. Unzip `Harmonia/` → `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
+3. Load in a DAW (or Standalone) → tap Generate → paste key → Validate.
+4. Drag MIDI → confirm five tracks and drums on ch 10. Or: `Tools/verify_midi_export.py some.mid`
 
 ## Bundle-id / plugin rename checklist
 
@@ -141,6 +202,18 @@ Tried cinematic anticipated backbeats (same snare count, not ghosts). Sync rose 
 
 MIDI stalled (lofi onset-fill + cinematic anticipate both walked back). Product: Generate / Inspire stay clickable on paid builds and open Settings; license Paste-from-clipboard; tour + GETTING_STARTED + FAQ copy. MIDI = q22. Headline **77.2**, arrange **78.3**, gates green. Artifacts: `sell-q25-*_s7.{mp3,mid}`.
 
-## Next loop (q26+) if unblocked
+## sell-q26
 
-MIDI: lofi melody 66.6 (onset-fill and rhythm-A/fold-69 walked back), cinematic drums 73.0 (ghosts and anticipated backbeats walked back). Trap chords 58.0 (do not chase vocab). Do not widen pop piano. Do not chase lofi bass_root. Trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Productize (no MIDI). Sell-site: `privacy.html` + `terms.html` stubs, Download/requirements section (VST3, DAW list), pricing FAQs ($49 / seats / refunds). Footer links. MIDI = q22. Headline **77.2**. Artifacts: `sell-q26-*` (q22 demos).
+
+## sell-q27
+
+Buyer zip: `package_vst3.sh` now stages `Harmonia/{Synthesia AI.vst3,GETTING_STARTED.txt,UNSIGNED_SMOKE.txt,LICENSE.txt}`. Added `Tools/LICENSE_NOTE.txt` and `Tools/verify_midi_export.py` (960 PPQ, named Chords/Bass/Synth/Piano/Drums, drums ch 10). MIDI = q22.
+
+## sell-q28
+
+Lemon “finish in 30 minutes” wired in this file (checkout URL, `https://api.lemonsqueezy.com/v1/licenses/validate`, optional webhook). Stub POSTs form-encoded `license_key` and accepts `"valid":true` / `"status":"active"`. First-run tour is a 4-step checklist; empty state names the five tracks + ch 10. MIDI = q22. Headline **77.2**, arrange **78.3**, gates green. Artifacts: `sell-q28-*`.
+
+## Next loop (q29+) if unblocked
+
+Do not chase banned MIDI levers. Human-only: CF Pages, Lemon product + checkout URL, signed certs, real DAW drag, live support email, real Privacy/Terms operator, Lemon receipt copy. MIDI headline remains **77.2**.

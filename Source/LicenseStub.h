@@ -113,10 +113,13 @@ public:
         if (url.isEmpty())
             return { false, "Not a valid offline key. Set HARMONIA_LICENSE_VALIDATE_URL or a Lemon validate URL in Settings." };
 
+        // Lemon Squeezy /v1/licenses/validate expects form-encoded license_key.
+        // JSON is still accepted as a response body ("valid": true).
         juce::URL request(url);
-        const auto body = juce::String("{\"license_key\":\"") + trimmed.replace("\"", "") + "\"}";
+        const auto body = "license_key=" + juce::URL::addEscapeChars(trimmed, true);
         request = request.withPOSTData(body);
-        juce::String headers = "Content-Type: application/json\r\n";
+        juce::String headers = "Content-Type: application/x-www-form-urlencoded\r\n"
+                               "Accept: application/json\r\n";
         int status = 0;
         auto stream = request.createInputStream(juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inPostData)
                                                     .withExtraHeaders(headers)
@@ -129,7 +132,9 @@ public:
         const bool ok = status == 200
             && (response.containsIgnoreCase("\"licensed\":true")
                 || response.containsIgnoreCase("\"valid\":true")
-                || response.containsIgnoreCase("\"status\":\"valid\""));
+                || response.containsIgnoreCase("\"valid\": true")
+                || response.containsIgnoreCase("\"status\":\"valid\"")
+                || response.containsIgnoreCase("\"status\":\"active\""));
         if (ok)
             return { true, "Validated against license URL." };
         return { false, "License URL rejected the key (HTTP " + juce::String(status) + ")." };

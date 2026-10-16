@@ -40,11 +40,12 @@ lemonCheckoutUrl: "https://YOURSTORE.lemonsqueezy.com/checkout/buy/xxxxxxxx-xxxx
 8. Point the **plugin** at Lemon’s validate endpoint (no secrets in git):
 
 ```bash
-# env on the user’s machine / your docs — not committed
-export HARMONIA_LICENSE_VALIDATE_URL="https://api.lemonsqueezy.com/…"
+# No Lemon API secret in the plugin. This public validate URL is enough.
+export HARMONIA_LICENSE_VALIDATE_URL="https://api.lemonsqueezy.com/v1/licenses/validate"
 ```
 
-   Or paste the URL in the plugin Settings → Advanced → Lemon validate URL.
+   Or paste that URL in the plugin Settings → Advanced → Lemon validate URL.
+   Exact 30-minute wiring: repo `SELL_CHECKLIST.md` → “Lemon Squeezy — finish in 30 minutes.”
 
 9. Offline keys (dev / grace): `Tools/make_license_key.sh` prints `HRM-XXXXXXXX-CCCC`. Shipping builds: `cmake -DHARMONIA_LICENSE_ENFORCE=1` so Generate stays locked until a valid key. Export/drag stay unlocked. See `Source/LicenseStub.h`. **Do not commit Lemon API keys.**
 
@@ -111,7 +112,7 @@ Mac notarizing and Windows Authenticode need **your** certs. Commands are printe
 
 - [x] Brand is Harmonia (keep Synthesia disclaimer in footer)
 - [x] Preview demos are sell-q8 in-key renders (illustrative audio only)
-- [ ] Privacy / Terms pages (link from footer) if you collect emails
+- [x] Privacy / Terms stub pages (`privacy.html`, `terms.html`) — replace operator copy before charging
 - [ ] Confirm LS receipt email includes license key + download
 - [ ] Plugin activation: Lemon HTTP **or** offline `HRM-` stub (`LicenseStub`)
 
