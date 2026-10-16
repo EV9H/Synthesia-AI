@@ -751,9 +751,23 @@ namespace
 
     void arrangeBreakdowns(std::map<Part, Notes>& parts, int bars)
     {
-        // Drum fills already land every 4 bars. Pad mute here changed chroma
-        // enough to trip bass_root_conflict, so leave harmonic beds intact.
-        juce::ignoreUnused(parts, bars);
+        // Pad mute trips bass_root_conflict. On 16+ bar song forms, thin the
+        // lead in the first four bars so the later chorus/drop reads as a lift.
+        if (bars < 16)
+            return;
+        auto it = parts.find(Part::Synth);
+        if (it == parts.end())
+            return;
+        const double muteTo = 16.0;
+        auto& lead = it->second;
+        lead.erase(std::remove_if(lead.begin(), lead.end(),
+                                  [=](const ArrangementGenerator::PartNote& n)
+                                  {
+                                      if (n.start >= muteTo)
+                                          return false;
+                                      return !isStrongBeat(n.start) && n.length < 0.55;
+                                  }),
+                   lead.end());
     }
 
     void separateRegisters(std::map<Part, Notes>& parts)
@@ -1396,7 +1410,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternBass(const 
 
     for (int bar = 0; bar < ctx.params.lengthInBars; ++bar)
     {
-        if (bar % 8 == 7 && !approachPatterns.empty())
+        if (bar % 4 == 3 && !approachPatterns.empty())
             pattern = &pick(approachPatterns, rng);
         else
             pattern = primary;
@@ -1697,6 +1711,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
             const char c = pattern[static_cast<size_t>(step % size)];
             if (c == '.' || c == '-')
                 continue;
+            // Verse / intro: drop ghosts so the chorus kit reads louder.
+            if (c == 'g' && energy < 0.55f && uniform(rng) < 0.45)
+                continue;
+            if (isHat && c != 'X' && energy < 0.40f && uniform(rng) < 0.28)
+                continue;
             int usePitch = pitch;
             if (isHat && pitch == gm::closedHat && (c == 'g' || c == 'p'))
                 usePitch = gm::pedalHat;
@@ -1745,8 +1764,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         emitLane(groove.tom, gm::lowTom, drums.kickVelocity - 8, drums.kickVelocity - 16,
                  drums.kickVelocity - 24, false, bar, energy);
 
-        if (ctx.profile.genre == Genre::Cinematic && sectionStart)
-            addHit(gm::crash, bar * 4.0, 96, false);
+        if (sectionStart && section != nullptr
+            && (section->kind == SectionKind::Chorus || section->kind == SectionKind::Drop
+                || ctx.profile.genre == Genre::Cinematic))
+            addHit(gm::crash, bar * 4.0, section->kind == SectionKind::Chorus
+                                             || section->kind == SectionKind::Drop ? 100 : 96,
+                   false);
 
         if (!fillBar)
             continue;
@@ -2166,6 +2189,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             contourB[i] = -contourA[juce::jmin(i, contourA.size() - 1)];
     }
     const bool contrastInSecondPhrase = true;
+    juce::ignoreUnused(contrastInSecondPhrase);
 
     const int numSegments = (bars + motifBars - 1) / motifBars;
     const int segmentsPerPhrase = juce::jmax(1, 4 / motifBars);
@@ -2192,14 +2216,20 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             if (position == 2)              contour = &contourA2;
             else if (position == 3)         { rhythm = &rhythmB; contour = &contourB; }
         }
-        else if (position == 1)
+        else
         {
-            contour = &contourA2;
-        }
-        else if (secondPhrase && contrastInSecondPhrase)
-        {
-            rhythm = &rhythmB;
-            contour = &contourB;
+            // 2-bar hook: call A, answer B, restate A, cadence B so the
+            // contour comes back every 4 bars without leaving the key.
+            if (position == 0)
+            {
+                rhythm = &rhythmA;
+                contour = &contourA;
+            }
+            else
+            {
+                rhythm = &rhythmB;
+                contour = &contourB;
+            }
         }
 
         Rhythm segmentRhythm = *rhythm;
@@ -2286,7 +2316,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const float energy = ctx.energyAt(start);
             const float density = ctx.densityAt(part, start);
             const bool trapLead = ctx.profile.genre == Genre::Trap && part == Part::Synth;
-            const bool hookHead = part == Part::Synth && k < 3 && (position == 0 || !secondPhrase);
+            const bool hookHead = part == Part::Synth && k < 4 && position == 0;
             juce::ignoreUnused(trapLead);
             if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
                 continue;
