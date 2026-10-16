@@ -2312,8 +2312,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const float energy = ctx.energyAt(start);
             const float density = ctx.densityAt(part, start);
             const bool trapLead = ctx.profile.genre == Genre::Trap && part == Part::Synth;
-            const bool hookHead = part == Part::Synth && k < 4 && position == 0;
-            juce::ignoreUnused(trapLead);
+            // Trap used to skip-protect the first phrase; dropping that shoved
+            // syncopation off the ref box (q10 80.9 → 64.4). Other genres keep
+            // the 4-note hook head on phrase downbeats only.
+            const bool hookHead = part == Part::Synth && (
+                trapLead ? (k < 3 && (position == 0 || !secondPhrase))
+                         : (k < 4 && position == 0));
             if (!hookHead && !syncPluck && !strong && !cadenceNote && uniform(rng) > 0.50 + 0.50 * energy * density)
                 continue;
             const double shortSkip = syncPluck ? 0.08 : (ctx.profile.genre == Genre::Trap ? 0.22 : 0.58);
@@ -2332,7 +2336,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
 
             pitch = foldIntoRange(pitch, role.low, role.high);
             // Piano-performance refs live around 66-70; keep the hook there.
-            while (pitch > 71 && pitch - 12 >= role.low)
+            // Trap plucks read thin above 70 and scored register_mean 61.
+            const int hookCeil = trapLead ? 70 : 71;
+            while (pitch > hookCeil && pitch - 12 >= role.low)
                 pitch -= 12;
             while (pitch < 60 && pitch + 12 <= role.high)
                 pitch += 12;
