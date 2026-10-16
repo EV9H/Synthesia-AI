@@ -93,6 +93,10 @@ Packaging/refund copy: `GETTING_STARTED.txt` inside the VST3 zip; license line s
 
 House/lo-fi chorus crash skipped (house drums 71.3 → **71.8**, matching q8). Cinematic piano arp 62–76 (piano 67.0 → **71.6**). Headline **76.8** loop-v1, legacy **76.5**. Gates green. Artifacts: `sell-q13-*_s7.{mp3,mid}`.
 
-## Next loop (q14+) if unblocked
+## sell-q14
 
-MIDI: lofi arrange 68.3 / chords 64.8; trap chords 58.0 are structurally capped vs piano refs — do not chase vocab. Do not retouch trap melody with 2-bar/sustain stacks. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
+Lo-fi arrangement: complementary piano (not unison comps), verse-only-X, hook restate on contour A (not inverted B), sustained two-hit pads, one inner-voice step. Arrange **68.3 → 77.4**. Chords **64.8 → 64.2** (held; short stabs walked back — bass_root error). Piano 81.7 → **84.6**, bass 75.8 → **80.9**, melody 69.3 → 66.6. Headline **76.8** loop-v1, legacy **76.2**. Hard gates green (two bass_root *warns*, no errors). Other genres unchanged. Artifacts: `sell-q14-*_s7.{mp3,mid}`.
+
+## Next loop (q15+) if unblocked
+
+MIDI: cinematic arrange 69.8 / overall 74.0; lofi melody 66.6. Trap chords 58.0 are structurally capped — do not chase vocab. Do not retouch trap melody with 2-bar/sustain stacks. Do not shorten lo-fi pad holds. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
