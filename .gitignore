@@ -57,3 +57,7 @@ __pycache__/
 
 # Generated eval clips may be large; keep report.md/json
 eval-reports/**/clips/
+
+# Offline stub keys are mintable by anyone; do not treat as production secrets.
+# Generate: Tools/make_license_key.sh
+Tools/sample_license.txt

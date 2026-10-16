@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harmonia — AI MIDI for your sounds</title>
+  <meta name="description" content="Harmonia is a VST3 MIDI generator. Describe a vibe or tap Inspire, get arrangement MIDI, drag it into your DAW and play it with your own sounds." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="aurora-bg" aria-hidden="true"></div>
+
+  <header>
+    <div class="wrap nav">
+      <a class="logo" href="#top" aria-label="Harmonia home">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <span data-brand>Harmonia</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" id="navToggle">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#demos">Demos</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a class="btn btn-primary nav-cta" href="#buy" data-checkout>Buy — $49</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero wrap">
+      <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> VST3 · MIDI generator · your sounds</p>
+      <h1>
+        Arrangement MIDI.<br />
+        <span class="gradient">Your instruments.</span>
+      </h1>
+      <p class="hero-lead">
+        <span data-brand>Harmonia</span> turns a short prompt — or one tap of Inspire — into genre-aware MIDI
+        you drag straight into your DAW. No baked-in sample pack. No fake “AI listening.” Just notes you own.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#buy" data-checkout>Get <span data-brand>Harmonia</span> — $49</a>
+        <a class="btn btn-ghost btn-lg" href="#demos">Hear preview demos</a>
+      </div>
+      <div class="hero-meta">
+        <span>One-time purchase</span>
+        <span>macOS &amp; Windows VST3</span>
+        <span>Drag MIDI into any DAW</span>
+      </div>
+      <div class="genre-pills" id="genrePills" aria-label="Supported genres"></div>
+    </section>
+
+    <!-- Demos -->
+    <section id="demos">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Preview demos</h2>
+          <p>
+            Rough preview renders so you can hear the MIDI shape. In the plugin you use
+            <strong>your</strong> piano, drums, and synths — these clips are not the product audio.
+          </p>
+        </div>
+        <div class="demos">
+          <article class="demo-card">
+            <div class="demo-top">
+              <span class="demo-label">Lo-fi</span>
+              <span class="demo-badge">MIDI preview</span>
+            </div>
+            <audio controls preload="none" src="demos/lofi.mp3">
+              Your browser does not support audio.
+            </audio>
+            <p class="demo-note">Dusty keys · soft hats · chilled progression</p>
+          </article>
+          <article class="demo-card">
+            <div class="demo-top">
+              <span class="demo-label">House</span>
+              <span class="demo-badge">MIDI preview</span>
+            </div>
+            <audio controls preload="none" src="demos/house.mp3">
+              Your browser does not support audio.
+            </audio>
+            <p class="demo-note">Four-on-the-floor · pad · dance bass</p>
+          </article>
+          <article class="demo-card">
+            <div class="demo-top">
+              <span class="demo-label">Trap</span>
+              <span class="demo-badge">MIDI preview</span>
+            </div>
+            <audio controls preload="none" src="demos/trap.mp3">
+              Your browser does not support audio.
+            </audio>
+            <p class="demo-note">808s · sparse piano · pluck lead</p>
+          </article>
+        </div>
+        <p class="demo-disclaimer">
+          Product ships MIDI files (and VST3 UI). Preview audio is illustrative only.
+        </p>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Built for the beat-maker workflow</h2>
+          <p>Modern, minimal UI. Advanced controls stay folded away until you need them.</p>
+        </div>
+        <div class="features">
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">✦</div>
+            <h3>Text → arrangement</h3>
+            <p>Describe mood, key, and energy. Get structured MIDI parts — drums, bass, chords, melody — not a random loop dump.</p>
+          </article>
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">◎</div>
+            <h3>Inspire, one click</h3>
+            <p>No blank-page syndrome. Tap Inspire for a mood-led idea with history and chips — then refine.</p>
+          </article>
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">♩</div>
+            <h3>Genre templates</h3>
+            <p>Pop, lo-fi, house, trap, R&amp;B, cinematic — each with its own drum language and harmonic vocabulary.</p>
+          </article>
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">↗</div>
+            <h3>Drag MIDI into your DAW</h3>
+            <p>960 PPQ MIDI out. Drop clips on your own tracks and play them with the sounds you already love.</p>
+          </article>
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">↻</div>
+            <h3>Per-part regenerate</h3>
+            <p>Keep the drums, reroll the melody. Lock what works; reinvent the rest without starting over.</p>
+          </article>
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">⌬</div>
+            <h3>Host sync</h3>
+            <p>Follows your DAW tempo and transport via AudioPlayHead — stays locked when you write.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>Three steps from idea to arrangement in your project.</p>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <h3>Prompt or Inspire</h3>
+            <p>Type a vibe, pick a genre, or hit Inspire. Optional: import MIDI and ask for accompaniment.</p>
+          </article>
+          <article class="step">
+            <h3>Shape the parts</h3>
+            <p>Humanize, regenerate one part at a time, tweak advanced options only if you want them.</p>
+          </article>
+          <article class="step">
+            <h3>Drag into the DAW</h3>
+            <p>Pull MIDI onto your tracks. Sound design stays yours — that is the product.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing / Lemon Squeezy -->
+    <section class="pricing-band" id="buy">
+      <div class="wrap">
+        <div class="price-card">
+          <p class="label">Lifetime license</p>
+          <p class="price-amount" data-price>$49</p>
+          <p class="price-note" data-price-note>one-time · own it forever</p>
+          <ul class="price-list">
+            <li>VST3 for macOS &amp; Windows</li>
+            <li>All genre templates</li>
+            <li>Text-to-arrangement + Inspire</li>
+            <li>Free updates in 1.x</li>
+            <li>License key via email</li>
+          </ul>
+          <!--
+            TODO(Lemon Squeezy): replace href="#" with your checkout URL from Lemon Squeezy
+            (Products → your product → Share → Checkout link). Keep data-lemonsqueezy for overlay JS if used.
+          -->
+          <a
+            class="btn btn-primary btn-lg"
+            href="#"
+            id="lemonCheckout"
+            data-checkout
+            data-lemonsqueezy
+            data-lemonsqueezy-comment="TODO: paste Lemon Squeezy checkout URL"
+          >Buy <span data-brand>Harmonia</span> — $49</a>
+          <p class="price-footnote">
+            Checkout powered by Lemon Squeezy (merchant of record). Secure payment · instant download.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>FAQ</h2>
+          <p>Straight answers. No vaporware claims.</p>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Is this an AI that listens to audio?</summary>
+            <p>
+              No. <span data-brand>Harmonia</span> is a <strong>MIDI generator</strong>. It plans and writes notes.
+              You hear them through whatever instruments you load in your DAW. Preview MP3s on this page are
+              illustrative renders only.
+            </p>
+          </details>
+          <details>
+            <summary>What do I get after purchase?</summary>
+            <p>
+              A download link and license key for the VST3 plugin (macOS / Windows). Install, activate, generate MIDI,
+              drag clips into your session.
+            </p>
+          </details>
+          <details>
+            <summary>Do I need an internet connection?</summary>
+            <p>
+              Text-to-arrangement and Inspire use a cloud LLM for the plan. Genre templates and MIDI editing work offline
+              once generated. Details ship with the installer notes.
+            </p>
+          </details>
+          <details>
+            <summary>Which DAWs?</summary>
+            <p>
+              Any host that loads VST3 and accepts dragged MIDI (Ableton Live, FL Studio, Logic via wrapper / AU roadmap,
+              Reaper, Cubase, Studio One, and similar). Always test the trial build in your host before buying when available.
+            </p>
+          </details>
+          <details>
+            <summary>Can I use the MIDI commercially?</summary>
+            <p>
+              Yes — MIDI you generate with a valid license is yours to use in commercial releases. Do not redistribute
+              the plugin itself.
+            </p>
+          </details>
+          <details>
+            <summary>Is this related to Synthesia?</summary>
+            <p>
+              No. The product is <strong>Harmonia</strong>, an AI MIDI generator for your DAW.
+              It is not affiliated with Synthesia Learning Co. or any piano-learning software of that name.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>
+          <p class="footer-brand" data-brand>Harmonia</p>
+          <p class="footer-muted">AI MIDI for your sounds. Boutique VST3 for producers who already have tone.</p>
+        </div>
+        <div class="footer-links">
+          <a href="#demos">Demos</a>
+          <a href="#buy">Buy</a>
+          <a href="mailto:hello@example.com" id="supportLink">Support</a>
+        </div>
+      </div>
+      <p class="tm-note">
+        <strong>Trademark:</strong> Harmonia is the product name for this MIDI generator. Not affiliated with Synthesia Learning Co. or any similarly named piano-learning software.</p>
+    </div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
