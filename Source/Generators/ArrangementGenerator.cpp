@@ -638,7 +638,6 @@ namespace
         auto* lead = parts.count(Part::Synth) ? &parts[Part::Synth] : nullptr;
         auto* piano = parts.count(Part::Piano) ? &parts[Part::Piano] : nullptr;
         auto* chords = parts.count(Part::Chords) ? &parts[Part::Chords] : nullptr;
-        auto* bass = parts.count(Part::Bass) ? &parts[Part::Bass] : nullptr;
 
         for (int win = 0; win * 2 < bars; ++win)
         {
@@ -649,8 +648,8 @@ namespace
             const int leadInCall = lead != nullptr ? countOnsets(*lead, callFrom, callTo) : 0;
             const int pianoInResp = piano != nullptr ? countOnsets(*piano, callTo, respTo) : 0;
 
-            // Call: lead speaks — piano and pads leave room.
-            if (leadInCall >= 2)
+            // Call: lead speaks — drop only piano ghosts and one inner pad voice.
+            if (leadInCall >= 3)
             {
                 if (piano != nullptr)
                     piano->erase(std::remove_if(piano->begin(), piano->end(),
@@ -658,31 +657,22 @@ namespace
                                                 {
                                                     if (n.start < callFrom || n.start >= callTo)
                                                         return false;
-                                                    return !isStrongBeat(n.start) && n.velocity < 90
-                                                        && n.length < 1.15;
+                                                    return !isStrongBeat(n.start) && n.velocity < 62
+                                                        && n.length < 0.55;
                                                 }),
                                  piano->end());
                 if (chords != nullptr)
-                    thinInnerVoices(*chords, callFrom, callTo, 2);
-                if (bass != nullptr && leadInCall >= 3)
-                    bass->erase(std::remove_if(bass->begin(), bass->end(),
-                                               [=](const ArrangementGenerator::PartNote& n)
-                                               {
-                                                   if (n.start < callFrom || n.start >= callTo)
-                                                       return false;
-                                                   return !isStrongBeat(n.start) && n.velocity < 86;
-                                               }),
-                                bass->end());
+                    thinInnerVoices(*chords, callFrom, callTo, 3);
             }
 
-            // Response: piano answers — lead rests off the strong beats.
-            if (pianoInResp >= 2 && lead != nullptr)
+            // Response: piano answers — drop short lead off-beats only.
+            if (pianoInResp >= 3 && lead != nullptr)
                 lead->erase(std::remove_if(lead->begin(), lead->end(),
                                            [=](const ArrangementGenerator::PartNote& n)
                                            {
                                                if (n.start < callTo || n.start >= respTo)
                                                    return false;
-                                               return !isStrongBeat(n.start) && n.length < 0.72;
+                                               return !isStrongBeat(n.start) && n.length < 0.40;
                                            }),
                             lead->end());
         }
@@ -692,7 +682,6 @@ namespace
     {
         auto* chords = parts.count(Part::Chords) ? &parts[Part::Chords] : nullptr;
         auto* piano = parts.count(Part::Piano) ? &parts[Part::Piano] : nullptr;
-        auto* lead = parts.count(Part::Synth) ? &parts[Part::Synth] : nullptr;
 
         for (int bar = 0; bar < bars; ++bar)
         {
@@ -702,30 +691,12 @@ namespace
                 continue;
 
             const double barStart = bar * 4.0;
-            const double cut = eightBar ? barStart + 3.0 : barStart + 2.0;
+            const double cut = barStart + 3.0;
             const double barEnd = barStart + 4.0;
             if (chords != nullptr)
                 muteWindow(*chords, cut, barEnd);
-            if (piano != nullptr && fourBar)
-            {
-                // Leave one accent as a fill; drop the rest of the last two beats.
-                bool keptAccent = false;
-                piano->erase(std::remove_if(piano->begin(), piano->end(),
-                                            [&](const ArrangementGenerator::PartNote& n)
-                                            {
-                                                if (n.start < cut || n.start >= barEnd)
-                                                    return false;
-                                                if (!keptAccent && (isStrongBeat(n.start) || n.velocity >= 88))
-                                                {
-                                                    keptAccent = true;
-                                                    return false;
-                                                }
-                                                return true;
-                                            }),
-                             piano->end());
-            }
-            if (lead != nullptr && eightBar)
-                muteWindow(*lead, cut + 0.5, barEnd);
+            if (piano != nullptr && eightBar)
+                muteWindow(*piano, cut, barEnd);
         }
     }
 
@@ -733,7 +704,7 @@ namespace
     {
         if (auto it = parts.find(Part::Chords); it != parts.end())
             for (auto& n : it->second)
-                while (n.pitch > 67 && n.pitch - 12 >= 48)
+                while (n.pitch > 70 && n.pitch - 12 >= 48)
                     n.pitch -= 12;
 
         if (auto it = parts.find(Part::Piano); it != parts.end())
@@ -1854,9 +1825,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateBrokenPiano(const 
         {
             const int bar = static_cast<int>(std::floor(beat / 4.0 + 1.0e-9));
             const int rotate = bar % 8;
-            const bool leadWindow = bar % 2 == 0;
-            if (leadWindow && index % 2 == 1)
-                continue;
             if (trapPiano && index % 7 == (bar % 7))
                 continue;
             const int velocity = index % 8 == 0 ? 96 : index % 2 == 0 ? 74 : 50;
@@ -2253,9 +2221,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             const double beatInTwoBars = std::fmod(start, 8.0);
             if (!cadenceNote && !syncPluck)
             {
-                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.55)
+                if (part == Part::Piano && beatInTwoBars < 4.0 && uniform(rng) < 0.42)
                     continue;
-                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.48)
+                if (part == Part::Synth && beatInTwoBars >= 4.0 && !strong && uniform(rng) < 0.36)
                     continue;
             }
 
