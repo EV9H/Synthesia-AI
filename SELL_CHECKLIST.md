@@ -101,6 +101,10 @@ Lo-fi arrangement: complementary piano (not unison comps), verse-only-X, hook re
 
 Cinematic: one pad stack per chord (not per-beat retrigger), ghost-free snares, one inner-voice step. Arrange **69.8 → 77.0**. Overall 74.0 → **74.2**. Chords 72.7 → 66.1, drums 83.6 → 73.0 (loop groove vs piano-ref trade), melody 70.5 → **76.8**, piano held 71.6 (verse arp skips walked back). Headline **76.8** loop-v1, legacy **75.9**, arrange **78.3**. Gates green. Artifacts: `sell-q15-*_s7.{mp3,mid}`.
 
-## Next loop (q16+) if unblocked
+## sell-q16
 
-MIDI still moving on arrange (75.6 → 78.3). Remaining weak parts: house drums 71.8, pop piano 69.2, lofi melody 66.6. Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.
+Product friction (headline stuck at 76.8; arrange already 78.3). GETTING_STARTED: greyed-out Generate → Settings paste path; Drag MIDI handle named. First-run tour + Generate tooltip say drag always works. Sell-site: license/Gatekeeper FAQs, “drag before key” on the price card, demos refreshed to q15 lofi/house/trap. MIDI unchanged. Artifacts copied as `sell-q16-*`.
+
+## Next loop (q17+) if unblocked
+
+MIDI: house drums 71.8, pop piano 69.2, lofi melody 66.6. Trap chords 58.0 capped — do not chase. Do not retouch trap melody with 2-bar/sustain. Do not shorten lo-fi pad holds. Do not per-beat retrigger cinematic pads. Human-only remaining: CF Pages, Lemon URL, Apple/Authenticode certs, real DAW drag.

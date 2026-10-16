@@ -1081,7 +1081,7 @@ FirstRunTour::FirstRunTour()
     };
     styleStep(step1, "1.  Pick a genre, or an Inspire seed for a finished plan.");
     styleStep(step2, "2.  Tap Generate. You get an 8-bar arrangement as MIDI.");
-    styleStep(step3, "3.  Drag MIDI into Ableton / Logic / FL. Load your piano.");
+    styleStep(step3, "3.  Drag the Drag MIDI handle into your DAW. Load your piano.");
     addAndMakeVisible(step1);
     addAndMakeVisible(step2);
     addAndMakeVisible(step3);
@@ -1122,7 +1122,7 @@ void FirstRunTour::setNeedsLicense(bool needsLicense)
     licenseNote.setVisible(needsLicense);
     openSettings.setVisible(needsLicense);
     licenseNote.setText(needsLicense
-                            ? "Paid copy: paste your HRM- key in Settings. Drag MIDI still works."
+                            ? "Paid copy: Settings → paste HRM-XXXXXXXX-CCCC. Generate needs the key; drag always works."
                             : "",
                         juce::dontSendNotification);
     resized();
@@ -2733,6 +2733,9 @@ void SynthesiaAIEditor::updateUIState()
     dragAllButton.setReady(hasMidi && !busy);
     const bool licensed = audioProcessor.isLicensed() || !LicenseStub::enforceGenerate();
     generateButton.setEnabled(!busy && licensed);
+    generateButton.setTooltip(licensed
+        ? "Write an 8-bar MIDI loop. Drag it into your DAW after."
+        : "Paste your HRM- key in Settings to Generate. Drag MIDI always works.");
     inspireButton.setEnabled(!busy && licensed);
     inspireSeedCombo.setEnabled(!busy && licensed);
     againButton.setEnabled(!busy);
