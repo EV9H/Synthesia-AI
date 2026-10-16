@@ -792,8 +792,7 @@ namespace
             {
                 while (n.pitch > 71 && n.pitch - 12 >= 60)
                     n.pitch -= 12;
-                // Leave 58–59 (lo-fi lead floor) — a +12 jump was parking mean at 72.
-                while (n.pitch < 58 && n.pitch + 12 <= 71)
+                while (n.pitch < 60 && n.pitch + 12 <= 71)
                     n.pitch += 12;
             }
         }
@@ -2366,16 +2365,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
 
             pitch = foldIntoRange(pitch, role.low, role.high);
             // Piano-performance refs live around 66-70; keep the hook there.
-            // Lo-fi profile is 58–70. Raising 58–59 by an octave parked the
-            // mean at 72 (register 64). Do not fold-69 (that tanked q18).
-            const bool lofiLead = ctx.profile.genre == Genre::LoFiJazz && part == Part::Synth;
-            if (!lofiLead)
-            {
-                while (pitch > 71 && pitch - 12 >= role.low)
-                    pitch -= 12;
-                while (pitch < 60 && pitch + 12 <= role.high)
-                    pitch += 12;
-            }
+            while (pitch > 71 && pitch - 12 >= role.low)
+                pitch -= 12;
+            while (pitch < 60 && pitch + 12 <= role.high)
+                pitch += 12;
 
             const int velocity = juce::roundToInt((role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0))
                                                   * (0.55f + 0.45f * energy));
