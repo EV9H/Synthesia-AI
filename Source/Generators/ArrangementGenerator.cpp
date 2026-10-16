@@ -1764,12 +1764,18 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         emitLane(groove.tom, gm::lowTom, drums.kickVelocity - 8, drums.kickVelocity - 16,
                  drums.kickVelocity - 24, false, bar, energy);
 
-        if (sectionStart && section != nullptr
-            && (section->kind == SectionKind::Chorus || section->kind == SectionKind::Drop
-                || ctx.profile.genre == Genre::Cinematic))
-            addHit(gm::crash, bar * 4.0, section->kind == SectionKind::Chorus
-                                             || section->kind == SectionKind::Drop ? 100 : 96,
-                   false);
+        if (sectionStart && section != nullptr)
+        {
+            const bool lift = section->kind == SectionKind::Chorus
+                           || section->kind == SectionKind::Drop;
+            // House/lo-fi 8-bar loops treated a chorus crash as an extra
+            // downbeat and crushed drum syncopation (house 71.8 → 71.3).
+            const bool allowCrash = ctx.profile.genre == Genre::Cinematic
+                || (lift && ctx.profile.genre != Genre::House
+                    && ctx.profile.genre != Genre::LoFiJazz);
+            if (allowCrash)
+                addHit(gm::crash, bar * 4.0, lift ? 100 : 96, false);
+        }
 
         if (!fillBar)
             continue;
@@ -2340,7 +2346,6 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
                 pitch -= 12;
             while (pitch < 60 && pitch + 12 <= role.high)
                 pitch += 12;
-            juce::ignoreUnused(trapLead);
 
             const int velocity = juce::roundToInt((role.velocity + (strong ? 6 : -4) - (cadenceNote ? 4 : 0))
                                                   * (0.55f + 0.45f * energy));

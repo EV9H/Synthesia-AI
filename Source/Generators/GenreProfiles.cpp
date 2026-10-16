@@ -273,7 +273,7 @@ namespace
         p.leadMelody.intervalWeights = { 0.2, 0.3, 0.5, 0.9, 1.5, 2.0, 1.2, 2.0, 1.5, 0.9, 0.5, 0.3, 0.2 };
 
         p.pianoStyle = PianoStyle::Arpeggio;
-        p.pianoArp = { 58, 72, { arpRolling, arpSkip, arpUpDown }, 0.88, 74 };
+        p.pianoArp = { 62, 76, { arpRolling, arpSkip, arpUpDown }, 0.88, 74 };
 
         p.drums.grooves = {
             { "X..x....X..x....", ".g..X.g..g..X.g.", "", ".x...x.x...x....", "", "........x......." },
