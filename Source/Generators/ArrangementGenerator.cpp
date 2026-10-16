@@ -2216,20 +2216,16 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateMelody(const Conte
             if (position == 2)              contour = &contourA2;
             else if (position == 3)         { rhythm = &rhythmB; contour = &contourB; }
         }
-        else
+        else if (position == 1)
         {
-            // 2-bar hook: call A, answer B, restate A, cadence B so the
-            // contour comes back every 4 bars without leaving the key.
-            if (position == 0)
-            {
-                rhythm = &rhythmA;
-                contour = &contourA;
-            }
-            else
-            {
-                rhythm = &rhythmB;
-                contour = &contourB;
-            }
+            // Vary the hook ending, not a full inverted restatement — exact
+            // 4-bar copies trip repeat_4 / variation_8 vs piano-performance refs.
+            contour = &contourA2;
+        }
+        else if (secondPhrase)
+        {
+            rhythm = &rhythmB;
+            contour = &contourB;
         }
 
         Rhythm segmentRhythm = *rhythm;

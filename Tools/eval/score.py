@@ -25,6 +25,13 @@ KEY_WEIGHTS = {
     "transition_entropy": 0.25,
 }
 
+# A restated 4-bar hook is the product. Piano-performance unique-every-bar
+# is the wrong target for synth on an 8-bar loop.
+SYNTH_KEY_WEIGHTS = {
+    "repeat_4": 0.35,
+    "variation_8": 0.35,
+}
+
 # Features where being near the reference median is "pro".
 COMPARE_KEYS = {
     "drums": (
@@ -180,7 +187,9 @@ def _band_score(value: float, lo: float, hi: float, ideal: float | None = None) 
     return float(np.clip(80.0 - (value - hi) / span * 40.0, 18.0, 80.0))
 
 
-def _key_weight(key: str) -> float:
+def _key_weight(key: str, part: str = "") -> float:
+    if part == "synth" and key in SYNTH_KEY_WEIGHTS:
+        return float(SYNTH_KEY_WEIGHTS[key])
     return float(KEY_WEIGHTS.get(key, 1.0))
 
 
@@ -195,7 +204,7 @@ def score_part(feats: dict[str, float], genre: str, part: str, stats: dict[str, 
         ref = _ref_array(stats, genre, part, key)
         s = _percentile_score(float(feats[key]), ref, key)
         per[key] = round(s, 1)
-        w = _key_weight(key)
+        w = _key_weight(key, part)
         weighted.append((s, w))
         equal.append(s)
     overall = float(np.average([s for s, w in weighted], weights=[w for s, w in weighted])) if weighted else 50.0
