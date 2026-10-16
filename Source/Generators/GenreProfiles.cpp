@@ -79,9 +79,7 @@ namespace
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;
-        // Density 0.60 / rest 0.26: more onsets than 0.50/0.36 (onset ~0.89
-        // scores 37 vs piano-ref p10 1.74). Do not delay rhythm A or fold-69.
-        p.leadMelody = { 58, 70, 0.60, 0.52, 0.26, 0.34, 2, true, false, 80 };
+        p.leadMelody = { 58, 70, 0.50, 0.52, 0.36, 0.34, 2, true, false, 80 };
         p.leadMelody.intervalWeights = { 0.1, 0.2, 0.4, 0.9, 1.6, 2.4, 1.4, 2.4, 1.6, 0.9, 0.4, 0.2, 0.1 };
 
         p.pianoStyle = PianoStyle::Comp;

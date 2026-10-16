@@ -129,6 +129,10 @@ Tried pop broken piano 102/74/46 (not the banned 108/32 stack). Piano **69.2 →
 
 Pop broken piano compressed to 92/74/56 with humanise-only (no downbeat accents). Piano **69.2 → 76.6** (vel_std 24 → 15, score 57 → 98). Pop **79.5 → 80.5**. Headline **77.2** loop-v1, legacy **76.5**, arrange **78.3**. Gates green. Other genres held. Artifacts: `sell-q22-*_s7.{mp3,mid}`.
 
-## Next loop (q23+) if unblocked
+## sell-q23
 
-MIDI: lofi melody 66.6 (onset ~0.89 score 37; not rhythm-A / fold-69 / 58-raise), cinematic drums 73.0 (sparse ghosts walked back), trap chords 58.0 (do not chase vocab). Do not widen pop piano (32–108 and 102/46 both failed; compress won). Do not chase lofi bass_root snap/root-insert. Trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
+Tried lo-fi lead onset-fill (density 0.60, keep weak notes, drop the second-bar skip). Melody **66.6 → 72.1** but arrange **77.3 → 73.5**; genre held 73.3, headline held 77.2. Walked back — loop synth band 0.70±0.40 vs piano-ref p10 1.74. MIDI = q22. Headline **77.2**. Artifacts: `sell-q23-*_s7.{mp3,mid}`.
+
+## Next loop (q24+) if unblocked
+
+MIDI: cinematic drums 73.0 (not sparse ghosts; anticipated backbeats untried), lofi melody 66.6 (onset-fill walked back; not rhythm-A / fold-69). Trap chords 58.0 (do not chase vocab). Do not widen pop piano. Do not chase lofi bass_root. Trap 2-bar-sustain / short lofi holds / per-beat cinematic pads / house 8th hats still forbidden. Human-only: CF Pages, Lemon URL, certs, real DAW drag.
