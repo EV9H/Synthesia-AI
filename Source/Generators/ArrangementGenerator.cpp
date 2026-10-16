@@ -496,7 +496,8 @@ namespace
 
     int scaleMove(const std::vector<int>& scale, int pitch, int delta);
 
-    void addInnerVoiceMotion(Notes& notes, const std::vector<int>& scale, std::mt19937& rng)
+    void addInnerVoiceMotion(Notes& notes, const std::vector<int>& scale, std::mt19937& rng,
+                            int maxPerStack = 8)
     {
         if (notes.size() < 3)
             return;
@@ -537,7 +538,8 @@ namespace
             int currentPitch = inner.pitch;
             int dir = uniform(rng) < 0.5 ? 1 : -1;
             bool first = true;
-            for (double motionAt = start + 1.0; motionAt < tail - 0.35; motionAt += 1.0)
+            int added = 0;
+            for (double motionAt = start + 1.0; motionAt < tail - 0.35 && added < maxPerStack; motionAt += 1.0)
             {
                 int moved = scaleMove(scale, currentPitch, dir);
                 if (moved == currentPitch)
@@ -579,6 +581,7 @@ namespace
                                    juce::jmax(0.35, juce::jmin(1.0, tail - motionAt) - 0.02),
                                    juce::jlimit(1, 127, inner.velocity - 4) });
                 currentPitch = moved;
+                ++added;
             }
         }
 
@@ -1162,13 +1165,11 @@ GenerationResult ArrangementGenerator::generateArrangement(const MidiGenerationP
 
         if (part == Part::Chords || part == Part::Piano)
         {
-            // Lo-fi pads already hold; extra inner-voice onsets crush density_chords.
-            const bool skipInner = part == Part::Chords && profile.genre == Genre::LoFiJazz;
-            if (!skipInner)
-            {
-                const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
-                addInnerVoiceMotion(notes, padScale, rng);
-            }
+            // One inner-voice step on lo-fi pads: full motion crushed density,
+            // none zeroed voice_leading on long holds.
+            const int maxInner = (part == Part::Chords && profile.genre == Genre::LoFiJazz) ? 1 : 8;
+            const auto padScale = scalePitches(params.rootNote, params.scale, 48, 88);
+            addInnerVoiceMotion(notes, padScale, rng, maxInner);
         }
 
         if (part != Part::Drums)
@@ -1314,11 +1315,7 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
             const double nextHit = hitIndex + 1 < hits.size()
                 ? bar * 4.0 + hits[hitIndex + 1].step * stepBeats
                 : (bar + 1) * 4.0;
-            // Lo-fi pads keep the written stab length. Extending to the next
-            // hit made 3 of 4 beat-center VL samples identical (score 25).
-            double length = hit.length * stepBeats;
-            if (!(ctx.profile.genre == Genre::LoFiJazz && part == Part::Chords))
-                length = juce::jmax(length, nextHit - start);
+            double length = juce::jmax(hit.length * stepBeats, nextHit - start);
             int index = chordIndexAt(progression, start);
 
             bool anticipated = false;

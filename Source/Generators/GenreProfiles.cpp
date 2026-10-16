@@ -67,9 +67,9 @@ namespace
                                 { "67 2h 5D 19 47 1 2h 5D" }, { "1 47 7 3 27 5D 19 67" } };
 
         p.chordStyle = ChordStyle::Comping;
-        // Short two-hit comps, same 4-note stacks. Full-bar holds zeroed VL
-        // (0.9) and stamped variation_8 (verse X == chorus X on a 4-chord loop).
-        p.chordPatterns = { "X---....x---....", "X--.....x--.....", "X---......x--...", "X-..........x---" };
+        // Sustained two-hit comps (4-note stacks). A lone full-bar hold stamps
+        // variation_8; short stabs tripped bass_root_conflict (q7 lesson).
+        p.chordPatterns = { "X-------x-------", "X-----------x---", "X-----x-........", "X-----x-------x-" };
         p.chordVoicing = { 58, 72, 4, false, false };
 
         p.bassStyle = BassStyle::Walking;
