@@ -138,10 +138,12 @@ namespace
         p.pianoVoicing = { 60, 76, 3, false, false };
 
         p.drums.grooves = {
-            { "X...X...X...X...", "", "....X.......X...", "x..xx...x..x.x..", "..x...x...x...x.", "" },
-            { "X...X...X...X.x.", "", "....X.......X...", ".x.x.x..x..x....", "..x...x...x...x.", "" },
-            { "X...X...X...X...", "", "....X.......X...", "x...x.x.x.x.x...", "......x.......x.", "" },
-            { "X...X...X...X...", "", "....X.....x.X...", "x.x.x...x...x.x.", "..x...x...x.....", "" },
+            // Closed hats live on e/a 16ths, not a straight 8th grid (that
+            // crushed house drums). Off-beats lift syncopation (s23 was 8.0).
+            { "X...X...X...X...", "", "....X.......X...", ".x.x..x..x.x..x.", "..x...x...x...x.", "" },
+            { "X...X...X...X.x.", "", "....X.......X...", "x..x.x..x..x.x..", "..x...x...x...x.", "" },
+            { "X...X...X...X...", "", "....X.......X...", ".x..x.x..x.x..x.", "......x.......x.", "" },
+            { "X...X...X...X...", "", "....X.....x.X...", "..x.x..x.x..x.x.", "..x...x...x.....", "" },
         };
         p.drums.hatSwing = 0.50;
         p.drums.humanizeMs = 9.0;

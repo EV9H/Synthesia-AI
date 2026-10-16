@@ -1799,8 +1799,9 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         switch (ctx.profile.genre)
         {
             case Genre::House:
-                addHit(gm::clap, fillStart, 78, false);
-                addHit(gm::clap, fillStart + 0.5, 86, false);
+                // Off-beat claps only — a beat-4 downbeat clap flattened sync.
+                addHit(gm::clap, fillStart + 0.25, 78, false);
+                addHit(gm::clap, fillStart + 0.75, 86, false);
                 addHit(gm::kick, fillEnd - 0.25, drums.kickVelocity, false);
                 break;
             case Genre::Trap:
@@ -1834,7 +1835,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                 break;
         }
 
-        if (liftComing && bar + 1 < bars)
+        // House/lo-fi: a chorus-downbeat crash from the fill path is the
+        // same extra on-beat that crushed syncopation when sectionStart fired.
+        if (liftComing && bar + 1 < bars
+            && ctx.profile.genre != Genre::House
+            && ctx.profile.genre != Genre::LoFiJazz)
             addHit(gm::crash, (bar + 1) * 4.0, 100, false);
     }
 
