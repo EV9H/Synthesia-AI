@@ -889,6 +889,16 @@ float ArrangementGenerator::Context::densityAt(Part part, double beat) const
             case Part::All:    d = section->energy; break;
         }
     }
+    // House verse: thin piano / synth only (mute map). Do not touch
+    // chords, bass, or drums — q29–q30 voicing/rhythm levers stay banned.
+    if (params.genre == Genre::House && section != nullptr
+        && section->kind == SectionKind::Verse)
+    {
+        if (part == Part::Piano)
+            d = juce::jmin(d, 0.18f);
+        else if (part == Part::Synth)
+            d = juce::jmin(d, 0.28f);
+    }
     if (params.density > 0.01f)
         d = juce::jlimit(0.05f, 1.0f, 0.4f * d + 0.6f * params.density);
     return d;
