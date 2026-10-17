@@ -1024,6 +1024,16 @@ std::vector<SectionInfo> ArrangementGenerator::buildForm(Genre genre, Arrangemen
     {
         if (safeBars >= 8)
         {
+            // House 8-bar loops: 2-bar sparse intro then a drop, not a
+            // flat verse/chorus split (q30). Other genres unchanged.
+            if (genre == Genre::House)
+            {
+                const int intro = 2;
+                return {
+                    makeSection(SectionKind::Intro, 0.0, intro, 1),
+                    makeSection(SectionKind::Drop, intro * 4.0, safeBars - intro, 1)
+                };
+            }
             const int first = safeBars / 2;
             const int second = safeBars - first;
             return {
