@@ -264,6 +264,18 @@ House **77.5 → 77.7**, chords held **74.9**, arrange **77.5 → 79.0**, drums 
 
 House is still structurally capped vs piano-ref chord vocab on 8-bar loops. Rhythm / inversion levers keep cliffing chords.
 
-## Next loop (q31+) if unblocked
+## sell-q31
 
-Do not retry q29 inversions, q30 bed-skip, open voicing, 2+2 pattern swap, or intro/drop 8-bar form. Remaining code productize is thin (preset names, drag-handle). Human blockers above unchanged.
+House-only, off the chord-voicing path. q30 bass bounce + Night House seed kept.
+
+| Lever | House | Chords | Arrange | Drums | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Kick-only dropout + fill every 8 + late/human clap | 77.7 | 74.9 | 79.2 | 80.7 | kept |
+| Verse piano/synth density mute | **78.6** | **74.9** | **84.4** | 80.7 | **kept** |
+| Extra bass ghosts | — | — | — | — | skipped |
+
+House **77.7 → 78.6**, chords held, arrange **79.0 → 84.4**, drums 81.0 → 80.7, gates green. Headline stays ~**77.2** (full suite not re-run). **Stop house loops for sell** — chords capped; arrangement mute maps took the last free point.
+
+## Next loop (q32+) if unblocked
+
+Do not retry house voicing, stab rhythm, pad-bed, intro/drop form, or further house score chase. Remaining code productize is thin (preset names, drag-handle). Human blockers above unchanged.
