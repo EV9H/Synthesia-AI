@@ -3,30 +3,34 @@ Harmonia — unsigned zip smoke test (2 minutes)
 This zip is unsigned. macOS Gatekeeper and Windows SmartScreen will warn.
 That is expected until the developer signs the installer. It is not malware.
 
-macOS
-1. Unzip. You get "Synthesia AI.vst3" plus GETTING_STARTED.txt.
-2. If Gatekeeper blocks: right-click the .vst3 → Open
-   (or System Settings → Privacy & Security → Open Anyway).
-3. Copy Synthesia AI.vst3 into ~/Library/Audio/Plug-Ins/VST3/
-4. Rescan plugins in your DAW.
+The DAW lists **Harmonia**. The folder on disk is still "Synthesia AI.vst3".
 
-Windows
+macOS (Gatekeeper)
+1. Unzip. You are in Harmonia/ next to Synthesia AI.vst3 and INSTALL.md.
+2. Right-click Synthesia AI.vst3 → Open (confirm the dialog).
+   Or System Settings → Privacy & Security → Open Anyway.
+3. Copy Synthesia AI.vst3 into ~/Library/Audio/Plug-Ins/VST3/
+4. Rescan. Live: Preferences → Plug-Ins. Reaper: Preferences → VST.
+
+Windows (SmartScreen)
 1. Unzip.
 2. If SmartScreen warns: More info → Run anyway.
 3. Copy the .vst3 folder into C:\Program Files\Common Files\VST3\
-4. Rescan.
+4. Rescan. FL: Options → Manage plugins. Cubase: VST Plug-in Manager.
+   Studio One: Options → Locations.
+
+Per-DAW folders and Logic-via-wrapper: INSTALL.md in this zip.
 
 Then in the DAW
 1. Insert Harmonia on a MIDI / instrument track.
-2. Pick a genre → Generate (or pick an Inspire seed).
+2. Pick a genre → Generate (or an Inspire seed).
    If Generate needs a key: tap it — Settings opens. Paste
-   HRM-XXXXXXXX-CCCC (or hit Paste) → Validate. Spaces and a
-   "License:" prefix are stripped.
-3. Drag the handle labelled "Drag MIDI" into the DAW (not the piano-roll).
+   HRM-XXXXXXXX-CCCC (or hit Paste) → Validate.
+3. Drag the handle labelled "Drag MIDI" (not the piano-roll).
 4. Load YOUR piano, bass, and drums. Route channel 10 to a drum kit.
 
-You should see five tracks: Chords (ch 1), Bass (ch 2), Synth (ch 3),
+Five tracks: Chords (ch 1), Bass (ch 2), Synth (ch 3),
 Piano (ch 4), Drums (ch 10 / GM). Preview audio is a cheap sketch.
 
-If that path fails, email support before leaving a 1-star review.
-Display name: Harmonia. Bundle id is still SynthesiaAI until a dedicated rename.
+If that path fails, use the support address on your receipt — do not
+1-star because the preview piano is thin or the OS warned on unsigned.

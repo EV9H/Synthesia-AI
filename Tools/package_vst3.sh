@@ -55,6 +55,7 @@ cp -R "$VST3" "$bundle/"
 cp "$ROOT/Tools/GETTING_STARTED.txt" "$bundle/GETTING_STARTED.txt"
 cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$bundle/UNSIGNED_SMOKE.txt"
 cp "$ROOT/Tools/LICENSE_NOTE.txt" "$bundle/LICENSE.txt"
+cp "$ROOT/Tools/INSTALL.md" "$bundle/INSTALL.md"
 (
     cd "$stage"
     zip -r -q "$out" Harmonia

@@ -34,10 +34,11 @@
     }
   });
 
-  // Support email
+  // Support email (placeholder until TODO in config.js is replaced)
   const support = document.getElementById("supportLink");
   if (support && site.supportEmail) {
     support.setAttribute("href", "mailto:" + site.supportEmail);
+    support.textContent = site.supportEmail;
   }
 
   // Genre pills

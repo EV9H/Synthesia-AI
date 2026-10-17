@@ -305,7 +305,7 @@ private:
     juce::Label step4;
     juce::Label licenseNote;
     juce::TextButton gotIt { "Got it" };
-    juce::TextButton generateNow { "Generate a loop" };
+    juce::TextButton generateNow { "Generate, then drag MIDI" };
     juce::TextButton openSettings { "Open Settings" };
 };
 

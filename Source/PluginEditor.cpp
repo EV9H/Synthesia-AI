@@ -964,7 +964,7 @@ void TrackLanes::paint(juce::Graphics& g)
     {
         g.setColour(Theme::label);
         g.setFont(Theme::medium(16.0f));
-        g.drawText("Generate MIDI, then drag it into your DAW.",
+        g.drawText("Tap Generate, then drag MIDI into your DAW.",
                    getLocalBounds().translated(0, -22), juce::Justification::centred);
         g.setColour(Theme::dimText);
         g.setFont(Theme::regular(13.0f));
@@ -1080,9 +1080,9 @@ FirstRunTour::FirstRunTour()
         label.setJustificationType(juce::Justification::centredLeft);
     };
     styleStep(step1, "1.  Pick a genre, or an Inspire seed for a finished plan.");
-    styleStep(step2, "2.  Tap Generate. You get an 8-bar arrangement as MIDI.");
+    styleStep(step2, "2.  Tap Generate. Five tracks: Chords, Bass, Synth, Piano, Drums ch 10.");
     styleStep(step3, "3.  Drag the Drag MIDI handle into your DAW (not the piano-roll).");
-    styleStep(step4, "4.  Load YOUR piano / bass / drums. Preview is a sketch.");
+    styleStep(step4, "4.  Load YOUR sounds. Preview piano is a sketch, not the product.");
     addAndMakeVisible(step1);
     addAndMakeVisible(step2);
     addAndMakeVisible(step3);
@@ -1158,7 +1158,7 @@ void FirstRunTour::resized()
         card.removeFromTop(8);
     }
     auto row = card.removeFromBottom(40);
-    generateNow.setBounds(row.removeFromRight(150));
+    generateNow.setBounds(row.removeFromRight(196));
     row.removeFromRight(8);
     if (openSettings.isVisible())
     {

@@ -16,7 +16,7 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 - Offline license mint: `Tools/make_license_key.sh` → writes `HRM-XXXXXXXX-CCCC`. A local sample may exist at `Tools/sample_license.txt` (**gitignored**). Do not commit Lemon/production secrets.
 - Plugin stub: Settings → License key + Validate. Shipping gate: `cmake -DHARMONIA_LICENSE_ENFORCE=1`
 - First-run tour + empty-state: generate → drag MIDI into the DAW. Preview is labelled a sketch. Paid builds: Open Settings from the tour; drag still works without a key.
-- Zip includes `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, and `LICENSE.txt` inside a `Harmonia/` folder (`Tools/package_vst3.sh`).
+- Zip includes `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, and `LICENSE.txt` inside a `Harmonia/` folder (`Tools/package_vst3.sh`).
 - MIDI export smoke: `Tools/verify_midi_export.py` (960 PPQ, named parts, drums ch 10).
 - Inspire factory seeds: combo still auto-generates. Keep at least one seed per shipping genre.
 - Eval honesty: headline is `loop-v1` (legacy column still reported so q8 **75.4** stays comparable).
@@ -26,7 +26,7 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 1. **Cloudflare Pages is not live.** Site files are in `sell-site/` (Privacy, Terms, Download section). **YOU** still connect Git.
    - CF → Workers & Pages → Create → Connect Git → `EV9H/Synthesia-AI`
    - Framework: None. Build command: empty. Output directory: **`sell-site`**
-   - Custom domain, then set `supportEmail` in `sell-site/config.js` (still `hello@example.com`)
+   - Custom domain, then set `supportEmail` in `sell-site/config.js` (placeholder `support@harmonia.todo` — not a live inbox)
 
 2. **Lemon Squeezy product does not exist.** Checkout button is `href="#"` until you paste a URL. Follow **Lemon Squeezy — finish in 30 minutes** below. Payouts / tax onboarding is on you. **Do not put Lemon API keys in the repo.**
 
@@ -111,7 +111,7 @@ You do **not** need a webhook to take money. Path A+B is enough.
 ### E. 5-minute smoke after A–C
 
 1. Test-mode checkout → you receive a key + zip.
-2. Unzip `Harmonia/` → `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
+2. Unzip `Harmonia/` → `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
 3. Load in a DAW (or Standalone) → tap Generate → paste key → Validate.
 4. Drag MIDI → confirm five tracks and drums on ch 10. Or: `Tools/verify_midi_export.py some.mid`
 
@@ -214,6 +214,39 @@ Buyer zip: `package_vst3.sh` now stages `Harmonia/{Synthesia AI.vst3,GETTING_STA
 
 Lemon “finish in 30 minutes” wired in this file (checkout URL, `https://api.lemonsqueezy.com/v1/licenses/validate`, optional webhook). Stub POSTs form-encoded `license_key` and accepts `"valid":true` / `"status":"active"`. First-run tour is a 4-step checklist; empty state names the five tracks + ch 10. MIDI = q22. Headline **77.2**, arrange **78.3**, gates green. Artifacts: `sell-q28-*`.
 
-## Next loop (q29+) if unblocked
+## sell-q29
 
-Do not chase banned MIDI levers. Human-only: CF Pages, Lemon product + checkout URL, signed certs, real DAW drag, live support email, real Privacy/Terms operator, Lemon receipt copy. MIDI headline remains **77.2**.
+Productize (no full-score chase). Zip docs: one-page `INSTALL.md` (Gatekeeper / SmartScreen + Live/FL/Reaper/Cubase/Studio One / Logic-via-wrapper) always copied next to the plugin. Tour CTA is “Generate, then drag MIDI”; empty state names five tracks + ch 10. Sell-site hero/FAQ: MIDI for YOUR DAW sounds, not a synth; unsigned warning; $49 one-time; refunds via Lemon once live. Support placeholder `support@harmonia.todo` (not a live inbox). Privacy/Terms stay stubs with an “Operator details TBA before launch” banner.
+
+House MIDI add-on (user: house too blocky): house stabs use per-bar smooth inversions (prefer 1st/2nd, common-tone VL) instead of per-hit invert spins. Inspire house seeds: Night / Warehouse (seed 23) / Rolling (seed 41) / Anthem; factory house seeds set `grooveIndex` from the seed. Light house-only eval — do not reopen a multi-genre score chase. If the lever fails gates or house overall, revert.
+
+### Code-side done vs human-blocked
+
+| Item | Status |
+| --- | --- |
+| Buyer zip `Harmonia/{plugin, INSTALL.md, GETTING_STARTED, UNSIGNED_SMOKE, LICENSE}` | **Code done** |
+| Per-DAW VST3 drop paths + Gatekeeper / SmartScreen copy | **Code done** |
+| First-run 4-step tour + empty-state five tracks / ch 10 + Generate-then-drag CTA | **Code done** |
+| License paste UI; offline `HRM-` works; Lemon validate optional | **Code done** |
+| Sell-site hero/FAQ (not a synth, $49, unsigned, Lemon refunds) | **Code done** (not deployed) |
+| Support email | **Human** — `support@harmonia.todo` is a marked placeholder |
+| Privacy / Terms operator name + address | **Human** — stubs + TBA banner only |
+| Cloudflare Pages connect Git / custom domain | **Human-blocked** |
+| Lemon product + checkout URL in `config.js` | **Human-blocked** |
+| Lemon receipt copy | **Human-blocked** |
+| Apple / Authenticode signing | **Human-blocked** |
+| Real DAW drag smoke (Live / FL / Reaper) | **Human-blocked** (`verify_midi_export.py` is the automated stand-in) |
+| Bundle rename Synthesia AI → Harmonia | Not a launch blocker (display name is Harmonia) |
+
+Human 30-min path (unchanged, still required to take money):
+
+1. Cloudflare Pages → Connect Git → output `sell-site`
+2. Lemon product $49 one-time + license keys → paste checkout URL into `config.js`
+3. Replace `support@harmonia.todo` with a real inbox
+4. Operator legal name/address on Privacy + Terms
+5. Sign Mac/Win builds (commands in `package_vst3.sh`)
+6. DAW smoke: right-click Open / SmartScreen → rescan → Generate → drag MIDI → load YOUR sounds
+
+## Next loop (q30+) if unblocked
+
+Do not chase banned MIDI levers. Remaining pure-code productize is thin (preset names, drag-handle affordance). Default: **code-side sellable; waiting on human blockers** above. MIDI headline remains **77.2** unless the house-only eval moved house.
