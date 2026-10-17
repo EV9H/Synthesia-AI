@@ -124,9 +124,11 @@ namespace
         p.chordVoicing = { 55, 79, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
-        p.bassPatterns = { "..R-..R-......R-", "R-......R-..R-..", "..R-..R-..R-....", "R-......R---A---" };
+        // Same pool size. Offbeats bounce fifth/octave under a locked root
+        // (q30). bassHigh 48 so O can land without folding back to root.
+        p.bassPatterns = { "..R-..F-......O-", "R-......O-..F-..", "..R-..F-..R-....", "R-......R---A---" };
         p.bassLow = 33;
-        p.bassHigh = 45;
+        p.bassHigh = 48;
         p.slideChance = 0.0;
 
         p.leadStyle = LeadStyle::Melody;

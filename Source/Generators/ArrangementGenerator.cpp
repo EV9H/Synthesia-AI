@@ -1300,18 +1300,12 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                 hasDownbeat = true;
         if (!hasDownbeat)
         {
-            // House: even bars keep a short held bed; odd bars are chops only
-            // so 8-bar loops alternate hold vs stab (q30). Do not skip every
-            // bed — that starved density_chords in a probe. Other genres unchanged.
-            if (ctx.profile.genre != Genre::House || (bar % 2) == 0)
-            {
-                const auto& bed = voicingForBar[static_cast<size_t>(bar)];
-                const float bedEnergy = ctx.energyAt(bar * 4.0);
-                for (int pitch : bed)
-                    notes.push_back({ pitch, bar * 4.0, 0.48,
-                                      humanise(juce::roundToInt(58 * (0.45f + 0.55f * bedEnergy)), rng, 3) });
-                leading = bed;
-            }
+            const auto& bed = voicingForBar[static_cast<size_t>(bar)];
+            const float bedEnergy = ctx.energyAt(bar * 4.0);
+            for (int pitch : bed)
+                notes.push_back({ pitch, bar * 4.0, 0.48,
+                                  humanise(juce::roundToInt(58 * (0.45f + 0.55f * bedEnergy)), rng, 3) });
+            leading = bed;
         }
 
         for (size_t hitIndex = 0; hitIndex < hits.size(); ++hitIndex)
