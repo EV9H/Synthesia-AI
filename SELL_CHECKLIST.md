@@ -218,7 +218,7 @@ Lemon “finish in 30 minutes” wired in this file (checkout URL, `https://api.
 
 Productize (no full-score chase). Zip docs: one-page `INSTALL.md` (Gatekeeper / SmartScreen + Live/FL/Reaper/Cubase/Studio One / Logic-via-wrapper) always copied next to the plugin. Tour CTA is “Generate, then drag MIDI”; empty state names five tracks + ch 10. Sell-site hero/FAQ: MIDI for YOUR DAW sounds, not a synth; unsigned warning; $49 one-time; refunds via Lemon once live. Support placeholder `support@harmonia.todo` (not a live inbox). Privacy/Terms stay stubs with an “Operator details TBA before launch” banner.
 
-House MIDI add-on (user: house too blocky): house stabs use per-bar smooth inversions (prefer 1st/2nd, common-tone VL) instead of per-hit invert spins. Inspire house seeds: Night / Warehouse (seed 23) / Rolling (seed 41) / Anthem; factory house seeds set `grooveIndex` from the seed. Light house-only eval — do not reopen a multi-genre score chase. If the lever fails gates or house overall, revert.
+House MIDI add-on (user: house too blocky): tried smooth 1st/2nd inversions (per-bar lock, then per-hit VL pick). Gates stayed green, but house **77.5 → 76.1 / 75.3** and chords **74.9 → 63.8**. **Walked back** — do not retry forced house inversions. Landed instead: Inspire house seeds Night / **Warehouse** (seed 23, D minor) / **Rolling** (seed 41, F minor) / Anthem; factory house seeds set `grooveIndex` from the seed. Shipped house MIDI = q22. Headline **77.2**, arrange **78.3**.
 
 ### Code-side done vs human-blocked
 
