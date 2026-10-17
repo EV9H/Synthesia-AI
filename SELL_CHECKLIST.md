@@ -247,6 +247,23 @@ Human 30-min path (unchanged, still required to take money):
 5. Sign Mac/Win builds (commands in `package_vst3.sh`)
 6. DAW smoke: right-click Open / SmartScreen → rescan → Generate → drag MIDI → load YOUR sounds
 
-## Next loop (q30+) if unblocked
+## sell-q30
 
-Do not chase banned MIDI levers. Remaining pure-code productize is thin (preset names, drag-handle affordance). Default: **code-side sellable; waiting on human blockers** above. MIDI headline remains **77.2** unless the house-only eval moved house.
+House-only (no site/CF/Lemon). q29 inversion locks still banned.
+
+| Lever | House | Chords | Decision |
+| --- | ---: | ---: | --- |
+| Odd-bar pad-bed skip | 76.9 | 72.8 | reverted |
+| Bass octave/fifth bounce + `bassHigh` 48 | **77.7** | **74.9** | **kept** |
+| Open/drop-2 voicing | 77.7 | 71.4 | reverted |
+| 2+2 / 1+3 stab patterns | 77.5 | 70.3 | reverted |
+| Intro(2)+Drop(6) 8-bar form | 75.3 | 74.6 | reverted (melody 66.2) |
+| Night House seed `67 4 1 5D` density 0.58 | — | — | kept (Inspire only) |
+
+House **77.5 → 77.7**, chords held **74.9**, arrange **77.5 → 79.0**, drums **81.0**, gates green. Headline stays **77.2**. Artifacts: `sell-q30-house_s7.{mid,mp3}` (after) + q22 before + Warehouse seed.
+
+House is still structurally capped vs piano-ref chord vocab on 8-bar loops. Rhythm / inversion levers keep cliffing chords.
+
+## Next loop (q31+) if unblocked
+
+Do not retry q29 inversions, q30 bed-skip, open voicing, 2+2 pattern swap, or intro/drop 8-bar form. Remaining code productize is thin (preset names, drag-handle). Human blockers above unchanged.
