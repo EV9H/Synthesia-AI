@@ -85,6 +85,56 @@ namespace
         return voicing;
     }
 
+    double houseVoicingMove(const std::vector<int>& from, const std::vector<int>& to)
+    {
+        if (from.empty() || to.empty())
+            return 0.0;
+        double cost = 0.0;
+        const size_t n = std::min(from.size(), to.size());
+        for (size_t i = 0; i < n; ++i)
+            cost += std::abs(from[i] - to[i]);
+        cost += 4.0 * std::abs(static_cast<int>(from.size()) - static_cast<int>(to.size()));
+        return cost;
+    }
+
+    // House stabs: keep common-tone voice leading, lift root-position blocks
+    // to 1st/2nd inversion. invertDiatonic stays in-key.
+    std::vector<int> houseSmoothInvert(std::vector<int> voicing,
+                                       const std::vector<int>& previous,
+                                       const theory::VoicingOptions& options,
+                                       const ChordInfo& chord)
+    {
+        if (voicing.size() < 3)
+            return voicing;
+
+        std::vector<std::vector<int>> candidates;
+        candidates.push_back(voicing);
+        auto once = invertDiatonic(voicing, options);
+        auto twice = invertDiatonic(once, options);
+        candidates.push_back(std::move(once));
+        candidates.push_back(std::move(twice));
+
+        std::vector<int> best = voicing;
+        double bestScore = 1.0e9;
+        for (const auto& cand : candidates)
+        {
+            if (cand.empty())
+                continue;
+            double score = previous.empty() ? 0.0 : houseVoicingMove(previous, cand);
+            if (cand.front() % 12 == chord.rootPitchClass)
+                score += 18.0;
+            if (!previous.empty())
+                score += 0.35 * std::abs(cand.back() - previous.back());
+            if (score < bestScore)
+            {
+                bestScore = score;
+                best = cand;
+            }
+        }
+        dropMinorSeconds(best);
+        return best;
+    }
+
     std::mt19937 streamFor(unsigned int seed, unsigned int stream)
     {
         std::seed_seq sequence{ seed, stream, 0x5eedu };
@@ -1281,6 +1331,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
         voicingForBar[static_cast<size_t>(bar)] =
             theory::voiceChord(progression[static_cast<size_t>(index)], previous, voicingOptions, rng);
         dropMinorSeconds(voicingForBar[static_cast<size_t>(bar)]);
+        if (ctx.profile.genre == Genre::House)
+            voicingForBar[static_cast<size_t>(bar)] =
+                houseSmoothInvert(voicingForBar[static_cast<size_t>(bar)], previous, voicingOptions,
+                                  progression[static_cast<size_t>(index)]);
         previous = voicingForBar[static_cast<size_t>(bar)];
     }
 
@@ -1350,14 +1404,32 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generatePatternChords(
                                : hit.symbol == 'g' ? baseVelocity - 25
                                                    : baseVelocity) * (0.40f + 0.60f * energy));
 
-            std::vector<int> voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
-                                                         leading, voicingOptions, rng);
-            dropMinorSeconds(voicing);
-            // Cycle inversions by bar so 8-bar loops stay unique without a 2-bar stamp.
-            // Keep per-bar spins on lo-fi: (bar/2)%2 stamped variation_8 to 0.875.
-            const int spins = (bar + static_cast<int>(hitIndex)) % 3;
-            for (int i = 0; i < spins; ++i)
-                voicing = invertDiatonic(voicing, voicingOptions);
+            std::vector<int> voicing;
+            if (ctx.profile.genre == Genre::House)
+            {
+                // One inversion per bar — house stabs stay locked, not spun per hit.
+                voicing = voicingForBar[static_cast<size_t>(bar)];
+                const int barChord = chordIndexAt(progression, bar * 4.0);
+                if (index != barChord)
+                {
+                    voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
+                                                 leading, voicingOptions, rng);
+                    dropMinorSeconds(voicing);
+                    voicing = houseSmoothInvert(voicing, leading, voicingOptions,
+                                                progression[static_cast<size_t>(index)]);
+                }
+            }
+            else
+            {
+                voicing = theory::voiceChord(progression[static_cast<size_t>(index)],
+                                             leading, voicingOptions, rng);
+                dropMinorSeconds(voicing);
+                // Cycle inversions by bar so 8-bar loops stay unique without a 2-bar stamp.
+                // Keep per-bar spins on lo-fi: (bar/2)%2 stamped variation_8 to 0.875.
+                const int spins = (bar + static_cast<int>(hitIndex)) % 3;
+                for (int i = 0; i < spins; ++i)
+                    voicing = invertDiatonic(voicing, voicingOptions);
+            }
             dropMinorSeconds(voicing);
             leading = voicing;
             size_t from = 0;

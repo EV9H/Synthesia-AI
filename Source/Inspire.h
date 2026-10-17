@@ -306,6 +306,12 @@ inline const std::vector<InspireSeedSpec>& inspireFactorySeeds()
         { "house-night", "Night House", Genre::House, InspireMood::Dark,
           0, ScaleType::Minor, 124, "1 5D 67 4", "straight", 0.40f,
           ArrangementForm::Loop, 8, 7 },
+        { "house-warehouse", "Warehouse House", Genre::House, InspireMood::Chill,
+          2, ScaleType::Minor, 122, "1 4 1 4s4", "straight", 0.36f,
+          ArrangementForm::Loop, 8, 23 },
+        { "house-rolling", "Rolling House", Genre::House, InspireMood::Happy,
+          5, ScaleType::Minor, 126, "67 4s4 1 5D", "straight", 0.62f,
+          ArrangementForm::Loop, 8, 41 },
         { "trap-chrome", "Chrome Trap", Genre::Trap, InspireMood::Dark,
           0, ScaleType::Minor, 140, "1 67 4 5D", "sparse", 0.38f,
           ArrangementForm::Loop, 8, 7 },
@@ -347,6 +353,12 @@ inline InspireIdea inspireIdeaFromSeed(const InspireSeedSpec& spec)
     idea.params.lockProgression = true;
     idea.params.progression.clear();
     idea.params.grooveIndex = 0;
+    if (spec.genre == Genre::House)
+    {
+        const int nGrooves = (int) getGenreProfile(Genre::House).drums.grooves.size();
+        if (nGrooves > 0)
+            idea.params.grooveIndex = (int) (spec.seed % (unsigned int) nGrooves);
+    }
     idea.params.seed = spec.seed;
     idea.params.density = spec.density;
     idea.params.motifRhythm = spec.rhythm;
