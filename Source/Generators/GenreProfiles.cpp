@@ -121,7 +121,9 @@ namespace
 
         p.chordStyle = ChordStyle::Stabs;
         p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
-        p.chordVoicing = { 55, 79, 4, false, false };
+        // Open/drop-2 allowed (cinematic already uses this). Does not force
+        // inversion class — q29 1st/2nd lock is still banned.
+        p.chordVoicing = { 55, 79, 4, false, true };
 
         p.bassStyle = BassStyle::Pattern;
         // Same pool size. Offbeats bounce fifth/octave under a locked root
