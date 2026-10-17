@@ -120,10 +120,10 @@ namespace
         p.minorProgressions = { { "1 67 3 7" }, { "1 5D 67 4" }, { "1 4 1 4s4" }, { "67 4 1 5D" } };
 
         p.chordStyle = ChordStyle::Stabs;
-        p.chordPatterns = { "..x-..x-..x-..x-", "..x..x....x..x..", "..x-..x-..x..x..", "x-..x-..x-..x-.." };
-        // Open/drop-2 allowed (cinematic already uses this). Does not force
-        // inversion class — q29 1st/2nd lock is still banned.
-        p.chordVoicing = { 55, 79, 4, false, true };
+        // Same pool size. Swap two static offbeat loops for 2+2 quarters
+        // and a 1+3 stab (q30 rhythm, no bed skip).
+        p.chordPatterns = { "..x-..x-..x-..x-", "x---x---x---x---", "..x-..x-..x..x..", "x-----------x-.." };
+        p.chordVoicing = { 55, 79, 4, false, false };
 
         p.bassStyle = BassStyle::Pattern;
         // Same pool size. Offbeats bounce fifth/octave under a locked root
