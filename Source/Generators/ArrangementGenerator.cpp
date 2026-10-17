@@ -1704,15 +1704,22 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
         t += msToBeats(drums.laidBackMs);
         if (isHat)
             t += msToBeats(drums.hatLagMs);
+        // House claps sit a hair late so 2-and-4 doesn't stack on the kick.
+        if (ctx.profile.genre == Genre::House && pitch == gm::clap)
+            t += msToBeats(11.0);
         const double humanize = ctx.params.humanizeMs > 0.0 ? ctx.params.humanizeMs : drums.humanizeMs;
-        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(humanize);
+        const double clapHuman = (ctx.profile.genre == Genre::House && pitch == gm::clap)
+            ? humanize + 5.0 : humanize;
+        t += (uniform(rng) * 2.0 - 1.0) * msToBeats(clapHuman);
         t = juce::jmax(0.0, t);
 
         if (pitch == gm::closedHat || pitch == gm::pedalHat)
             chokeOpen(t);
 
+        const int velSpread = (ctx.profile.genre == Genre::House && pitch == gm::clap)
+            ? 18 : (isHat ? 14 : 10);
         notes.push_back({ pitch, t, length > 0.0 ? length : drumLength(pitch),
-                          playedVelocity(velocity, t, rng, isHat ? 14 : 10), false, bend });
+                          playedVelocity(velocity, t, rng, velSpread), false, bend });
     };
 
     auto emitLane = [&](const std::string& pattern, int pitch, int accentVel,
@@ -1761,7 +1768,11 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                              && nextSection->kind != section->kind
                              && (nextSection->kind == SectionKind::Chorus
                                  || nextSection->kind == SectionKind::Drop);
-        const bool fillBar = liftComing || (bar % 4 == 3);
+        // House: fill every 8 bars only. The every-4th fill sat on the
+        // verse-end dropout and either vanished or cluttered the 2-and-4 clap.
+        const bool fillBar = ctx.profile.genre == Genre::House
+            ? (bar % 8 == 7)
+            : (liftComing || (bar % 4 == 3));
 
         if (!drums.lockKickToBass)
             emitLane(groove.kick, gm::kick, drums.kickVelocity, drums.kickVelocity - 8,
@@ -1861,6 +1872,10 @@ ArrangementGenerator::PartNotes ArrangementGenerator::generateDrums(const Contex
                                    {
                                        if (n.start < muteFrom || n.start >= muteTo)
                                            return false;
+                                       // House: mute kick only — keep the 2-and-4 clap so
+                                       // the breakdown doesn't kill the groove (q31).
+                                       if (ctx.profile.genre == Genre::House)
+                                           return n.pitch == gm::kick;
                                        return n.pitch == gm::kick || n.pitch == gm::snare
                                            || n.pitch == gm::clap || n.pitch == gm::eSnare;
                                    }),
