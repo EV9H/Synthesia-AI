@@ -304,7 +304,7 @@ inline const std::vector<InspireSeedSpec>& inspireFactorySeeds()
           0, ScaleType::Major, 84, "27 5 19 67", "sparse", 0.34f,
           ArrangementForm::Loop, 8, 7 },
         { "house-night", "Night House", Genre::House, InspireMood::Dark,
-          0, ScaleType::Minor, 124, "1 5D 67 4", "straight", 0.40f,
+          0, ScaleType::Minor, 124, "67 4 1 5D", "straight", 0.58f,
           ArrangementForm::Loop, 8, 7 },
         { "house-warehouse", "Warehouse House", Genre::House, InspireMood::Chill,
           2, ScaleType::Minor, 122, "1 4 1 4s4", "straight", 0.36f,
