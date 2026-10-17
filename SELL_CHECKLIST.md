@@ -276,6 +276,29 @@ House-only, off the chord-voicing path. q30 bass bounce + Night House seed kept.
 
 House **77.7 → 78.6**, chords held, arrange **79.0 → 84.4**, drums 81.0 → 80.7, gates green. Headline stays ~**77.2** (full suite not re-run). **Stop house loops for sell** — chords capped; arrangement mute maps took the last free point.
 
-## Next loop (q32+) if unblocked
+## sell-q32
 
-Do not retry house voicing, stab rhythm, pad-bed, intro/drop form, or further house score chase. Remaining code productize is thin (preset names, drag-handle). Human blockers above unchanged.
+Thin productize only. **House / MIDI score loops are stopped** (q31 house 78.6, chords structurally capped). Do not reopen genre levers.
+
+- Inspire + factory presets: buyer labels are `Genre · Mood` (e.g. `House · Dark`, `Pop · Happy`). Descriptions say Harmonia writes MIDI for YOUR sounds.
+- Drag MIDI handle: idle copy is “Generate first”; ready is “Drag MIDI into DAW”; hover is “Drop on a MIDI track”; tooltip names the DAW MIDI track (not the piano-roll). Wider hit target.
+- Empty state + tour + status: name the bottom-left Drag MIDI handle. Tour step 1 mentions Harmonia plans.
+
+### Code-side done vs human-blocked (q32)
+
+| Item | Status |
+| --- | --- |
+| House MIDI score chase | **Stopped** — house 78.6 / chords ~74.9 cap. Do not reopen. |
+| Headline MIDI (other genres) | **Stopped** — shipped q22 headline **77.2**. Do not chase. |
+| Inspire / preset buyer labels | **Code done** |
+| Drag-to-DAW handle + empty-state CTA | **Code done** |
+| First-run tour / install zip docs / sell-site copy | **Code done** (site not deployed) |
+| Support email | **Human** — `support@harmonia.todo` placeholder |
+| Privacy / Terms operator | **Human** — stubs + TBA banner |
+| Cloudflare Pages | **Human-blocked** |
+| Lemon product + checkout URL | **Human-blocked** |
+| Lemon receipt copy | **Human-blocked** |
+| Apple / Authenticode signing | **Human-blocked** |
+| Real DAW drag smoke | **Human-blocked** |
+
+**Code-side sellable; waiting on human blockers.** Human 30-min path: CF Pages → Lemon $49 + checkout URL → real support inbox → operator legal → sign builds → DAW smoke.

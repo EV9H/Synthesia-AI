@@ -709,6 +709,8 @@ void DragHandle::setReady(bool r)
 {
     ready = r;
     setMouseCursor(ready ? juce::MouseCursor::DraggingHandCursor : juce::MouseCursor::NormalCursor);
+    setTooltip(ready ? "Drag this part onto a MIDI track in your DAW"
+                     : "Generate first, then drag this part into your DAW");
     repaint();
 }
 
@@ -738,21 +740,27 @@ void LabeledDrag::setReady(bool r)
 {
     ready = r;
     setMouseCursor(ready ? juce::MouseCursor::DraggingHandCursor : juce::MouseCursor::NormalCursor);
+    setTooltip(ready
+                   ? "Drag this Harmonia MIDI onto a MIDI track in your DAW — not the piano-roll."
+                   : "Tap Generate first. Then drag this handle into your DAW.");
     repaint();
 }
 
 void LabeledDrag::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat().reduced(0.5f);
-    g.setColour(ready ? (hovered ? Theme::panel.brighter(0.12f) : Theme::panel) : Theme::clipBackground);
+    g.setColour(ready ? (hovered ? Theme::accent.withAlpha(0.22f) : Theme::panel) : Theme::clipBackground);
     g.fillRoundedRectangle(bounds, 10.0f);
-    g.setColour(Theme::outline);
-    g.drawRoundedRectangle(bounds, 10.0f, 1.0f);
+    g.setColour(ready ? (hovered ? Theme::accent : Theme::outline) : Theme::outline);
+    g.drawRoundedRectangle(bounds, 10.0f, ready && hovered ? 1.6f : 1.0f);
     auto icon = getLocalBounds().removeFromLeft(36).toFloat();
     drawIcon(g, IconKind::Drag, icon, ready ? Theme::accent : Theme::outline);
     g.setColour(ready ? Theme::label : Theme::dimText);
-    g.setFont(Theme::medium(13.5f));
-    g.drawText("Drag MIDI", getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
+    g.setFont(Theme::medium(13.0f));
+    const char* label = !ready ? "Generate first"
+                       : hovered ? "Drop on a MIDI track"
+                                 : "Drag MIDI into DAW";
+    g.drawText(label, getLocalBounds().withTrimmedLeft(32), juce::Justification::centredLeft, false);
 }
 
 void LabeledDrag::mouseDown(const juce::MouseEvent&) { dragging = false; }
@@ -785,7 +793,7 @@ TrackLanes::TrackLanes()
         lane->mute.onClick = [this, part]() { if (onMute) onMute(part); };
         lane->regen.onClick = [this, part]() { if (onRegen) onRegen(part); };
         lane->drag.onDrag = [this, part]() { if (onDrag) onDrag(part); };
-        lane->drag.setTooltip("Drag this part's MIDI into your DAW");
+        lane->drag.setTooltip("Drag this part onto a MIDI track in your DAW");
         lanes.push_back(std::move(lane));
     }
     setReady(false);
@@ -964,13 +972,13 @@ void TrackLanes::paint(juce::Graphics& g)
     {
         g.setColour(Theme::label);
         g.setFont(Theme::medium(16.0f));
-        g.drawText("Tap Generate, then drag MIDI into your DAW.",
+        g.drawText("Tap Generate, then drag the Drag MIDI handle into your DAW.",
                    getLocalBounds().translated(0, -22), juce::Justification::centred);
         g.setColour(Theme::dimText);
         g.setFont(Theme::regular(13.0f));
-        g.drawText("Preview is a sketch — play the notes with your own piano.",
+        g.drawText("Preview is a sketch — play the notes with YOUR piano, bass, and drums.",
                    getLocalBounds().translated(0, 0), juce::Justification::centred);
-        g.drawText("Chords · Bass · Synth · Piano · Drums (ch 10). Tap Generate or Inspire.",
+        g.drawText("Chords · Bass · Synth · Piano · Drums (ch 10). Handle is bottom-left.",
                    getLocalBounds().translated(0, 22), juce::Justification::centred);
         return;
     }
@@ -1079,9 +1087,9 @@ FirstRunTour::FirstRunTour()
         label.setColour(juce::Label::textColourId, Theme::label);
         label.setJustificationType(juce::Justification::centredLeft);
     };
-    styleStep(step1, "1.  Pick a genre, or an Inspire seed for a finished plan.");
+    styleStep(step1, "1.  Pick a genre, or a Harmonia plan (genre · mood) from Inspire.");
     styleStep(step2, "2.  Tap Generate. Five tracks: Chords, Bass, Synth, Piano, Drums ch 10.");
-    styleStep(step3, "3.  Drag the Drag MIDI handle into your DAW (not the piano-roll).");
+    styleStep(step3, "3.  Drag the orange Drag MIDI handle (bottom left) into your DAW.");
     styleStep(step4, "4.  Load YOUR sounds. Preview piano is a sketch, not the product.");
     addAndMakeVisible(step1);
     addAndMakeVisible(step2);
@@ -1304,14 +1312,14 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     moreButton.onClick = [this]() { setMoreOpen(!moreOpen); };
     addAndMakeVisible(moreButton);
 
-    inspireSeedCombo.addItem("Inspire seed...", 1);
+    inspireSeedCombo.addItem("Harmonia plans...", 1);
     {
         int id = 2;
         for (const auto& seed : inspireFactorySeeds())
             inspireSeedCombo.addItem(seed.label, id++);
     }
     inspireSeedCombo.setSelectedId(1, juce::dontSendNotification);
-    inspireSeedCombo.setTooltip("One-click plans. Picking a seed generates MIDI you can drag into your DAW.");
+    inspireSeedCombo.setTooltip("One-click Harmonia plans (genre · mood). Picking one writes MIDI you drag into your DAW.");
     inspireSeedCombo.onChange = [this]()
     {
         if (!audioProcessor.isGenerating())
@@ -1340,7 +1348,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     addAndMakeVisible(trackLanes);
 
     dragAllButton.onDrag = [this]() { startExternalMidiDrag(Part::All); };
-    dragAllButton.setTooltip("Drag the full MIDI arrangement into your DAW");
+    dragAllButton.setTooltip("Tap Generate first. Then drag this handle onto a MIDI track.");
     addAndMakeVisible(dragAllButton);
 
     previewButton.onClick = [this]()
@@ -1351,7 +1359,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
 
     statusLabel.setColour(juce::Label::textColourId, Theme::dimText);
     statusLabel.setFont(Theme::regular(13.0f));
-    statusLabel.setText("Pick a genre, tap Generate, then drag MIDI into your DAW.",
+    statusLabel.setText("Pick a genre, tap Generate, then drag the Drag MIDI handle into your DAW.",
                         juce::dontSendNotification);
     addAndMakeVisible(statusLabel);
 
@@ -1435,7 +1443,7 @@ SynthesiaAIEditor::SynthesiaAIEditor(SynthesiaAIProcessor& p)
     };
     pianoRegen.onClick = [this]() { onRegeneratePart(Part::Piano, false); };
     pianoDrag.onDrag = [this]() { startExternalMidiDrag(Part::Piano); };
-    pianoDrag.setTooltip("Drag the piano MIDI into your DAW");
+    pianoDrag.setTooltip("Drag the piano part onto a MIDI track in your DAW");
     addMore(pianoMute);
     addMore(pianoRegen);
     addMore(pianoDrag);
@@ -1990,13 +1998,13 @@ void SynthesiaAIEditor::resized()
     secondary.removeFromLeft(10);
     moreButton.setBounds(secondary.removeFromLeft(150));
     secondary.removeFromLeft(10);
-    inspireSeedCombo.setBounds(secondary.removeFromRight(168));
+    inspireSeedCombo.setBounds(secondary.removeFromRight(180));
 
     area.removeFromTop(14);
     statusLabel.setBounds(area.removeFromBottom(20));
     area.removeFromBottom(8);
     auto transport = area.removeFromBottom(40);
-    dragAllButton.setBounds(transport.removeFromLeft(128));
+    dragAllButton.setBounds(transport.removeFromLeft(176));
     transport.removeFromLeft(10);
     previewButton.setBounds(transport.removeFromLeft(40));
 
