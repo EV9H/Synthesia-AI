@@ -99,22 +99,25 @@ public:
     {
         const auto trimmed = sanitiseKey(key);
         if (trimmed.isEmpty())
-            return { false, "Paste a license key (HRM-XXXXXXXX-CCCC)." };
+            return { false, "Paste HRM-XXXXXXXX-CCCC (offline, no internet) or a Lemon key. Drag MIDI always works." };
 
         if (offlineKeyValid(trimmed))
-            return { true, "Valid offline key. Generate is unlocked. Drag MIDI always works." };
+            return { true, "Valid offline HRM- key. Works without internet. Generate unlocked. Drag MIDI always works." };
 
         if (trimmed.startsWith(prefix))
-            return { false, "HRM- key checksum failed. Paste the full HRM-XXXXXXXX-CCCC line from your receipt, then Validate." };
+        {
+            if (trimmed.length() < 17)
+                return { false, "Invalid HRM- key (too short). Need HRM-XXXXXXXX-CCCC from your receipt or Tools/make_license_key.sh." };
+            return { false, "Invalid HRM- key (checksum). Re-copy the full line — no extra spaces. Offline keys never expire." };
+        }
 
         auto url = urlIn.trim();
         if (url.isEmpty())
             url = defaultValidateUrl().trim();
         if (url.isEmpty())
-            return { false, "Not a valid offline key. Set HARMONIA_LICENSE_VALIDATE_URL or a Lemon validate URL in Settings." };
+            return { false, "Not an offline HRM- key. Lemon validate is optional and not set. Mint HRM- with Tools/make_license_key.sh, or paste a receipt key." };
 
         // Lemon Squeezy /v1/licenses/validate expects form-encoded license_key.
-        // JSON is still accepted as a response body ("valid": true).
         juce::URL request(url);
         const auto body = "license_key=" + juce::URL::addEscapeChars(trimmed, true);
         request = request.withPOSTData(body);
@@ -126,9 +129,16 @@ public:
                                                     .withConnectionTimeoutMs(4000)
                                                     .withStatusCode(&status));
         if (stream == nullptr)
-            return { false, "Lemon validate URL unreachable (placeholder). Offline key still required." };
+            return { false, "License URL unreachable (offline). Paste an HRM- key instead — those validate on this machine." };
 
         const auto response = stream->readEntireStreamAsString();
+        if (response.containsIgnoreCase("expired")
+            || response.containsIgnoreCase("\"status\":\"expired\""))
+            return { false, "Expired (Lemon). Ask for a refund or a new key. Offline HRM- keys do not expire." };
+        if (response.containsIgnoreCase("disabled")
+            || response.containsIgnoreCase("inactive"))
+            return { false, "Disabled / inactive (Lemon). Contact support on your receipt. Offline HRM- still works if you have one." };
+
         const bool ok = status == 200
             && (response.containsIgnoreCase("\"licensed\":true")
                 || response.containsIgnoreCase("\"valid\":true")
@@ -136,7 +146,7 @@ public:
                 || response.containsIgnoreCase("\"status\":\"valid\"")
                 || response.containsIgnoreCase("\"status\":\"active\""));
         if (ok)
-            return { true, "Validated against license URL." };
-        return { false, "License URL rejected the key (HTTP " + juce::String(status) + ")." };
+            return { true, "Validated online. Generate unlocked. Drag MIDI always works." };
+        return { false, "Invalid key (HTTP " + juce::String(status) + "). Check the paste. Offline HRM-XXXXXXXX-CCCC still works without this URL." };
     }
 };

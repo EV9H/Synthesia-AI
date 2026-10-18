@@ -8,11 +8,15 @@ Display name in the DAW: **Harmonia**. The VST3 folder on disk is still
 
 You should see a `Harmonia/` folder:
 
+- `README.txt` — this is Harmonia
 - `Synthesia AI.vst3` — the plugin (appears as Harmonia)
 - `GETTING_STARTED.txt` — 30-second generate → drag
 - `UNSIGNED_SMOKE.txt` — Gatekeeper / SmartScreen
-- `LICENSE.txt` — key / drag-always-works
+- `LICENSE.txt` — trial vs HRM- key
 - `INSTALL.md` — this page
+
+This unsigned zip is a **trial**: Generate and Drag MIDI work with no key
+and no timer. A paid key is optional until Lemon checkout exists.
 
 ## macOS (Gatekeeper)
 

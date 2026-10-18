@@ -111,7 +111,7 @@ You do **not** need a webhook to take money. Path A+B is enough.
 ### E. 5-minute smoke after A–C
 
 1. Test-mode checkout → you receive a key + zip.
-2. Unzip `Harmonia/` → `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
+2. Unzip `Harmonia/` → `README.txt`, `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
 3. Load in a DAW (or Standalone) → tap Generate → paste key → Validate.
 4. Drag MIDI → confirm five tracks and drums on ch 10. Or: `Tools/verify_midi_export.py some.mid`
 
@@ -302,3 +302,33 @@ Thin productize only. **House / MIDI score loops are stopped** (q31 house 78.6, 
 | Real DAW drag smoke | **Human-blocked** |
 
 **Code-side sellable; waiting on human blockers.** Human 30-min path: CF Pages → Lemon $49 + checkout URL → real support inbox → operator legal → sign builds → DAW smoke.
+
+## sell-q33
+
+Productize only (no MIDI / house score, no CF/Lemon accounts).
+
+- License paste: distinct invalid / checksum / expired / unreachable / offline-OK copy. Placeholder says offline HRM-.
+- Trial is documented honestly: this unsigned zip unlocks Generate + Drag MIDI with **no key and no timer**. Paid `ENFORCE=1` locks Generate only. No fake countdown.
+- Operator mint: `Tools/make_license_key.sh` one-liner in the script and LICENSE.txt.
+- Sell-site FAQ: trial before pay, offline keys, invalid/expired, Logic wrapper, DAWs. `support@harmonia.todo` stays a TODO.
+- Zip: `README.txt` so the folder reads as Harmonia; bundle on disk stays `Synthesia AI.vst3`.
+
+### Code-side done vs human-blocked (q33)
+
+| Item | Status |
+| --- | --- |
+| House / headline MIDI chase | **Stopped** (house 78.6, headline 77.2) |
+| Trial zip (Generate + drag, no key) | **Code done** — documented; not time-limited |
+| Offline HRM- paste + error copy | **Code done** |
+| Operator `make_license_key.sh` | **Code done** |
+| FAQ objections (static site) | **Code done** (not deployed) |
+| Zip docs say Harmonia | **Code done** (binary folder still Synthesia AI.vst3) |
+| Support email | **Human** — `support@harmonia.todo` |
+| Privacy / Terms operator | **Human** |
+| Cloudflare Pages | **Human-blocked** |
+| Lemon product + checkout URL | **Human-blocked** |
+| Lemon receipt copy | **Human-blocked** |
+| Signing | **Human-blocked** |
+| Real DAW drag smoke | **Human-blocked** |
+
+Nothing meaningful left code-side for taking money. **Code-side sellable; waiting on human blockers.**

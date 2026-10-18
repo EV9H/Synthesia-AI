@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Print a valid offline Harmonia stub key (HRM-XXXXXXXX-CCCC).
-# No Lemon secret. Shipping Lemon keys come from the Lemon product later.
+# Operator mint — before Lemon checkout is live:
+#   Tools/make_license_key.sh
+# Prints one offline HRM-XXXXXXXX-CCCC. Email that line to a tester.
+# No Lemon secret. Offline keys never expire and never leave the plugin.
 set -euo pipefail
 payload="$(python3 - <<'PY'
 import hashlib, os, time

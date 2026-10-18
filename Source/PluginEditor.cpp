@@ -1132,7 +1132,7 @@ void FirstRunTour::setNeedsLicense(bool needsLicense)
     licenseNote.setVisible(needsLicense);
     openSettings.setVisible(needsLicense);
     licenseNote.setText(needsLicense
-                            ? "Paid copy: tap Generate to open Settings and paste HRM-XXXXXXXX-CCCC. Drag always works."
+                            ? "Paid build: tap Generate → paste HRM-XXXXXXXX-CCCC (offline OK). Drag MIDI always works."
                             : "",
                         juce::dontSendNotification);
     resized();
@@ -2349,7 +2349,8 @@ void SynthesiaAIEditor::onGenerateClicked()
 {
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
-        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        statusLabel.setText("Paid build: paste HRM-XXXXXXXX-CCCC in Settings (offline OK). Drag MIDI still works.",
+                            juce::dontSendNotification);
         openSettings();
         return;
     }
@@ -2371,7 +2372,8 @@ void SynthesiaAIEditor::onInspireClicked()
 {
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
-        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        statusLabel.setText("Paid build: paste HRM-XXXXXXXX-CCCC in Settings (offline OK). Drag MIDI still works.",
+                            juce::dontSendNotification);
         openSettings();
         return;
     }
@@ -2411,7 +2413,8 @@ void SynthesiaAIEditor::applyInspireSeed()
 {
     if (LicenseStub::enforceGenerate() && !audioProcessor.isLicensed())
     {
-        statusLabel.setText("Paste a license key in Settings to generate.", juce::dontSendNotification);
+        statusLabel.setText("Paid build: paste HRM-XXXXXXXX-CCCC in Settings (offline OK). Drag MIDI still works.",
+                            juce::dontSendNotification);
         openSettings();
         return;
     }
@@ -2883,13 +2886,13 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     addAndMakeVisible(licenseLabel);
     // Product keys are paste-once, not passwords — bullets hide checksum typos.
     licenseEditor.setPasswordCharacter(0);
-    licenseEditor.setTextToShowWhenEmpty("paste HRM-XXXXXXXX-CCCC from your receipt", Theme::dimText);
+    licenseEditor.setTextToShowWhenEmpty("HRM-XXXXXXXX-CCCC — offline, no internet", Theme::dimText);
     styleEditor(licenseEditor);
     addAndMakeVisible(licenseEditor);
     pasteLicenseButton.setButtonText("Paste");
     pasteLicenseButton.setColour(juce::TextButton::buttonColourId, Theme::panel.brighter(0.08f));
     pasteLicenseButton.setColour(juce::TextButton::textColourOffId, Theme::label);
-    pasteLicenseButton.setTooltip("Paste the HRM- line from your receipt clipboard");
+    pasteLicenseButton.setTooltip("Paste HRM-XXXXXXXX-CCCC (or a Lemon key). Offline HRM- never leaves this machine.");
     pasteLicenseButton.onClick = [this]()
     {
         licenseEditor.setText(juce::SystemClipboard::getTextFromClipboard(),
@@ -2927,7 +2930,7 @@ SettingsOverlay::SettingsOverlay(SynthesiaAIProcessor& p)
     usageLabel.setColour(juce::Label::textColourId, Theme::dimText);
     addAndMakeVisible(usageLabel);
 
-    hintLabel.setText("API and license keys stay on this machine. Offline format HRM-XXXXXXXX-CCCC. Lemon HTTP is optional.",
+    hintLabel.setText("Trial zip: Generate + Drag MIDI work with no key. Optional offline HRM- from your receipt (or Tools/make_license_key.sh). Lemon HTTP is optional and unused until checkout is live.",
                       juce::dontSendNotification);
     hintLabel.setFont(Theme::regular(13.0f));
     hintLabel.setColour(juce::Label::textColourId, Theme::dimText);
@@ -2972,10 +2975,10 @@ void SettingsOverlay::refreshFromProcessor()
     licenseUrlLabel.setVisible(advancedToggle.getToggleState());
     licenseUrlEditor.setVisible(advancedToggle.getToggleState());
     const auto licensed = processor.isLicensed();
-    licenseStatusLabel.setText(licensed ? "Valid offline key. Drag MIDI still works."
+    licenseStatusLabel.setText(licensed ? "Valid offline HRM- key. Works without internet. Drag MIDI always works."
                                         : (LicenseStub::enforceGenerate()
-                                               ? "Paste HRM- key to Generate. Drag MIDI always works."
-                                               : "Trial. Drag MIDI always works; paid builds can lock Generate."),
+                                               ? "Paid build: paste HRM-XXXXXXXX-CCCC to Generate. Invalid/expired Lemon keys fail here; offline HRM- does not expire. Drag MIDI always works."
+                                               : "Trial build (this unsigned zip). Generate and Drag MIDI are unlocked — no timer. Paste an HRM- key anytime."),
                                juce::dontSendNotification);
     licenseStatusLabel.setColour(juce::Label::textColourId, licensed ? Theme::licensed : Theme::trial);
 

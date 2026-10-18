@@ -21,11 +21,13 @@ Windows (SmartScreen)
 
 Per-DAW folders and Logic-via-wrapper: INSTALL.md in this zip.
 
+This zip is a trial: Generate and Drag MIDI work with no key.
+
 Then in the DAW
 1. Insert Harmonia on a MIDI / instrument track.
-2. Pick a genre → Generate (or an Inspire seed).
-   If Generate needs a key: tap it — Settings opens. Paste
-   HRM-XXXXXXXX-CCCC (or hit Paste) → Validate.
+2. Pick a genre → Generate (or a Harmonia plan).
+   Paid builds: tap Generate — Settings opens. Paste
+   HRM-XXXXXXXX-CCCC (or hit Paste) → Validate. Offline OK.
 3. Drag the handle labelled "Drag MIDI" (not the piano-roll).
 4. Load YOUR piano, bass, and drums. Route channel 10 to a drum kit.
 

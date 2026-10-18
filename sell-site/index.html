@@ -293,17 +293,43 @@
             </p>
           </details>
           <details>
-            <summary>Do I need an internet connection?</summary>
+            <summary>Can I try it before paying? Is there a trial?</summary>
             <p>
-              Text-to-arrangement and Inspire use a cloud LLM for the plan. Genre templates and MIDI editing work offline
-              once generated. Details ship with the installer notes.
+              Yes. The unsigned zip <strong>is</strong> the trial: Generate and Drag MIDI work with
+              no key and no timer. Use it in your DAW before Lemon checkout exists. Paid
+              (<code>ENFORCE</code>) builds lock Generate until you paste <code>HRM-XXXXXXXX-CCCC</code>.
+              Drag MIDI never locks.
             </p>
           </details>
           <details>
-            <summary>Which DAWs?</summary>
+            <summary>Does the key work offline?</summary>
             <p>
-              Any host that loads VST3 and accepts dragged MIDI (Ableton Live, FL Studio, Logic via wrapper / AU roadmap,
-              Reaper, Cubase, Studio One, and similar). Always test the trial build in your host before buying when available.
+              Offline <code>HRM-XXXXXXXX-CCCC</code> keys validate on this machine and never expire.
+              They are not sent anywhere. Lemon keys need a validate URL (optional, not live yet).
+              Genre templates work offline. Text-to-arrangement / Inspire need a network and an LLM key you supply.
+            </p>
+          </details>
+          <details>
+            <summary>My key says invalid or expired</summary>
+            <p>
+              Invalid HRM- usually means a truncated paste — copy the full <code>HRM-XXXXXXXX-CCCC</code>
+              line (Settings → Paste). Offline HRM- keys do not expire. “Expired” / “disabled” is a
+              Lemon HTTP status once checkout is live — ask for a new key or a refund through Lemon.
+            </p>
+          </details>
+          <details>
+            <summary>Do I need an internet connection?</summary>
+            <p>
+              Not for Generate, Drag MIDI, or an offline HRM- key. Text-to-arrangement and Inspire
+              use a cloud LLM only if you turn that on. Genre templates work offline.
+            </p>
+          </details>
+          <details>
+            <summary>Which DAWs? What about Logic?</summary>
+            <p>
+              VST3 + dragged MIDI: Ableton Live, FL Studio, Reaper, Cubase, Studio One, and similar.
+              <strong>Logic Pro has no native VST3</strong> — use a VST3 wrapper, or wait for AU.
+              This zip does not include AU.
             </p>
           </details>
           <details>

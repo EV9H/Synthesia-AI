@@ -3,25 +3,31 @@ Harmonia — license note (this zip)
 Shipping brand: Harmonia. The VST3 bundle may still be named "Synthesia AI"
 until a dedicated rename. Same plugin.
 
-What you bought
-  Arrangement MIDI for your DAW. Preview audio is a cheap sketch.
+This unsigned zip is a trial
+  Generate and Drag MIDI work with no key and no timer.
+  Use it for DAW smoke and marketing before Lemon checkout exists.
+  Paid (ENFORCE) builds lock Generate until you paste a key.
+  Drag MIDI and export never lock.
 
-Activate
-  Settings → paste the key from your receipt → Validate (or tap Paste).
-  Offline format: HRM-XXXXXXXX-CCCC
-  Lemon keys (if your receipt has one) validate over HTTPS when
-  HARMONIA_LICENSE_VALIDATE_URL is set. Offline HRM- keys never leave this machine.
+Activate (optional on this trial zip)
+  Settings → paste HRM-XXXXXXXX-CCCC → Validate (or tap Paste).
+  Offline HRM- keys never leave this machine and do not expire.
+  Invalid: checksum failed — re-copy the full HRM- line.
+  Expired / disabled: Lemon HTTP only. Ask for a new key or use HRM-.
+  Operator mint before Lemon is live:
+    Tools/make_license_key.sh
 
-What stays unlocked without a key
-  Drag MIDI and export. Generate locks only on paid (ENFORCE) builds.
-  Tap Generate — Settings opens if the key is missing.
+Lemon (not live yet)
+  Lemon keys validate over HTTPS only when HARMONIA_LICENSE_VALIDATE_URL
+  is set. Until then, mint offline HRM- keys. No Lemon secret in this repo.
 
 Do not
-  Redistribute this zip or share your key.
+  Redistribute this zip or share a paid key.
   Expect a synth or sample pack. Load YOUR piano, bass, and drums.
 
 Unsigned builds
   See UNSIGNED_SMOKE.txt. Gatekeeper / SmartScreen warnings are expected
   until the developer signs the installer.
 
-Support: the address on your receipt, or sell-site/config.js supportEmail.
+Support: placeholder support@harmonia.todo until a real inbox is set
+in sell-site/config.js. Use the address on your receipt once Lemon is live.

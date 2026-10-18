@@ -7,29 +7,34 @@ that is expected — load your own sounds.
 The plugin shows as Harmonia. On disk the bundle is still
 "Synthesia AI.vst3" until a dedicated rename. Same plugin.
 
+This unsigned zip is the marketing trial. Generate and Drag MIDI
+work with no key and no timer. Paid (ENFORCE) builds lock Generate
+until you paste HRM-XXXXXXXX-CCCC. Drag MIDI never locks.
+
 Install first (unsigned zip): see INSTALL.md in this folder.
 macOS: right-click the .vst3 → Open. Windows: More info → Run anyway.
 Then copy it into the system VST3 folder and rescan.
 
 1. Insert Harmonia on a MIDI / instrument track (Live, FL, Reaper,
    Cubase, Studio One). Logic: VST3 wrapper only — no AU in this zip.
-2. Pick a genre (or an Inspire seed — the combo generates immediately).
+2. Pick a genre (or a Harmonia plan — genre · mood — in the combo).
 3. Tap Generate. Five tracks: Chords (ch 1), Bass (ch 2), Synth (ch 3),
    Piano (ch 4), Drums (ch 10 / GM).
-4. Drag the handle labelled "Drag MIDI" into your DAW (not the piano-roll).
+4. Drag the handle labelled "Drag MIDI into DAW" (bottom left) into
+   your DAW — not the piano-roll.
 5. Load YOUR piano, bass, and drums. Route ch 10 to a drum kit.
 
-If Generate needs a key: tap it — Settings opens. Paste HRM-XXXXXXXX-CCCC
-from your receipt (or hit Paste) → Validate. The key is visible so you
-can check the checksum; spaces and a "License:" prefix are stripped.
-Lemon keys work only if a validate URL is set (optional). Offline HRM-
-keys never leave this machine. Drag and export stay unlocked without a
-key. Generate locks only on paid (ENFORCE) builds.
+Optional key (offline): Settings → paste HRM-XXXXXXXX-CCCC from a
+receipt, or hit Paste → Validate. Spaces and a "License:" prefix
+are stripped. The key is visible so you can check the checksum.
+Offline HRM- keys never leave this machine and do not expire.
+Lemon keys work only if a validate URL is set (optional, not live yet).
+Operator mint before Lemon: Tools/make_license_key.sh
 
 Unsigned build: Gatekeeper / SmartScreen will warn. Not malware.
 Follow INSTALL.md and UNSIGNED_SMOKE.txt.
 
-This zip: Synthesia AI.vst3, INSTALL.md, GETTING_STARTED.txt,
+This zip: Synthesia AI.vst3, README.txt, INSTALL.md, GETTING_STARTED.txt,
 UNSIGNED_SMOKE.txt, LICENSE.txt.
 
 Display name: Harmonia. Bundle id is still SynthesiaAI until a rename.

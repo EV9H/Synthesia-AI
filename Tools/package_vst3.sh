@@ -52,6 +52,7 @@ trap 'rm -rf "$stage"' EXIT
 bundle="$stage/Harmonia"
 mkdir -p "$bundle"
 cp -R "$VST3" "$bundle/"
+cp "$ROOT/Tools/README.txt" "$bundle/README.txt"
 cp "$ROOT/Tools/GETTING_STARTED.txt" "$bundle/GETTING_STARTED.txt"
 cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$bundle/UNSIGNED_SMOKE.txt"
 cp "$ROOT/Tools/LICENSE_NOTE.txt" "$bundle/LICENSE.txt"
