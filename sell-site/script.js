@@ -16,22 +16,24 @@
   const title = document.querySelector("title");
   if (title) title.textContent = name + " — AI MIDI for your sounds";
 
-  // Checkout links
+  // Checkout links. Until Lemon is live, send buyers to the trial zip —
+  // do not pop an operator SETUP.md alert on a public page.
   const checkoutUrl = site.lemonCheckoutUrl || "#";
+  const trialUrl = site.trialZipUrl || "#download";
+  const checkoutLive = checkoutUrl !== "#" && checkoutUrl !== "";
+  document.querySelectorAll("[data-trial]").forEach((a) => {
+    a.setAttribute("href", trialUrl);
+  });
   document.querySelectorAll("[data-checkout]").forEach((a) => {
-    a.setAttribute("href", checkoutUrl);
-    if (checkoutUrl === "#" || checkoutUrl === "") {
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        alert(
-          "Checkout URL not set yet.\n\n" +
-            "1. Create the product in Lemon Squeezy\n" +
-            "2. Copy the checkout link\n" +
-            "3. Paste it into config.js → lemonCheckoutUrl\n\n" +
-            "See SETUP.md."
-        );
-      });
+    if (checkoutLive) {
+      a.setAttribute("href", checkoutUrl);
+      return;
     }
+    a.setAttribute("href", trialUrl);
+    if (a.hasAttribute("data-checkout-keep-label"))
+      return;
+    if (a.classList.contains("nav-cta"))
+      a.textContent = "Try zip — no key";
   });
 
   // Support email (placeholder until TODO in config.js is replaced)

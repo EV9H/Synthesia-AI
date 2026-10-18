@@ -14,8 +14,9 @@ Activate (optional on this trial zip)
   Offline HRM- keys never leave this machine and do not expire.
   Invalid: checksum failed — re-copy the full HRM- line.
   Expired / disabled: Lemon HTTP only. Ask for a new key or use HRM-.
-  Operator mint before Lemon is live:
-    Tools/make_license_key.sh
+  Sample / demo key: this zip needs none. Testers who want the LICENSED
+  badge, from the repo: Tools/make_license_key.sh
+  Operator mint before Lemon is live: same script.
 
 Lemon (not live yet)
   Lemon keys validate over HTTPS only when HARMONIA_LICENSE_VALIDATE_URL

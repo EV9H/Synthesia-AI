@@ -24,12 +24,16 @@ Then copy it into the system VST3 folder and rescan.
    your DAW — not the piano-roll.
 5. Load YOUR piano, bass, and drums. Route ch 10 to a drum kit.
 
-Optional key (offline): Settings → paste HRM-XXXXXXXX-CCCC from a
-receipt, or hit Paste → Validate. Spaces and a "License:" prefix
-are stripped. The key is visible so you can check the checksum.
-Offline HRM- keys never leave this machine and do not expire.
-Lemon keys work only if a validate URL is set (optional, not live yet).
-Operator mint before Lemon: Tools/make_license_key.sh
+Sample / demo key (optional — this trial zip does not need one)
+  Settings → paste HRM-XXXXXXXX-CCCC → Validate (or tap Paste).
+  Spaces and a "License:" prefix are stripped. The key stays visible
+  so you can check the checksum. Offline HRM- never leaves this machine
+  and does not expire.
+  Invalid: truncated paste / bad checksum. Re-copy the full HRM- line.
+  Expired / disabled: Lemon HTTP only (not live). Offline HRM- never expires.
+  Testers / operator mint before Lemon: from the repo run
+    Tools/make_license_key.sh
+  That prints one HRM-XXXXXXXX-CCCC. Email it, or paste it in Settings.
 
 Unsigned build: Gatekeeper / SmartScreen will warn. Not malware.
 Follow INSTALL.md and UNSIGNED_SMOKE.txt.

@@ -312,6 +312,7 @@ Productize only (no MIDI / house score, no CF/Lemon accounts).
 - Operator mint: `Tools/make_license_key.sh` one-liner in the script and LICENSE.txt.
 - Sell-site FAQ: trial before pay, offline keys, invalid/expired, Logic wrapper, DAWs. `support@harmonia.todo` stays a TODO.
 - Zip: `README.txt` so the folder reads as Harmonia; bundle on disk stays `Synthesia AI.vst3`.
+- Follow-through (still q33): GitHub README no longer tells buyers to paste `SYN-`. First-run tour names the trial path on unsigned zips. Sell-site Buy no longer pops an operator alert — it sends visitors to the trial/download section until `lemonCheckoutUrl` is set.
 
 ### Code-side done vs human-blocked (q33)
 
@@ -323,10 +324,14 @@ Productize only (no MIDI / house score, no CF/Lemon accounts).
 | Operator `make_license_key.sh` | **Code done** |
 | FAQ objections (static site) | **Code done** (not deployed) |
 | Zip docs say Harmonia | **Code done** (binary folder still Synthesia AI.vst3) |
+| GitHub README key format | **Code done** — HRM- / Harmonia, not SYN- |
+| Sell-site Buy with no Lemon URL | **Code done** — degrades to trial/download, no operator alert |
+| In-plugin trial note on first run | **Code done** |
 | Support email | **Human** — `support@harmonia.todo` |
 | Privacy / Terms operator | **Human** |
 | Cloudflare Pages | **Human-blocked** |
 | Lemon product + checkout URL | **Human-blocked** |
+| Hosted trial zip URL | **Human** — `trialZipUrl` in `sell-site/config.js` still `#download` |
 | Lemon receipt copy | **Human-blocked** |
 | Signing | **Human-blocked** |
 | Real DAW drag smoke | **Human-blocked** |

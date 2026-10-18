@@ -52,7 +52,7 @@ export HARMONIA_LICENSE_VALIDATE_URL="https://api.lemonsqueezy.com/v1/licenses/v
 10. Optional: Lemon.js overlay — add their script from LS docs; buttons already have `data-lemonsqueezy`.
 11. Test with **test mode** checkout before going live.
 
-**TODO left in HTML:** `#lemonCheckout` starts as `href="#"` until you paste the URL into `config.js` (script applies it).
+**TODO left in HTML:** `#lemonCheckout` starts as `href="#download"` until you paste the URL into `config.js` (script applies it). Until then, Buy sends visitors to the trial/download section — no operator alert.
 
 ---
 

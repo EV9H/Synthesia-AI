@@ -27,7 +27,7 @@
         <li><a href="#how">How it works</a></li>
         <li><a href="#download">Download</a></li>
         <li><a href="#faq">FAQ</a></li>
-        <li><a class="btn btn-primary nav-cta" href="#buy" data-checkout>Buy — $49</a></li>
+        <li><a class="btn btn-primary nav-cta" href="#download" data-checkout>Try zip — no key</a></li>
       </ul>
     </div>
   </header>
@@ -46,8 +46,8 @@
         cheap sketch. The product is the notes.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="#buy" data-checkout>Get <span data-brand>Harmonia</span> — $49</a>
-        <a class="btn btn-ghost btn-lg" href="#demos">Hear preview demos</a>
+        <a class="btn btn-primary btn-lg" href="#download" data-trial>Try unsigned zip — no key</a>
+        <a class="btn btn-ghost btn-lg" href="#buy" data-checkout data-checkout-keep-label>Get <span data-brand>Harmonia</span> — $49</a>
       </div>
       <div class="hero-meta">
         <span>$49 one-time · not a subscription</span>
@@ -177,7 +177,10 @@
       <div class="wrap">
         <div class="section-head">
           <h2>Download and requirements</h2>
-          <p>VST3 only. Your DAW and your instruments. Preview audio is not the product.</p>
+          <p>
+            This unsigned zip <strong>is</strong> the trial — Generate and Drag MIDI, no key, no timer.
+            Checkout is not live yet. VST3 only. Your DAW and your instruments. Preview audio is not the product.
+          </p>
         </div>
         <div class="req-grid">
           <article class="req-card">
@@ -226,16 +229,20 @@
             TODO(Lemon Squeezy): replace href="#" with your checkout URL from Lemon Squeezy
             (Products → your product → Share → Checkout link). Keep data-lemonsqueezy for overlay JS if used.
           -->
+          <a class="btn btn-ghost btn-lg" href="#download" data-trial>Try unsigned zip — no key</a>
           <a
             class="btn btn-primary btn-lg"
-            href="#"
+            href="#download"
             id="lemonCheckout"
             data-checkout
+            data-checkout-keep-label
             data-lemonsqueezy
             data-lemonsqueezy-comment="TODO: paste Lemon Squeezy checkout URL"
           >Buy <span data-brand>Harmonia</span> — $49</a>
           <p class="price-footnote">
-            Checkout powered by Lemon Squeezy (merchant of record). Secure payment · instant download.
+            Checkout is not live yet. The unsigned zip is the trial (Generate + drag, no payment).
+            Once a Lemon Squeezy product exists, this button becomes the real checkout —
+            tax, receipt, and refunds go through them.
           </p>
         </div>
       </div>

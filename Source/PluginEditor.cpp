@@ -1129,11 +1129,11 @@ FirstRunTour::FirstRunTour()
 
 void FirstRunTour::setNeedsLicense(bool needsLicense)
 {
-    licenseNote.setVisible(needsLicense);
+    licenseNote.setVisible(true);
     openSettings.setVisible(needsLicense);
     licenseNote.setText(needsLicense
                             ? "Paid build: tap Generate → paste HRM-XXXXXXXX-CCCC (offline OK). Drag MIDI always works."
-                            : "",
+                            : "Trial zip: Generate works now — no key, no timer. Optional HRM- in Settings (offline OK).",
                         juce::dontSendNotification);
     resized();
 }

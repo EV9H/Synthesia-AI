@@ -491,6 +491,17 @@ section {
   flex-shrink: 0;
 }
 
+.price-card .btn {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.price-card .btn + .btn {
+  margin-top: 0.75rem;
+}
+
 .price-footnote {
   margin-top: 1rem;
   font-size: 0.75rem;

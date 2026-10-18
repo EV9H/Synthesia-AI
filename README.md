@@ -1,6 +1,14 @@
-# Synthesia AI
+# Harmonia
 
-An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). Built with JUCE, this VST3/AU plugin generates musical MIDI sequences using either offline algorithmic generation or AI/LLM-based generation.
+MIDI generator for **your** DAW sounds — not a synth, not a sample pack.
+The GitHub repo stays `EV9H/Synthesia-AI`. The DAW lists **Harmonia**.
+The VST3 folder on disk may still be `Synthesia AI.vst3` (same plugin).
+
+An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, Reaper, Cubase, Studio One). Built with JUCE. Preview audio is a cheap sketch — load your own instruments.
+
+**Trial (unsigned zip):** Generate and Drag MIDI work with no key and no timer. See `Tools/GETTING_STARTED.txt`.
+**Paid builds:** Settings → paste `HRM-XXXXXXXX-CCCC` (offline OK; does not expire). Drag MIDI never locks.
+Operator mint before Lemon: `Tools/make_license_key.sh`
 
 ## Features
 
@@ -34,7 +42,7 @@ An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, etc.). B
 ### Roadmap
 - **AI Timbre/Patch Generation**: Generate synth patches and timbres using AI
 - **More generator types**: Genetic algorithms, reinforcement learning
-- **Licensing**: Signed / online license check (the current build is an offline `SYN-` stub + Trial badge)
+- **Licensing**: Offline `HRM-XXXXXXXX-CCCC` (checksum, no internet) plus optional Lemon HTTP when a validate URL is set. Unsigned zip is a trial (`ENFORCE=0`). Signed / Lemon checkout is a human step, not in this repo.
 
 ## Design Decisions
 
@@ -252,12 +260,12 @@ With no key, Plan still works: keywords in the prompt map to genre, energy and d
 
 ### Quick start (users)
 
-1. Load **Synthesia AI** as an instrument.
-2. Pick a **Preset** (Pop Radio, Lo-fi Dust, Peak Hour House, Trap Drop, Neo-Soul Pocket, Cinematic Pads, Lo-fi Song, House Anthem, Jazz Changes, Pop Uplift) or set key / genre yourself.
-3. Click **Generate MIDI**. Mute or solo parts on the piano roll.
-4. Drag **All parts** (or Chords / Bass / Synth / Piano / Drums) into your DAW, or click **Export MIDI**.
-5. Optional: **Plan** tab for an LLM/heuristic arrangement, **Import** to accompany a `.mid`, **Style** to learn from your MIDI.
-6. The header shows a **TRIAL** badge until you enter a license key starting with `SYN-` (12+ characters) in Settings. That check is an offline stub and can be replaced later.
+1. Load **Harmonia** as an instrument (bundle on disk may still say Synthesia AI).
+2. Pick a **Preset** / Harmonia plan (genre · mood) or set key / genre yourself.
+3. Click **Generate**. Mute or solo parts on the piano roll.
+4. Drag the handle labelled **Drag MIDI into DAW** (or Chords / Bass / Synth / Piano / Drums) onto a MIDI track — not the piano-roll.
+5. Load YOUR piano, bass, and drums. Route channel 10 to a drum kit.
+6. This unsigned zip is a trial — Generate works with no key. Paid builds: Settings → paste `HRM-XXXXXXXX-CCCC` (offline OK). Invalid = truncated paste; expired is Lemon-only. Offline HRM- keys do not expire. Testers: `Tools/make_license_key.sh`.
 
 ### Presets and host recall
 
@@ -331,7 +339,7 @@ Artifacts (VST3/AU binaries) are uploaded for each successful build.
 │   ├── MidiImporter.{h,cpp}        # MIDI file / capture analysis and overlay modes
 │   ├── StyleProfile.{h,cpp}        # Learn/save style JSON and blend with genre profiles
 │   ├── PresetStore.{h,cpp}         # Factory + user generator presets
-│   ├── LicenseStub.h               # Offline SYN- license check (swap later)
+│   ├── LicenseStub.h               # Offline HRM- key + optional Lemon HTTP
 │   ├── Music/MusicTheory.{h,cpp}   # Scales, chords, voicings, chord-symbol parser
 │   └── Generators/
 │       ├── MidiGenerator.{h,cpp}   # Base generator interface
@@ -379,7 +387,7 @@ Suggested approach:
 
 [Specify your product license here.]
 
-The in-plugin **TRIAL / LICENSED** badge is an offline stub (`LicenseStub`): a key that starts with `SYN-` and is at least 12 characters counts as licensed. Swap `LicenseStub::isLicensed` for a signed or online check when you ship.
+The in-plugin **TRIAL / LICENSED** badge is `LicenseStub`: an offline `HRM-XXXXXXXX-CCCC` key (checksum, never sent) counts as licensed. Legacy `SYN-` stubs still validate. Optional Lemon HTTP uses `HARMONIA_LICENSE_VALIDATE_URL`. The unsigned zip ships with `ENFORCE=0` so Generate works with no key.
 
 ## Contributing
 
