@@ -80,11 +80,20 @@ set_target_properties(SynthesiaFonts PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 # SynthesiaRender stays ungated so eval and packaging keep working.
 option(HARMONIA_LICENSE_ENFORCE "Require a license key to Generate in the editor" OFF)
 
+# JUCE HTTP: Windows uses WinHTTP (GHA windows-latest has no libcurl cmake
+# package). Linux/macOS keep find_package(CURL).
+if(WIN32)
+    set(SYNTHESIA_JUCE_USE_CURL 0)
+else()
+    set(SYNTHESIA_JUCE_USE_CURL 1)
+    find_package(CURL REQUIRED)
+endif()
+
 # JUCE modules
 target_compile_definitions(SynthesiaAI
     PUBLIC
         JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=1
+        JUCE_USE_CURL=${SYNTHESIA_JUCE_USE_CURL}
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
 if(HARMONIA_LICENSE_ENFORCE)
@@ -93,14 +102,16 @@ else()
     target_compile_definitions(SynthesiaAI PUBLIC HARMONIA_LICENSE_ENFORCE=0)
 endif()
 
-# Find CURL
-find_package(CURL REQUIRED)
+set(SYNTHESIA_CURL_LIBS "")
+if(SYNTHESIA_JUCE_USE_CURL)
+    set(SYNTHESIA_CURL_LIBS CURL::libcurl)
+endif()
 
 target_link_libraries(SynthesiaAI
     PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
-        CURL::libcurl
+        ${SYNTHESIA_CURL_LIBS}
         SynthesiaDrumSamples
         SynthesiaFonts
     PUBLIC
@@ -120,12 +131,12 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
     target_compile_definitions(SynthesiaRender PRIVATE
         JucePlugin_Name="Harmonia"
         JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=1
+        JUCE_USE_CURL=${SYNTHESIA_JUCE_USE_CURL}
         HARMONIA_LICENSE_ENFORCE=0)
     target_link_libraries(SynthesiaRender PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
-        CURL::libcurl
+        ${SYNTHESIA_CURL_LIBS}
         SynthesiaDrumSamples
         SynthesiaFonts
         juce::juce_recommended_config_flags)
