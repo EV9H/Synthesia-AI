@@ -53,6 +53,9 @@ target_sources(SynthesiaAITests PRIVATE
     ${CMAKE_SOURCE_DIR}/Source/Generators/ArrangementPlan.cpp
     ${CMAKE_SOURCE_DIR}/Source/Generators/GenreProfiles.cpp
     ${CMAKE_SOURCE_DIR}/Source/Music/MusicTheory.cpp
+    ${CMAKE_SOURCE_DIR}/Source/StyleProfile.cpp
+    ${CMAKE_SOURCE_DIR}/Source/MidiImporter.cpp
+    ${CMAKE_SOURCE_DIR}/Source/MidiExporter.cpp
 )
 
 include(GoogleTest)
