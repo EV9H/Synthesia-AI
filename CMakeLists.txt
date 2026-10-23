@@ -23,8 +23,14 @@ else()
     set(SYNTHESIA_FORMATS VST3 Standalone)
 endif()
 
+# PRODUCT_NAME is the on-disk bundle (Harmonia.vst3) and the name DAW
+# scanners list. CMake target stays SynthesiaAI so existing --target
+# SynthesiaAI_VST3 scripts keep working.
+# PLUGIN_* codes stay Synt/SyAI — changing them mints a new VST3 CID and
+# drops saved projects. No buyers yet, but eval/state XML still use
+# SynthesiaAIState, so a one-time ID swap is deferred on purpose.
 juce_add_plugin(SynthesiaAI
-    COMPANY_NAME "SynthesiaAI"
+    COMPANY_NAME "Harmonia"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
@@ -34,7 +40,7 @@ juce_add_plugin(SynthesiaAI
     PLUGIN_MANUFACTURER_CODE Synt
     PLUGIN_CODE SyAI
     FORMATS ${SYNTHESIA_FORMATS}
-    PRODUCT_NAME "Synthesia AI"
+    PRODUCT_NAME "Harmonia"
 )
 
 # Source files (shared with the SynthesiaRender host below)
@@ -132,6 +138,7 @@ if(SYNTHESIA_BUILD_RENDER_HOST)
         JucePlugin_Name="Harmonia"
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=${SYNTHESIA_JUCE_USE_CURL}
+        JUCE_PLUGINHOST_VST3=1
         HARMONIA_LICENSE_ENFORCE=0)
     target_link_libraries(SynthesiaRender PRIVATE
         juce::juce_audio_utils

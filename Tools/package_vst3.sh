@@ -22,6 +22,9 @@ case "$uname_s" in
 esac
 
 candidates=(
+    "$BUILD/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3"
+    "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Harmonia.vst3"
+    "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Harmonia.vst3"
     "$BUILD/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3"
     "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Synthesia AI.vst3"
     "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Synthesia AI.vst3"
@@ -57,10 +60,30 @@ cp "$ROOT/Tools/GETTING_STARTED.txt" "$bundle/GETTING_STARTED.txt"
 cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$bundle/UNSIGNED_SMOKE.txt"
 cp "$ROOT/Tools/LICENSE_NOTE.txt" "$bundle/LICENSE.txt"
 cp "$ROOT/Tools/INSTALL.md" "$bundle/INSTALL.md"
-(
-    cd "$stage"
-    zip -r -q "$out" Harmonia
-)
+# GHA windows-latest Git bash has no `zip`. Python is on every runner.
+pack_zip() {
+    local py
+    py="$(command -v python3 || command -v python || true)"
+    if command -v zip >/dev/null 2>&1; then
+        ( cd "$stage" && zip -r -q "$out" Harmonia )
+        return 0
+    fi
+    if [[ -z "$py" ]]; then
+        echo "Need zip or python3 to pack the trial zip." >&2
+        return 1
+    fi
+    "$py" - "$stage" "$out" <<'PY'
+import sys, zipfile
+from pathlib import Path
+stage, out = Path(sys.argv[1]), sys.argv[2]
+root = stage / "Harmonia"
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+    for path in root.rglob("*"):
+        if path.is_file():
+            zf.write(path, path.relative_to(stage).as_posix())
+PY
+}
+pack_zip
 
 cat <<EOF
 Wrote $out
@@ -73,14 +96,14 @@ macOS signing / notarizing (needs YOUR Apple credentials, not in this repo):
   4. Then, on a Mac:
        codesign --force --deep --options runtime \\
          --sign "Developer ID Application: YOUR NAME (TEAMID)" \\
-         "Synthesia AI.vst3"
-       ditto -c -k --keepParent "Synthesia AI.vst3" Harmonia-vst3.zip
+         "Harmonia.vst3"
+       ditto -c -k --keepParent "Harmonia.vst3" Harmonia-vst3.zip
        xcrun notarytool submit Harmonia-vst3.zip --keychain-profile "harmonia" --wait
-       xcrun stapler staple "Synthesia AI.vst3"
-  AU: repeat for "Synthesia AI.component"
-  Standalone: repeat for "Synthesia AI.app"
+       xcrun stapler staple "Harmonia.vst3"
+  AU: repeat for "Harmonia.component"
+  Standalone: repeat for "Harmonia.app"
 
 Windows signing (needs YOUR Authenticode cert):
   signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ^
-    /f your.pfx /p YOUR_PASSWORD "Synthesia AI.vst3"
+    /f your.pfx /p YOUR_PASSWORD "Harmonia.vst3"
 EOF

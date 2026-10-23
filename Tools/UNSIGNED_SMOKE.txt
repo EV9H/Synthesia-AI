@@ -3,13 +3,13 @@ Harmonia — unsigned zip smoke test (2 minutes)
 This zip is unsigned. macOS Gatekeeper and Windows SmartScreen will warn.
 That is expected until the developer signs the installer. It is not malware.
 
-The DAW lists **Harmonia**. The folder on disk is still "Synthesia AI.vst3".
+The DAW lists **Harmonia**. The folder on disk is Harmonia.vst3.
 
 macOS (Gatekeeper)
-1. Unzip. You are in Harmonia/ next to Synthesia AI.vst3 and INSTALL.md.
-2. Right-click Synthesia AI.vst3 → Open (confirm the dialog).
+1. Unzip. You are in Harmonia/ next to Harmonia.vst3 and INSTALL.md.
+2. Right-click Harmonia.vst3 → Open (confirm the dialog).
    Or System Settings → Privacy & Security → Open Anyway.
-3. Copy Synthesia AI.vst3 into ~/Library/Audio/Plug-Ins/VST3/
+3. Copy Harmonia.vst3 into ~/Library/Audio/Plug-Ins/VST3/
 4. Rescan. Live: Preferences → Plug-Ins. Reaper: Preferences → VST.
 
 Windows (SmartScreen)

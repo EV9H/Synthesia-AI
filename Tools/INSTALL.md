@@ -1,15 +1,15 @@
 # Harmonia — install (one page)
 
-Display name in the DAW: **Harmonia**. The VST3 folder on disk is still
-`Synthesia AI.vst3` until a dedicated rename. Same plugin. This zip is
-**unsigned** — Gatekeeper / SmartScreen will warn. That is expected, not malware.
+Display name in the DAW: **Harmonia**. The VST3 folder on disk is
+`Harmonia.vst3`. This zip is **unsigned** — Gatekeeper / SmartScreen will
+warn. That is expected, not malware.
 
 ## Unzip
 
 You should see a `Harmonia/` folder:
 
 - `README.txt` — this is Harmonia
-- `Synthesia AI.vst3` — the plugin (appears as Harmonia)
+- `Harmonia.vst3` — the plugin
 - `GETTING_STARTED.txt` — 30-second generate → drag
 - `UNSIGNED_SMOKE.txt` — Gatekeeper / SmartScreen
 - `LICENSE.txt` — trial vs HRM- key
@@ -20,9 +20,9 @@ and no timer. A paid key is optional until Lemon checkout exists.
 
 ## macOS (Gatekeeper)
 
-1. Right-click `Synthesia AI.vst3` → **Open**. Confirm the dialog.
+1. Right-click `Harmonia.vst3` → **Open**. Confirm the dialog.
    Or: System Settings → Privacy & Security → **Open Anyway**.
-2. Copy `Synthesia AI.vst3` to `~/Library/Audio/Plug-Ins/VST3/`
+2. Copy `Harmonia.vst3` to `~/Library/Audio/Plug-Ins/VST3/`
    (create the folder if it is missing).
 3. Rescan plugins in your DAW. Look for **Harmonia**.
 

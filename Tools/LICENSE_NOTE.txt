@@ -1,7 +1,7 @@
 Harmonia — license note (this zip)
 
-Shipping brand: Harmonia. The VST3 bundle may still be named "Synthesia AI"
-until a dedicated rename. Same plugin.
+Shipping brand: Harmonia. The VST3 bundle is Harmonia.vst3.
+VST3 CID stays Synt/SyAI (saved-project compatibility).
 
 This unsigned zip is a trial
   Generate and Drag MIDI work with no key and no timer.

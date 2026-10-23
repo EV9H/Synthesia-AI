@@ -38,7 +38,7 @@ Shipping brand is **Harmonia**. The GitHub repo stays `EV9H/Synthesia-AI` until 
 
 6. **Privacy / Terms are stubs.** Pages exist and are linked. They still say “replace operator name/address before charging.” Have counsel (or at least your real legal name) in those files.
 
-7. **Bundle still says Synthesia AI.** Display name is Harmonia. Dedicated rename only (see below) — not a launch blocker if the landing page is clear.
+7. **Bundle is Harmonia.vst3.** VST3 CID stays `Synt` / `SyAI` so saved-project IDs do not change. GitHub repo stays Synthesia-AI.
 
 8. **Inspire seeds** — combo still auto-generates. Smoke one seed per genre on an `ENFORCE=1` build after the key path works.
 
@@ -111,7 +111,7 @@ You do **not** need a webhook to take money. Path A+B is enough.
 ### E. 5-minute smoke after A–C
 
 1. Test-mode checkout → you receive a key + zip.
-2. Unzip `Harmonia/` → `README.txt`, `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Synthesia AI.vst3`.
+2. Unzip `Harmonia/` → `README.txt`, `INSTALL.md`, `GETTING_STARTED.txt`, `UNSIGNED_SMOKE.txt`, `LICENSE.txt`, `Harmonia.vst3`.
 3. Load in a DAW (or Standalone) → tap Generate → paste key → Validate.
 4. Drag MIDI → confirm five tracks and drums on ch 10. Or: `Tools/verify_midi_export.py some.mid`
 
@@ -337,3 +337,53 @@ Productize only (no MIDI / house score, no CF/Lemon accounts).
 | Real DAW drag smoke | **Human-blocked** |
 
 Nothing meaningful left code-side for taking money. **Code-side sellable; waiting on human blockers.**
+
+## sell-q34
+
+Bundle rename + host smoke + trial zip from CI. No MIDI score chase. No CF/Lemon/signing.
+
+- On-disk bundle is `Harmonia.vst3` (`PRODUCT_NAME "Harmonia"`). CMake target stays `SynthesiaAI`. VST3 CID stays `Synt` / `SyAI` (saved projects keep working; IDs left stable on purpose). State XML tag stays `SynthesiaAIState`.
+- `Tools/host_smoke.sh`: pluginval (strictness 5+) + `SynthesiaRender --smoke` (Generate, 960-PPQ export, state round-trip, VST3 instantiate). Still not a substitute for drag-into-Ableton/FL/Reaper.
+- CI: Linux job runs the smoke and uploads `harmonia-smoke.mid`. Every OS packages `Tools/package_vst3.sh` and uploads the unsigned zip. Tag `v*` opens a **draft** GitHub Release (not published). Point `trialZipUrl` at a release asset only after you approve publishing.
+
+### Code-side done vs human-blocked (q34)
+
+| Item | Status |
+| --- | --- |
+| House / headline MIDI chase | **Stopped** (house 78.6, headline 77.2) |
+| Bundle `Harmonia.vst3` | **Code done** — CID still Synt/SyAI |
+| Host smoke (pluginval + Generate + MIDI + state) | **Code done** — Linux CI |
+| Trial zip CI artifact | **Code done** |
+| Draft GitHub Release on `v*` | **Code done** — stays draft |
+| `trialZipUrl` live asset | **Human** — still `#download` until you publish a release |
+| Support email | **Human** — `support@harmonia.todo` |
+| Privacy / Terms operator | **Human** |
+| Cloudflare Pages | **Human-blocked** |
+| Lemon product + checkout URL | **Human-blocked** |
+| Signing | **Human-blocked** |
+| Real DAW drag smoke | **Human-blocked** — Ableton / FL / Reaper |
+
+## sell-q34
+
+Bundle rename + host smoke + trial zip from CI. No MIDI score chase. No CF/Lemon/signing.
+
+- On-disk bundle is `Harmonia.vst3` (`PRODUCT_NAME "Harmonia"`). CMake target stays `SynthesiaAI`. VST3 CID stays `Synt` / `SyAI` (saved projects keep working; no buyers yet, IDs left stable on purpose). State XML tag stays `SynthesiaAIState`.
+- `Tools/host_smoke.sh`: pluginval (strictness 5+) + `SynthesiaRender --smoke` (Generate, 960-PPQ export, state round-trip, VST3 instantiate). Still not a substitute for drag-into-Ableton/FL/Reaper.
+- CI: Linux job runs the smoke and uploads `harmonia-smoke.mid`. Every OS packages `Tools/package_vst3.sh` and uploads the unsigned zip. Tag `v*` opens a **draft** GitHub Release (not published). Point `trialZipUrl` at a release asset only after you approve publishing.
+
+### Code-side done vs human-blocked (q34)
+
+| Item | Status |
+| --- | --- |
+| House / headline MIDI chase | **Stopped** (house 78.6, headline 77.2) |
+| Bundle `Harmonia.vst3` | **Code done** — CID still Synt/SyAI |
+| Host smoke (pluginval + Generate + MIDI + state) | **Code done** — Linux CI |
+| Trial zip CI artifact | **Code done** |
+| Draft GitHub Release on `v*` | **Code done** — stays draft |
+| `trialZipUrl` live asset | **Human** — still `#download` until you publish a release |
+| Support email | **Human** — `support@harmonia.todo` |
+| Privacy / Terms operator | **Human** |
+| Cloudflare Pages | **Human-blocked** |
+| Lemon product + checkout URL | **Human-blocked** |
+| Signing | **Human-blocked** |
+| Real DAW drag smoke | **Human-blocked** — Ableton / FL / Reaper |

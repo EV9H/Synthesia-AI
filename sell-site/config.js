@@ -9,8 +9,9 @@ window.SITE = {
   priceNote: "one-time · own it forever",
   // TODO(human): paste Lemon Squeezy checkout URL after creating the product
   lemonCheckoutUrl: "#",
-  // TODO(human): hosted unsigned zip URL once CF / a release exists.
-  // "#" scrolls to the Download section (the trial path before checkout).
+  // TODO(human): hosted unsigned zip URL once you approve publishing a
+  // GitHub Release (workflow uploads draft assets on v* tags). Until then
+  // "#download" scrolls to the Download section.
   trialZipUrl: "#download",
   // TODO(human): replace with a real support inbox before charging.
   // Not a live mailbox — placeholder so the site does not look launched.

@@ -1,7 +1,6 @@
 This folder is Harmonia (MIDI generator for YOUR DAW sounds).
 
-The DAW lists Harmonia. The plugin folder on disk is still
-"Synthesia AI.vst3" — same plugin, unsigned.
+The DAW lists Harmonia. The plugin folder on disk is Harmonia.vst3.
 
 Start here:
   INSTALL.md            — unzip, Gatekeeper / SmartScreen, per-DAW folders

@@ -3,65 +3,144 @@ name: Build
 on:
   push:
     branches: [ main, cursor/* ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
 
 jobs:
   build-windows:
     runs-on: windows-latest
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-    
+
     - name: Build
       run: cmake --build build --config Release
-    
+
     - name: Run Tests
       run: |
         cd build
         ctest -C Release --output-on-failure
-    
-    - name: Upload VST3
+
+    - name: Package trial zip
+      shell: bash
+      run: Tools/package_vst3.sh
+
+    - name: Upload trial zip
       uses: actions/upload-artifact@v4
       with:
-        name: SynthesiaAI-Windows-VST3
-        path: build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
+        name: Harmonia-windows-trial-zip
+        path: dist/Harmonia-*.zip
+        if-no-files-found: error
 
   build-macos:
     # macos-latest is macOS 26 / Xcode 26.6; JUCE 7.0.12 juceaide dies on
     # CGWindowListCreateImage (obsoleted in the macOS 15+ SDK). Pin 14 so
     # juceaide compiles without a JUCE 8 upgrade.
     runs-on: macos-14
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-    
+
     - name: Build
       run: cmake --build build --config Release
-    
+
     - name: Run Tests
       run: |
         cd build
         ctest -C Release --output-on-failure
-    
-    - name: Upload VST3
+
+    - name: Package trial zip
+      run: Tools/package_vst3.sh
+
+    - name: Upload trial zip
       uses: actions/upload-artifact@v4
       with:
-        name: SynthesiaAI-macOS-VST3
-        path: build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
-    
-    - name: Upload AU
+        name: Harmonia-macos-trial-zip
+        path: dist/Harmonia-*.zip
+        if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install JUCE deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libasound2-dev libcurl4-openssl-dev libfreetype6-dev \
+          libx11-dev libxcomposite-dev libxcursor-dev libxext-dev \
+          libxinerama-dev libxrandr-dev libxrender-dev \
+          libglu1-mesa-dev mesa-common-dev pkg-config unzip
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaRender -j$(nproc)
+
+    - name: Host smoke (Generate + MIDI + state + pluginval)
+      run: Tools/host_smoke.sh
+      env:
+        SKIP_BUILD: "1"
+
+    - name: Upload smoke MIDI
       uses: actions/upload-artifact@v4
       with:
-        name: SynthesiaAI-macOS-AU
-        path: build/SynthesiaAI_artefacts/Release/AU/SynthesiaAI.component
+        name: Harmonia-linux-smoke-midi
+        path: eval-reports/smoke/harmonia-smoke.mid
+        if-no-files-found: error
+
+    - name: Package trial zip
+      run: Tools/package_vst3.sh
+
+    - name: Upload trial zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: Harmonia-linux-trial-zip
+        path: dist/Harmonia-*.zip
+        if-no-files-found: error
+
+  release-draft:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: Harmonia-*-trial-zip
+        path: dist
+        merge-multiple: true
+
+    - name: Draft GitHub Release (not published)
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        prerelease: true
+        name: Harmonia ${{ github.ref_name }} (draft trial zips)
+        body: |
+          Unsigned trial zips. Do not publish until you sign the builds and
+          paste a Lemon checkout URL.
+
+          After you approve publishing a release, set
+          `sell-site/config.js` `trialZipUrl` to the asset URL.
+        files: dist/*.zip

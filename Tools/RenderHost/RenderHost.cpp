@@ -12,6 +12,7 @@
 #include "Music/MusicTheory.h"
 #include "Inspire.h"
 #include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <iostream>
 #include <optional>
 
@@ -105,7 +106,156 @@ namespace
             "  --midi <file.mid>       also export the clip (one track per part)\n"
             "  --split-midi            with --midi, also write <name>-<part>.mid files\n"
             "  --sample-rate <hz>      default 48000\n"
-            "  --block <samples>       host block size (default 512)\n";
+            "  --block <samples>       host block size (default 512)\n"
+            "  --smoke                 generate + export + state round-trip (no WAV)\n"
+            "  --vst3 <Harmonia.vst3>  with --smoke, also instantiate the bundle\n";
+    }
+
+    int countNoteOns(const juce::MidiBuffer& midi)
+    {
+        int n = 0;
+        for (const auto metadata : midi)
+            if (metadata.getMessage().isNoteOn())
+                ++n;
+        return n;
+    }
+
+    bool stateLooksPopulated(const juce::MemoryBlock& block)
+    {
+        return block.getSize() > 64;
+    }
+
+    int runHostSmoke(const juce::StringArray& args)
+    {
+        auto option = [&args](const juce::String& name, const juce::String& fallback)
+        {
+            const int index = args.indexOf(name);
+            return (index >= 0 && index + 1 < args.size()) ? args[index + 1] : fallback;
+        };
+
+        std::unique_ptr<juce::AudioProcessor> plugin(createPluginFilter());
+        auto* proc = dynamic_cast<SynthesiaAIProcessor*>(plugin.get());
+        if (proc == nullptr)
+        {
+            std::cerr << "SMOKE FAIL  createPluginFilter did not return SynthesiaAIProcessor\n";
+            return 1;
+        }
+
+        const juce::String name = proc->getName();
+        if (!name.containsIgnoreCase("Harmonia"))
+        {
+            std::cerr << "SMOKE FAIL  getName() is '" << name << "', expected Harmonia\n";
+            return 1;
+        }
+        std::cout << "SMOKE  instantiate  name=" << name << "\n";
+
+        MidiGenerationParams params;
+        params.genre = Genre::Pop;
+        params.part = Part::All;
+        params.lengthInBars = 8;
+        params.form = ArrangementForm::Loop;
+        params.rootNote = 0;
+        params.scale = ScaleType::Major;
+        params.seed = static_cast<unsigned int>(option("--seed", "7").getLargeIntValue());
+        const int genreIndex = genreNames.indexOf(option("--genre", "pop"), true);
+        if (genreIndex >= 0)
+            params.genre = static_cast<Genre>(genreIndex);
+        const auto& profile = getGenreProfile(params.genre);
+        params.tempo = profile.defaultTempo;
+        params.quantization = profile.defaultGrid;
+
+        proc->setGeneratorType(GeneratorType::Genre);
+        proc->setLastUiParams(params);
+        proc->generateMidiBlocking(params);
+        const auto& clip = proc->getGeneratedMidi();
+        const int notes = countNoteOns(clip);
+        if (clip.isEmpty() || notes < 8)
+        {
+            std::cerr << "SMOKE FAIL  Generate produced " << notes << " note-ons\n";
+            return 2;
+        }
+        std::cout << "SMOKE  generate     note-ons=" << notes << "  name=" << name << "\n";
+
+        const auto midiPath = option("--midi", "harmonia-smoke.mid");
+        const juce::File midiFile = juce::File::getCurrentWorkingDirectory().getChildFile(midiPath);
+        midiFile.getParentDirectory().createDirectory();
+        if (!MidiExporter::exportToFile(clip, midiFile, params.tempo, 4, 4))
+        {
+            std::cerr << "SMOKE FAIL  MIDI export " << midiFile.getFullPathName() << "\n";
+            return 3;
+        }
+        std::cout << "SMOKE  export       " << midiFile.getFullPathName() << "\n";
+
+        juce::MemoryBlock saved;
+        proc->getStateInformation(saved);
+        if (!stateLooksPopulated(saved))
+        {
+            std::cerr << "SMOKE FAIL  getStateInformation returned " << saved.getSize() << " bytes\n";
+            return 4;
+        }
+        proc->setPreviewPlaying(false);
+        plugin.reset();
+        plugin.reset(createPluginFilter());
+        proc = dynamic_cast<SynthesiaAIProcessor*>(plugin.get());
+        if (proc == nullptr)
+        {
+            std::cerr << "SMOKE FAIL  second instantiate failed\n";
+            return 4;
+        }
+        proc->setStateInformation(saved.getData(), (int) saved.getSize());
+        const int restored = countNoteOns(proc->getGeneratedMidi());
+        juce::MemoryBlock saved2;
+        proc->getStateInformation(saved2);
+        if (restored != notes || !stateLooksPopulated(saved2))
+        {
+            std::cerr << "SMOKE FAIL  state restore notes=" << restored << " expected=" << notes << "\n";
+            return 4;
+        }
+        std::cout << "SMOKE  state        round-trip notes=" << restored
+                  << "  blob=" << saved.getSize() << "->" << saved2.getSize() << " bytes\n";
+
+        const auto vst3Path = option("--vst3", {});
+        if (vst3Path.isNotEmpty())
+        {
+            const juce::File vst3 = juce::File::getCurrentWorkingDirectory().getChildFile(vst3Path);
+            if (!vst3.exists())
+            {
+                std::cerr << "SMOKE FAIL  --vst3 not found: " << vst3.getFullPathName() << "\n";
+                return 5;
+            }
+            juce::AudioPluginFormatManager formats;
+            formats.addFormat(new juce::VST3PluginFormat());
+            juce::OwnedArray<juce::PluginDescription> types;
+            formats.getFormat(0)->findAllTypesForFile(types, vst3.getFullPathName());
+            if (types.isEmpty())
+            {
+                std::cerr << "SMOKE FAIL  VST3 scan found no plugins in "
+                          << vst3.getFullPathName() << "\n";
+                return 5;
+            }
+            juce::String error;
+            auto instance = formats.getFormat(0)->createInstanceFromDescription(
+                *types[0], 48000.0, 512, error);
+            if (instance == nullptr)
+            {
+                std::cerr << "SMOKE FAIL  VST3 instantiate: " << error << "\n";
+                return 5;
+            }
+            const auto hostedName = instance->getName();
+            instance->setStateInformation(saved.getData(), (int) saved.getSize());
+            juce::MemoryBlock hostedState;
+            instance->getStateInformation(hostedState);
+            if (!hostedName.containsIgnoreCase("Harmonia") || !stateLooksPopulated(hostedState))
+            {
+                std::cerr << "SMOKE FAIL  VST3 name='" << hostedName
+                          << "' or restored state missing clip\n";
+                return 5;
+            }
+            std::cout << "SMOKE  vst3         loaded name=" << hostedName << "\n";
+        }
+
+        std::cout << "SMOKE PASS\n";
+        return 0;
     }
 }
 
@@ -131,6 +281,9 @@ int main(int argc, char* argv[])
             std::cout << userId << "\t(user)\n";
         return 0;
     }
+
+    if (args.contains("--smoke"))
+        return runHostSmoke(args);
 
     const auto fixturesDir = option("--write-fixtures", {});
     if (fixturesDir.isNotEmpty())
