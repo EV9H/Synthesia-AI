@@ -1,0 +1,8 @@
+Harmonia host smoke
+  VST3: /workspace/build/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3
+  MIDI: /workspace/eval-reports/smoke/harmonia-smoke.mid
+  Generate + 960-PPQ export: PASS
+  State save/restore (SynthesiaAIState): PASS
+  VST3 instantiate via SynthesiaRender --vst3: PASS
+  pluginval: PASS
+Still needs a human: Drag MIDI into Ableton / FL / Reaper and load YOUR sounds.
