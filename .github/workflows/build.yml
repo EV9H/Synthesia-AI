@@ -33,7 +33,10 @@ jobs:
         path: build/SynthesiaAI_artefacts/Release/VST3/SynthesiaAI.vst3
 
   build-macos:
-    runs-on: macos-latest
+    # macos-latest is macOS 26 / Xcode 26.6; JUCE 7.0.12 juceaide dies on
+    # CGWindowListCreateImage (obsoleted in the macOS 15+ SDK). Pin 14 so
+    # juceaide compiles without a JUCE 8 upgrade.
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4

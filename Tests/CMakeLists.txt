@@ -23,15 +23,20 @@ target_compile_definitions(SynthesiaAITests PRIVATE
     JUCE_STANDALONE_APPLICATION=0
 )
 
-# Find CURL for LLM tests
-find_package(CURL REQUIRED)
+# Tests compile juce_core with JUCE_USE_CURL=0. Only link libcurl where
+# find_package succeeded (not Windows GHA).
+set(SYNTHESIA_TEST_CURL_LIBS "")
+if(NOT WIN32)
+    find_package(CURL REQUIRED)
+    set(SYNTHESIA_TEST_CURL_LIBS CURL::libcurl)
+endif()
 
 target_link_libraries(SynthesiaAITests
     PRIVATE
         gtest_main
         juce::juce_audio_basics
         juce::juce_core
-        CURL::libcurl
+        ${SYNTHESIA_TEST_CURL_LIBS}
 )
 
 # Include source directories for testing
@@ -48,6 +53,9 @@ target_sources(SynthesiaAITests PRIVATE
     ${CMAKE_SOURCE_DIR}/Source/Generators/ArrangementPlan.cpp
     ${CMAKE_SOURCE_DIR}/Source/Generators/GenreProfiles.cpp
     ${CMAKE_SOURCE_DIR}/Source/Music/MusicTheory.cpp
+    ${CMAKE_SOURCE_DIR}/Source/StyleProfile.cpp
+    ${CMAKE_SOURCE_DIR}/Source/MidiImporter.cpp
+    ${CMAKE_SOURCE_DIR}/Source/MidiExporter.cpp
 )
 
 include(GoogleTest)
