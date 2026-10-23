@@ -60,10 +60,30 @@ cp "$ROOT/Tools/GETTING_STARTED.txt" "$bundle/GETTING_STARTED.txt"
 cp "$ROOT/Tools/UNSIGNED_SMOKE.txt" "$bundle/UNSIGNED_SMOKE.txt"
 cp "$ROOT/Tools/LICENSE_NOTE.txt" "$bundle/LICENSE.txt"
 cp "$ROOT/Tools/INSTALL.md" "$bundle/INSTALL.md"
-(
-    cd "$stage"
-    zip -r -q "$out" Harmonia
-)
+# GHA windows-latest Git bash has no `zip`. Python is on every runner.
+pack_zip() {
+    local py
+    py="$(command -v python3 || command -v python || true)"
+    if command -v zip >/dev/null 2>&1; then
+        ( cd "$stage" && zip -r -q "$out" Harmonia )
+        return 0
+    fi
+    if [[ -z "$py" ]]; then
+        echo "Need zip or python3 to pack the trial zip." >&2
+        return 1
+    fi
+    "$py" - "$stage" "$out" <<'PY'
+import sys, zipfile
+from pathlib import Path
+stage, out = Path(sys.argv[1]), sys.argv[2]
+root = stage / "Harmonia"
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+    for path in root.rglob("*"):
+        if path.is_file():
+            zf.write(path, path.relative_to(stage).as_posix())
+PY
+}
+pack_zip
 
 cat <<EOF
 Wrote $out
