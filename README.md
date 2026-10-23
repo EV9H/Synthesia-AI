@@ -2,7 +2,7 @@
 
 MIDI generator for **your** DAW sounds — not a synth, not a sample pack.
 The GitHub repo stays `EV9H/Synthesia-AI`. The DAW lists **Harmonia**.
-The VST3 folder on disk may still be `Synthesia AI.vst3` (same plugin).
+The VST3 folder on disk is `Harmonia.vst3`. VST3 CID stays `Synt` / `SyAI`.
 
 An AI-powered MIDI generation plugin for DAWs (Ableton Live, FL Studio, Reaper, Cubase, Studio One). Built with JUCE. Preview audio is a cheap sketch — load your own instruments.
 
@@ -105,8 +105,8 @@ cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaAI_Standalone
 
 # Plugin location
-build/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3
-build/SynthesiaAI_artefacts/Release/Standalone/Synthesia AI.exe
+build/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3
+build/SynthesiaAI_artefacts/Release/Standalone/Harmonia.exe
 ```
 
 Ninja also works: `cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release`.
@@ -120,9 +120,9 @@ cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
 cmake --build build --config Release --target SynthesiaAI_VST3 SynthesiaAI_AU SynthesiaAI_Standalone
 
 # Plugin locations
-build/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3
-build/SynthesiaAI_artefacts/Release/AU/Synthesia AI.component
-build/SynthesiaAI_artefacts/Release/Standalone/Synthesia AI.app
+build/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3
+build/SynthesiaAI_artefacts/Release/AU/Harmonia.component
+build/SynthesiaAI_artefacts/Release/Standalone/Harmonia.app
 ```
 
 Universal binaries are optional; omit `-DCMAKE_OSX_ARCHITECTURES` for a native-only build.
@@ -260,7 +260,7 @@ With no key, Plan still works: keywords in the prompt map to genre, energy and d
 
 ### Quick start (users)
 
-1. Load **Harmonia** as an instrument (bundle on disk may still say Synthesia AI).
+1. Load **Harmonia** as an instrument (bundle on disk is `Harmonia.vst3`).
 2. Pick a **Preset** / Harmonia plan (genre · mood) or set key / genre yourself.
 3. Click **Generate**. Mute or solo parts on the piano roll.
 4. Drag the handle labelled **Drag MIDI into DAW** (or Chords / Bass / Synth / Piano / Drums) onto a MIDI track — not the piano-roll.

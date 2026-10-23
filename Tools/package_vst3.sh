@@ -22,6 +22,9 @@ case "$uname_s" in
 esac
 
 candidates=(
+    "$BUILD/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3"
+    "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Harmonia.vst3"
+    "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Harmonia.vst3"
     "$BUILD/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3"
     "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Synthesia AI.vst3"
     "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Synthesia AI.vst3"
@@ -73,14 +76,14 @@ macOS signing / notarizing (needs YOUR Apple credentials, not in this repo):
   4. Then, on a Mac:
        codesign --force --deep --options runtime \\
          --sign "Developer ID Application: YOUR NAME (TEAMID)" \\
-         "Synthesia AI.vst3"
-       ditto -c -k --keepParent "Synthesia AI.vst3" Harmonia-vst3.zip
+         "Harmonia.vst3"
+       ditto -c -k --keepParent "Harmonia.vst3" Harmonia-vst3.zip
        xcrun notarytool submit Harmonia-vst3.zip --keychain-profile "harmonia" --wait
-       xcrun stapler staple "Synthesia AI.vst3"
-  AU: repeat for "Synthesia AI.component"
-  Standalone: repeat for "Synthesia AI.app"
+       xcrun stapler staple "Harmonia.vst3"
+  AU: repeat for "Harmonia.component"
+  Standalone: repeat for "Harmonia.app"
 
 Windows signing (needs YOUR Authenticode cert):
   signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ^
-    /f your.pfx /p YOUR_PASSWORD "Synthesia AI.vst3"
+    /f your.pfx /p YOUR_PASSWORD "Harmonia.vst3"
 EOF

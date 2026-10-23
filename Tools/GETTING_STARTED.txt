@@ -4,8 +4,7 @@ Harmonia is a MIDI generator, not a synth. The product is the notes.
 Preview audio is a cheap sketch. If the preview piano sounds thin,
 that is expected — load your own sounds.
 
-The plugin shows as Harmonia. On disk the bundle is still
-"Synthesia AI.vst3" until a dedicated rename. Same plugin.
+The plugin shows as Harmonia. The bundle on disk is Harmonia.vst3.
 
 This unsigned zip is the marketing trial. Generate and Drag MIDI
 work with no key and no timer. Paid (ENFORCE) builds lock Generate
@@ -38,7 +37,7 @@ Sample / demo key (optional — this trial zip does not need one)
 Unsigned build: Gatekeeper / SmartScreen will warn. Not malware.
 Follow INSTALL.md and UNSIGNED_SMOKE.txt.
 
-This zip: Synthesia AI.vst3, README.txt, INSTALL.md, GETTING_STARTED.txt,
+This zip: Harmonia.vst3, README.txt, INSTALL.md, GETTING_STARTED.txt,
 UNSIGNED_SMOKE.txt, LICENSE.txt.
 
-Display name: Harmonia. Bundle id is still SynthesiaAI until a rename.
+Display name and bundle: Harmonia. VST3 CID is still Synt/SyAI (stable).

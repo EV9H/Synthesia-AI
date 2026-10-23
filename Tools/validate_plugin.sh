@@ -44,6 +44,9 @@ find_vst3() {
         return 0
     fi
     for cand in \
+        "$BUILD/SynthesiaAI_artefacts/Release/VST3/Harmonia.vst3" \
+        "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Harmonia.vst3" \
+        "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Harmonia.vst3" \
         "$BUILD/SynthesiaAI_artefacts/Release/VST3/Synthesia AI.vst3" \
         "$BUILD/SynthesiaAI_artefacts/RelWithDebInfo/VST3/Synthesia AI.vst3" \
         "$BUILD/SynthesiaAI_artefacts/Debug/VST3/Synthesia AI.vst3"
